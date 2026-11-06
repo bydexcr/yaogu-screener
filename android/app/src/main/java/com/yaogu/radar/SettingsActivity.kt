@@ -36,6 +36,7 @@ class SettingsActivity : Activity() {
         val etNdays = findViewById<EditText>(R.id.et_ndays)
         val cbSt = findViewById<CheckBox>(R.id.cb_st)
         val cbBj = findViewById<CheckBox>(R.id.cb_bj)
+        val swSound = findViewById<android.widget.Switch>(R.id.sw_sound)
 
         val mainR = strat.optJSONArray("t_open_pct_range")
         val deepR = strat.optJSONArray("deep_open_pct_range")
@@ -50,6 +51,7 @@ class SettingsActivity : Activity() {
         etNdays.setText(strat.optInt("high_ndays", 30).toString())
         cbSt.isChecked = cfg.optBoolean("exclude_st", true)
         cbBj.isChecked = cfg.optBoolean("exclude_bj", true)
+        swSound.isChecked = (cfg.optJSONObject("notify")?.optBoolean("sound", true) ?: true)
 
         findViewById<Button>(R.id.btn_clear_key).setOnClickListener { etKey.setText("") }
         findViewById<Button>(R.id.btn_cancel).setOnClickListener { finish() }
@@ -87,7 +89,7 @@ class SettingsActivity : Activity() {
                     .put("confirm_above_open", true)
                     .put("broken_below_open_pct", -3.0)
                     .put("broken_below_prev_pct", -9.0))
-                out.put("notify", JSONObject().put("enabled", true))
+                out.put("notify", JSONObject().put("enabled", true).put("sound", swSound.isChecked))
                 out.put("exclude_st", cbSt.isChecked)
                 out.put("exclude_bj", cbBj.isChecked)
                 cfgFile.writeText(out.toString(2))
@@ -97,6 +99,7 @@ class SettingsActivity : Activity() {
                     prefsEdit.putString("api_key", key)
                     File(filesDir, "key").writeText(key)
                 }
+                prefsEdit.putBoolean("sound_on", swSound.isChecked)
                 prefsEdit.putBoolean("reload_web", true).apply()
                 Toast.makeText(this, "已保存，下一轮轮询热生效", Toast.LENGTH_SHORT).show()
                 finish()

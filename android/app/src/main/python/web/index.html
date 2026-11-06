@@ -127,11 +127,13 @@
       white-space:nowrap; flex:0 0 auto}
     table.cand td.rr{max-width:none; white-space:normal; overflow:visible; text-overflow:clip}
     /* 手机卡片只保留 4 项：代码/名称/评分/状态，其余点击弹窗看 */
-    table.cand td:not([data-label="代码"]):not([data-label="名称"]):not([data-label="评分"]):not([data-label="状态"]){display:none}
+    table.cand td:not([data-label="时间"]):not([data-label="代码"]):not([data-label="名称"]):not([data-label="评分"]):not([data-label="状态"]){display:none}
     .event{gap:6px}
     .event .time{min-width:64px}
     footer{font-size:10.5px}
     .warnbar{font-size:11.5px}
+    /* 右上角给齿轮按钮留出空间，避免遮挡标题栏文字 */
+    .bar{padding-right:44px}
   }
   /* ---------- 候选详情弹窗 ---------- */
   #cand tbody tr{cursor:pointer}
@@ -156,7 +158,6 @@
     <span class="badge" id="src">-</span>
     <span class="meta">T <b id="t0">-</b>｜T-1 <b id="t1">-</b>｜T-2 <b id="t2">-</b>｜候选 <b id="pool">-</b>｜低开 <b class="hl" id="hits">-</b>｜深水 <b id="wd">-</b>｜承接 <b style="color:var(--ok)" id="wc">-</b>｜走弱 <b style="color:var(--warn)" id="wb">-</b></span>
     <span class="meta">更新 <b id="upts">-</b>（<span id="intv">30</span>s） 轮次 <span id="cyc">-</span></span>
-    <span class="switch" id="snd">🔔 声音:开</span>
   </div>
   <div class="warnbar" id="warnbar" style="display:none">
     ⚠ 本地行情数据未就绪（缺 T-1 日线）：正在自动重试同步，页面保持在线，同步完成后自动恢复扫描。
@@ -180,7 +181,7 @@
     </div>
 
     <div class="card">
-      <h2>📋 候选池 <span class="tick">(已通过 T-1 条件，实时显示 T 日开盘/现价；悬停题材看涨停原因)</span></h2>
+      <h2 id="candTitle">📋 候选池 <span class="tick">(已通过 T-1 条件，实时显示 T 日开盘/现价；悬停题材看涨停原因)</span></h2>
       <div class="tbl">
       <table class="cand">
         <thead><tr>
@@ -292,7 +293,6 @@
 <script>
 const $=s=>document.querySelector(s);
 let soundOn=true, seenHits=new Set(), flashTimer=null;
-$("#snd").onclick=()=>{soundOn=!soundOn;$("#snd").textContent=soundOn?"🔔 声音:开":"🔇 声音:关";};
 function beep(){ if(!soundOn) return; try{
   const ctx=new (window.AudioContext||window.webkitAudioContext)();
   [880,1320].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();
@@ -317,6 +317,7 @@ function showCand(code){
     ["名称", esc(c.name)],
     ["评分", fmt(c.score,1)],
     ["状态", esc(sigTxt)+"（"+esc(zoneTxt)+"）"],
+    ["命中时间", esc(c.hit_time||"-")],
     ["成色", esc(c.continue_text||(c.t1_limitup?"涨停":"大涨"))+(c.limit_up_time?(" "+esc(c.limit_up_time)):"")+(c.seal_money_yi!=null?(" · 封"+fmt(c.seal_money_yi,1)+"亿"):"")],
     ["题材", esc(c.limit_up_reason||"-")],
     ["T-1日期", esc(c.t1_date||"-")],
@@ -514,6 +515,7 @@ async function refresh(){
     catch(e){ $("#errs").textContent="看板连接异常: "+e; return; }
   }
   try{
+    soundOn = (st && st.sound === false) ? false : true;   // 声音开关由设置页控制
     const ph=$("#phase");
     ph.textContent=(st.phase||"-")+(st.offline?"(回放)":"");
     ph.className="badge"+(st.phase==="连续竞价"||st.phase==="集合竞价"?" live":"");
@@ -576,6 +578,30 @@ async function refresh(){
         <span class="dp">开盘 ${fmt(h.open_pct,2)}%</span>
         <span class="tick">现价 ${fmt(h.last_price,2)} (${fmt(h.last_pct,2)}%)</span></div>`).join("")
       :`<div class="empty" style="padding:8px 0">暂无深水命中</div>`;
+    // 盘后命中复盘：收盘后 ~ 次日 09:15（含非交易日）展示当日全部命中股
+    const rv=st.review||{};
+    const rmode=!!(rv.mode && (rv.hits||[]).length);
+    const titleEl=$("#candTitle");
+    if(titleEl){
+      titleEl.innerHTML = rmode
+        ? `📌 盘中命中复盘 · ${esc(rv.date||'')} <span class="tick">（共 ${rv.hits.length} 只 · 点卡片看详情）</span>`
+        : `📋 候选池 <span class="tick">(已通过 T-1 条件，实时显示 T 日开盘/现价；悬停题材看涨停原因)</span>`;
+    }
+    if(rmode){
+      $("#cand").innerHTML=rv.hits.map(h=>{
+        CAND[h.thscode]=h;
+        const zt = h.zone==='main' ? '★低开' : (h.zone==='deep' ? '💧深水' : '-');
+        const sx = h.sig==='confirm' ? '承接✓' : (h.sig==='broken' ? '走弱⚠' : zt);
+        const cls = (h.zone==='main'||h.zone==='deep') ? 'hit-row' : '';
+        return `<tr class="${cls}" data-code="${esc(h.thscode)}">
+          <td data-label="时间">${esc(String(h.hit_time||'').slice(11)||'-')}</td>
+          <td data-label="代码">${esc(h.thscode)}</td>
+          <td data-label="名称"><b>${esc(h.name)}</b></td>
+          <td data-label="评分" class="sc">${fmt(h.score,0)}</td>
+          <td data-label="状态">${sx}</td></tr>`;
+      }).join("");
+      return;
+    }
     // 候选表
     const cs=st.candidates||[];
     if(!cs.length){ $("#cand").innerHTML='<tr><td colspan="13"><div class="empty">当前无候选股（T-1条件未命中）</div></td></tr>'; return; }

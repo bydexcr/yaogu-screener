@@ -24,7 +24,7 @@ DEFAULT_CFG = {
     "intraday": {"confirm_above_open": True,
                  "broken_below_open_pct": -3.0,
                  "broken_below_prev_pct": -9.0},
-    "notify": {"enabled": True},
+    "notify": {"enabled": True, "sound": True},
     "timezone": "Asia/Shanghai",
 }
 

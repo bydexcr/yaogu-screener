@@ -160,6 +160,14 @@
             android:text="剔除北交所"
             android:textColor="#dbe2ef" />
 
+        <Switch
+            android:id="@+id/sw_sound"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="声音提醒（命中/承接/走弱）"
+            android:textColor="#dbe2ef" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -41,6 +41,8 @@ class DashboardService : Service() {
                 NotificationChannel("yaogu_service", "运行状态", NotificationManager.IMPORTANCE_LOW))
             nm.createNotificationChannel(
                 NotificationChannel("yaogu_alerts", "盘中提醒", NotificationManager.IMPORTANCE_HIGH))
+            nm.createNotificationChannel(
+                NotificationChannel("yaogu_alerts_silent", "盘中提醒(静音)", NotificationManager.IMPORTANCE_LOW))
         }
     }
 
@@ -73,7 +75,8 @@ class DashboardService : Service() {
         out.put("strategy", st)
         out.put("intraday", JSONObject().put("confirm_above_open", true)
             .put("broken_below_open_pct", -3.0).put("broken_below_prev_pct", -9.0))
-        out.put("notify", JSONObject().put("enabled", true))
+        out.put("notify", JSONObject().put("enabled", true)
+            .put("sound", prefs.getBoolean("sound_on", true)))
         out.put("exclude_st", true)
         out.put("exclude_bj", true)
         cfgFile.writeText(out.toString(2))
@@ -97,6 +100,8 @@ class DashboardService : Service() {
             env.callAttr("__setitem__", "YAOGU_KEY_FILE", keyFile.absolutePath)
             env.callAttr("__setitem__", "YAOGU_CONFIG_FILE", cfg.absolutePath)
             env.callAttr("__setitem__", "YAOGU_DATA_DIR", File(filesDir, "data_mobile").absolutePath)
+            env.callAttr("__setitem__", "YAOGU_SOUND",
+                if (prefs.getBoolean("sound_on", true)) "1" else "0")
             py.getModule("android_main").callAttr("main")
         } catch (t: Throwable) {
             Notifier.post("启动失败", t.message ?: t.toString())

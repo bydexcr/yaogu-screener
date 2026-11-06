@@ -113,6 +113,14 @@ class MobileEngine:
                                   exclude_bj=bool(self.cfg.get("exclude_bj", True)))
         self.pool_key = self.t1_date
         self.watch, self.hits, self.deep_hits, self.events = {}, [], [], []
+        # App 重启/当日中断后，恢复当天已记录的命中（供盘中时间线与盘后复盘）
+        try:
+            saved = self._load_session_hits(self.t_date)
+            if saved:
+                self.hits = [r for r in saved if r.get("zone") == "main"]
+                self.deep_hits = [r for r in saved if r.get("zone") == "deep"]
+        except Exception:
+            pass
         return True
 
     # ---------------------------------------------------------- 行情
@@ -204,6 +212,7 @@ class MobileEngine:
                 return
             rec = cand.to_dict(); rec["hit_time"] = now
             self.hits.append(rec); res["new_hits"].append(rec)
+            self._save_session_hits()
             if self._notify_on:
                 notify_mobile.send("hit", f"★低开命中 {cand.name}({cand.thscode})",
                                    f"T-1 {cand.t1_pct:+.2f}% 开盘{cand.open_pct:+.2f}% 现价{cand.last_price}")
@@ -212,9 +221,65 @@ class MobileEngine:
                 return
             rec = cand.to_dict(); rec["hit_time"] = now
             self.deep_hits.append(rec); res["deep_new"].append(rec)
+            self._save_session_hits()
             if self._notify_on:
                 notify_mobile.send("deephit", f"💧深水低吸 {cand.name}({cand.thscode})",
                                    f"T-1 {cand.t1_pct:+.2f}% 开盘{cand.open_pct:+.2f}% 现价{cand.last_price}")
+
+    # ---------- 盘后命中复盘：持久化 & 判定 ----------
+    def _hits_file(self, day: str) -> Path:
+        return self.data_dir / f"session_hits_{day}.json"
+
+    def _save_session_hits(self) -> None:
+        if not self.t_date:
+            return
+        try:
+            data = {"date": self.t_date, "hits": self.hits[-300:],
+                    "deep_hits": self.deep_hits[-300:]}
+            self._hits_file(self.t_date).write_text(
+                json.dumps(data, ensure_ascii=False, default=str), encoding="utf-8")
+        except Exception:
+            pass
+
+    def _load_session_hits(self, day: str) -> list:
+        f = self._hits_file(day)
+        if not f.exists():
+            return []
+        try:
+            data = json.loads(f.read_text(encoding="utf-8-sig"))
+        except Exception:
+            return []
+        merged = {}
+        for k in ("hits", "deep_hits"):
+            for r in data.get(k) or []:
+                code = r.get("thscode")
+                if code and code not in merged:
+                    merged[code] = r
+        out = list(merged.values())
+        out.sort(key=lambda r: r.get("hit_time") or "")
+        return out
+
+    def _review_info(self):
+        """收盘后 ~ 次日 09:15（含非交易日）的命中复盘：返回 (是否复盘, 复盘日期, 命中列表)。"""
+        cal = self.calendar or []
+        now = now_local()
+        today = now.strftime("%Y-%m-%d")
+        hhmm = now.strftime("%H:%M")
+        review_date = None
+        if today in cal:
+            if hhmm < "09:15":
+                prev = [d for d in cal if d < today]
+                review_date = prev[-1] if prev else None
+            elif hhmm >= "15:00":
+                review_date = today
+        else:  # 非交易日：显示最近一个已收盘交易日的命中
+            prev = [d for d in cal if d <= today]
+            review_date = prev[-1] if prev else None
+        if not review_date:
+            return False, "", []
+        hits = self._load_session_hits(review_date)
+        return (len(hits) > 0), review_date, hits
+
 
     def _track_sig(self, cand):
         if not cand.hit:
@@ -242,6 +307,7 @@ class MobileEngine:
 
     # ---------------------------------------------------------- 状态
     def _update_state(self, res: dict):
+        review_mode, review_date, review_hits = self._review_info()
         self.state = {
             "updated": res.get("ts", now_str()), "cycle": self.cycle_no,
             "source": self.source_label, "phase": self.phase, "offline": self.offline,
@@ -253,6 +319,9 @@ class MobileEngine:
                       "deep": self.deep_range or [-10, -7],
                       "deep_enabled": bool(self.deep_range)},
             "sentiment": self.sentiment,
+            "sound": bool(self.cfg.get("notify", {}).get("sound", True)),
+            "review": {"mode": review_mode, "date": review_date,
+                       "hits": review_hits[-100:]},
             "watch": {"hit": sum(1 for c in self.pool if c.zone == "main"),
                       "deep": sum(1 for c in self.pool if c.zone == "deep"),
                       "confirm": sum(1 for c in self.pool if c.sig == "confirm"),

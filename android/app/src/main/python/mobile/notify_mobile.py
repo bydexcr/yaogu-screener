@@ -27,10 +27,14 @@ def send(etype: str, title: str, text: str, code: str = "") -> None:
     """etype: hit / deephit / confirm / broken；冷却 5 分钟（按 类型+代码）。"""
     if not _cooldown_ok(f"{etype}:{code}"):
         return
-    # 0) 安卓 App 模式（Chaquopy）：调用 Java 通知桥
+    # 0) 安卓 App 模式（Chaquopy）：调用 Java 通知桥（静音与否由设置页的“声音提醒”决定）
     try:
         from java import jclass  # 仅安卓 App 内可用
-        jclass("com.yaogu.radar.Notifier").callAttr("post", title, text)
+        silent = str(os.environ.get("YAOGU_SOUND", "1")).strip().lower() in ("0", "false")
+        try:
+            jclass("com.yaogu.radar.Notifier").callAttr("post", title, text, silent)
+        except Exception:
+            jclass("com.yaogu.radar.Notifier").callAttr("post", title, text)
         print(f"[通知] {title}", flush=True)
         return
     except ImportError:
