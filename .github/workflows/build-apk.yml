@@ -1,1 +1,75 @@
+name: build-apk
 
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
+      # 签名：优先使用仓库 Secret 中的 keystore；没有则生成一个新 keystore 并作为产物提供
+      - name: Prepare signing keystore
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          KSPASS="${KS_PASS:-yaogu-pass}"
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > keystore.jks
+            echo "KS_GENERATED=false" >> "$GITHUB_ENV"
+            echo "using stored keystore"
+          else
+            keytool -genkeypair -keystore keystore.jks -storetype PKCS12 -alias yaogu \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Yaogu Radar, OU=Personal, O=Personal, L=NA, ST=NA, C=CN" \
+              -storepass "$KSPASS" -keypass "$KSPASS"
+            echo "KS_GENERATED=true" >> "$GITHUB_ENV"
+            echo "generated a fresh keystore (download artifact to reuse stable signature)"
+          fi
+          echo "KEYSTORE_FILE=$PWD/keystore.jks" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PASSWORD=$KSPASS" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=yaogu" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=$KSPASS" >> "$GITHUB_ENV"
+
+      - name: Build APKs (debug + signed release)
+        run: gradle assembleDebug assembleRelease --no-daemon --stacktrace
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: yaogu-android-apks
+          path: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      # 首次构建会生成随机签名，可下载此产物保存；下次构建把它转为 Secret（KEYSTORE_BASE64）即可保持签名一致
+      - name: Upload generated keystore (first run only)
+        if: env.KS_GENERATED == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: yaogu-keystore-keep-as-secret
+          path: android/keystore.jks
+          if-no-files-found: ignore
