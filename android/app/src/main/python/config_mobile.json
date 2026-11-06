@@ -1,0 +1,20 @@
+{
+  "interval_seconds": 30,
+  "data_dir": "data_mobile",
+  "web": { "enabled": true, "host": "127.0.0.1", "port": 8311, "token": "" },
+  "strategy": {
+    "t1_gain_min_pct": 8.0,
+    "t1_volume_lt_t2": true,
+    "high_ndays": 30,
+    "t1_amount_min_yi": 5.0,
+    "t_open_pct_range": [-8.0, -5.0],
+    "deep_open_pct_range": [-10.0, -7.0]
+  },
+  "intraday": {
+    "confirm_above_open": true,
+    "broken_below_open_pct": -3.0,
+    "broken_below_prev_pct": -9.0
+  },
+  "notify": { "enabled": true },
+  "timezone": "Asia/Shanghai"
+}

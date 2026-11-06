@@ -1,0 +1,66 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.chaquo.python'
+}
+
+// 签名信息由 CI 注入（见 .github/workflows/build-apk.yml）；本地无则产出未签名 release
+def ksFile = System.getenv("KEYSTORE_FILE")
+def ksPass = System.getenv("KEYSTORE_PASSWORD") ?: ""
+def ksAlias = System.getenv("KEY_ALIAS") ?: "yaogu"
+def ksKeyPass = System.getenv("KEY_PASSWORD") ?: ksPass
+
+android {
+    namespace 'com.yaogu.radar'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.yaogu.radar"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        ndk {
+            // arm64-v8a: 主流手机；armeabi-v7a: 老机型兼容（Chaquopy Python 3.11 支持）
+            abiFilters 'arm64-v8a', 'armeabi-v7a'
+        }
+    }
+
+    signingConfigs {
+        if (ksFile) {
+            release {
+                storeFile file(ksFile)
+                storePassword ksPass
+                keyAlias ksAlias
+                keyPassword ksKeyPass
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (ksFile) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+chaquopy {
+    defaultConfig {
+        version = "3.11"
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.13.1'
+}
