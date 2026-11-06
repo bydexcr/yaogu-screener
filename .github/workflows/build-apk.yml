@@ -7,9 +7,13 @@ on:
       - 'android/**'
       - '.github/workflows/build-apk.yml'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: android
@@ -28,6 +32,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
+
+      - name: Show toolchain (diagnostics)
+        run: |
+          java -version
+          gradle --version | head -n 12
 
       # 签名：优先使用仓库 Secret 中的 keystore；没有则生成一个新 keystore 并作为产物提供
       - name: Prepare signing keystore
@@ -55,6 +64,10 @@ jobs:
 
       - name: Build APKs (debug + signed release)
         run: gradle assembleDebug assembleRelease --no-daemon --stacktrace
+
+      - name: Show APK output
+        run: |
+          ls -lh app/build/outputs/apk/release/ app/build/outputs/apk/debug/ 2>/dev/null || true
 
       - name: Upload APKs
         uses: actions/upload-artifact@v4
