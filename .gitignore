@@ -1,0 +1,42 @@
+# ---- 本地行情库/运行产物：不要提交到 GitHub（否则仓库巨大且含隐私） ----
+data/
+output/
+*.duckdb
+*.duckdb.wal
+*.duckdb.tmp
+*.parquet
+run_*.log
+run_*.log.err
+watchdog.log
+start.log
+screener.pid
+lan_url.txt
+latest.html
+
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+
+# ---- 凭据/密钥（绝不要提交） ----
+credentials.env
+**/key
+.env
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.iml
+
+# ---- Android 构建产物 ----
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/python/**/data_mobile/
+android/keystore.jks
+*.jks
+*.keystore
