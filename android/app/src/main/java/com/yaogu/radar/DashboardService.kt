@@ -87,6 +87,7 @@ class DashboardService : Service() {
             if (!Python.isStarted()) Python.start(AndroidPlatform(this))
             val py = Python.getInstance()
             val env = py.getModule("os").get("environ")
+                ?: throw IllegalStateException("os.environ unavailable")
             val prefs = getSharedPreferences("yaogu", MODE_PRIVATE)
             val key = prefs.getString("api_key", "") ?: ""
             val keyFile = File(filesDir, "key")
