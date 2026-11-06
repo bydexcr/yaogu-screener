@@ -96,6 +96,57 @@
   .sf .bar-thr{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed var(--accent);z-index:3}
   .sf .bar-val{text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
   .sf .bar-val.pos{color:var(--hit)} .sf .bar-val.neg{color:var(--ok)}
+  /* ---------- 手机/窄屏适配 ---------- */
+  .tbl{max-height:76vh;overflow:auto}
+  @media (max-width: 900px){
+    body{padding:10px}
+    .bar{gap:8px}
+    h1{font-size:17px}
+    .cols{grid-template-columns:1fr}
+    .sf{overflow-x:auto}
+  }
+  @media (max-width: 680px){
+    body{padding:8px; overflow-x:hidden}
+    h1{font-size:16px}
+    .meta{font-size:11px; line-height:1.55}
+    .badge{font-size:11px; padding:2px 8px}
+    .chips{gap:6px}
+    .chip{font-size:10.5px; padding:2px 8px}
+    .card{padding:10px}
+    h2{font-size:13px}
+    .tbl{max-height:none; overflow:visible}
+    table.cand{display:block}
+    table.cand thead{display:none}
+    table.cand tbody{display:block}
+    table.cand tr{display:block; margin:0 0 10px; padding:10px 12px;
+      border:1px solid var(--line); border-radius:10px; background:#121826}
+    table.cand tr.hit-row{border-color:rgba(255,77,106,.55); background:rgba(255,77,106,.08)}
+    table.cand td{display:flex; justify-content:space-between; align-items:center;
+      gap:12px; padding:3px 0; border:0; text-align:right; font-size:12.5px}
+    table.cand td::before{content:attr(data-label); color:var(--dim); font-size:11px;
+      white-space:nowrap; flex:0 0 auto}
+    table.cand td.rr{max-width:none; white-space:normal; overflow:visible; text-overflow:clip}
+    /* 手机卡片只保留 4 项：代码/名称/评分/状态，其余点击弹窗看 */
+    table.cand td:not([data-label="代码"]):not([data-label="名称"]):not([data-label="评分"]):not([data-label="状态"]){display:none}
+    .event{gap:6px}
+    .event .time{min-width:64px}
+    footer{font-size:10.5px}
+    .warnbar{font-size:11.5px}
+  }
+  /* ---------- 候选详情弹窗 ---------- */
+  #cand tbody tr{cursor:pointer}
+  .modal-mask{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex;
+    align-items:center; justify-content:center; z-index:1000; padding:16px}
+  .modal{width:min(92vw,420px); max-height:82vh; overflow:auto; background:var(--card);
+    border:1px solid var(--line); border-radius:12px; padding:12px 14px}
+  .modal-head{display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:8px; font-weight:700; color:#fff; font-size:15px}
+  .modal-close{background:none; border:0; color:var(--dim); font-size:18px; cursor:pointer; padding:0 4px}
+  .m-row{display:flex; justify-content:space-between; gap:12px; padding:5px 0;
+    border-bottom:1px dashed #1c2230; font-size:12.5px}
+  .m-row .k{color:var(--dim); flex:0 0 auto}
+  .m-row .v{text-align:right; word-break:break-all}
+  .m-row:last-child{border-bottom:0}
 </style>
 </head>
 <body>
@@ -130,8 +181,8 @@
 
     <div class="card">
       <h2>📋 候选池 <span class="tick">(已通过 T-1 条件，实时显示 T 日开盘/现价；悬停题材看涨停原因)</span></h2>
-      <div style="max-height:76vh;overflow:auto">
-      <table>
+      <div class="tbl">
+      <table class="cand">
         <thead><tr>
           <th>代码</th><th>名称</th><th>评分</th><th>成色</th><th>题材</th>
           <th>T-1涨幅</th><th>T-1额(亿)</th><th>量比</th>
@@ -252,6 +303,39 @@ function beep(){ if(!soundOn) return; try{
 
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function fmt(v,d=2){return (v===null||v===undefined||v==="")?"-":Number(v).toFixed(d);}
+
+// 候选详情：手机端卡片只显示 4 项，点击卡片弹窗看全部
+const CAND={};
+function _pct(v){ return (v===null||v===undefined)?"-":((v>=0?"+":"")+Number(v).toFixed(2)+"%"); }
+function showCand(code){
+  const c=CAND[code]; if(!c) return;
+  const zp=c.zone||"";
+  const zoneTxt = zp==="main"?"★低开(5~8%)" : zp==="deep"?"💧深水(7~10%)" : "未命中";
+  const sigTxt = c.sig==="confirm"?"承接✓" : c.sig==="broken"?"走弱⚠" : (c.hit?"★低开":"-");
+  const rows=[
+    ["代码", esc(c.thscode)],
+    ["名称", esc(c.name)],
+    ["评分", fmt(c.score,1)],
+    ["状态", esc(sigTxt)+"（"+esc(zoneTxt)+"）"],
+    ["成色", esc(c.continue_text||(c.t1_limitup?"涨停":"大涨"))+(c.limit_up_time?(" "+esc(c.limit_up_time)):"")+(c.seal_money_yi!=null?(" · 封"+fmt(c.seal_money_yi,1)+"亿"):"")],
+    ["题材", esc(c.limit_up_reason||"-")],
+    ["T-1日期", esc(c.t1_date||"-")],
+    ["T-1涨幅", _pct(c.t1_pct)],
+    ["T-1收盘", fmt(c.t1_close)],
+    ["T-1成交额", fmt(c.t1_amount_yi,1)+" 亿"],
+    ["量比(缩量)", fmt(c.volume_ratio,2)],
+    ["30日新高余量", fmt(c.high30_margin_pct,2)+"%"],
+    ["今日开盘价", fmt(c.open_price)],
+    ["开盘涨幅", (c.open_pct===null?"-":_pct(c.open_pct))],
+    ["最新价", fmt(c.last_price)],
+    ["现涨幅", _pct(c.last_pct)],
+  ];
+  $("#mTitle").textContent=(c.name||"?")+" "+c.thscode;
+  $("#mBody").innerHTML=rows.map(([k,v])=>
+    `<div class="m-row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  $("#candModal").style.display="flex";
+}
+function hideCand(){ $("#candModal").style.display="none"; }
 
 function sfNum(v,d=2,plus=false){ if(v===null||v===undefined||v==="") return "-";
   const n=Number(v); if(isNaN(n)) return "-";
@@ -496,6 +580,7 @@ async function refresh(){
     const cs=st.candidates||[];
     if(!cs.length){ $("#cand").innerHTML='<tr><td colspan="13"><div class="empty">当前无候选股（T-1条件未命中）</div></td></tr>'; return; }
     $("#cand").innerHTML=cs.map(c=>{
+      CAND[c.thscode]=c;   // 供点击弹窗读取
       const zp=c.zone||"";
       const cls=c.hit?"hit-row":"";
       const op=c.open_pct===null?'<span class="tick">未开盘</span>':
@@ -509,21 +594,44 @@ async function refresh(){
       const lastCls=(c.last_pct??0)>=0?"up":"down";
       const colorTag=c.continue_text?esc(c.continue_text):(c.t1_limitup?"<b style='color:var(--hit)'>涨停</b>":"大涨");
       const seal=c.seal_money_yi!=null?`<span class="tick">封${fmt(c.seal_money_yi,1)}亿</span>`:"";
-      return `<tr class="${cls}">
-        <td>${esc(c.thscode)}</td><td><b>${esc(c.name)}</b></td>
-        <td class="sc">${fmt(c.score,0)}</td>
-        <td>${colorTag}${c.limit_up_time?`<span class="tick"> ${esc(c.limit_up_time)}</span>`:""}${seal}</td>
-        <td class="rr" title="${esc(c.limit_up_reason||"")}">${esc(c.limit_up_reason||"-")}</td>
-        <td class="up">${fmt(c.t1_pct,2)}%</td>
-        <td>${fmt(c.t1_amount_yi,1)}</td><td>${fmt(c.volume_ratio,2)}</td>
-        <td>${fmt(c.open_price,2)}</td><td>${op}</td>
-        <td class="${lastCls}">${fmt(c.last_price,2)}</td><td class="${lastCls}">${fmt(c.last_pct,2)}%</td>
-        <td>${sigCell}</td></tr>`;
+      return `<tr class="${cls}" data-code="${esc(c.thscode)}">
+        <td data-label="代码">${esc(c.thscode)}</td><td data-label="名称"><b>${esc(c.name)}</b></td>
+        <td data-label="评分" class="sc">${fmt(c.score,0)}</td>
+        <td data-label="成色">${colorTag}${c.limit_up_time?`<span class="tick"> ${esc(c.limit_up_time)}</span>`:""}${seal}</td>
+        <td data-label="题材" class="rr" title="${esc(c.limit_up_reason||"")}">${esc(c.limit_up_reason||"-")}</td>
+        <td data-label="T-1涨幅" class="up">${fmt(c.t1_pct,2)}%</td>
+        <td data-label="T-1额(亿)">${fmt(c.t1_amount_yi,1)}</td><td data-label="量比">${fmt(c.volume_ratio,2)}</td>
+        <td data-label="今日开盘">${fmt(c.open_price,2)}</td><td data-label="开盘涨幅">${op}</td>
+        <td data-label="最新价" class="${lastCls}">${fmt(c.last_price,2)}</td><td data-label="现涨幅" class="${lastCls}">${fmt(c.last_pct,2)}%</td>
+        <td data-label="状态">${sigCell}</td></tr>`;
     }).join("");
   }catch(e){ $("#errs").textContent="渲染异常: "+e; }
 }
+// 候选卡片点击 -> 详情弹窗（事件委托；等 DOM 就绪再绑定，避免弹窗元素尚未解析）
+function wireCandEvents(){
+  const candEl=document.getElementById("cand");
+  if(!candEl) return;
+  candEl.addEventListener("click", e=>{
+    const tr=e.target.closest("tr");
+    if(tr && tr.dataset.code){ showCand(tr.dataset.code); }
+  });
+  const mClose=document.getElementById("mClose");
+  const mask=document.getElementById("candModal");
+  if(mClose) mClose.addEventListener("click", hideCand);
+  if(mask) mask.addEventListener("click", e=>{ if(e.target.id==="candModal") hideCand(); });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape") hideCand(); });
+}
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", wireCandEvents);
+else wireCandEvents();
+
 if(window.__DSH_STATE__){ refresh(); document.title+=" · 快照"; }
 else { refresh(); setInterval(refresh, 3000); }
 </script>
+  <div class="modal-mask" id="candModal" style="display:none">
+    <div class="modal">
+      <div class="modal-head"><span id="mTitle">-</span><button class="modal-close" id="mClose">✕</button></div>
+      <div id="mBody"></div>
+    </div>
+  </div>
 </body>
 </html>

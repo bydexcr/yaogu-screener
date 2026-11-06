@@ -40,3 +40,7 @@ android/app/src/main/python/**/data_mobile/
 android/keystore.jks
 *.jks
 *.keystore
+
+# Windows/测试缓存
+desktop.ini
+**/data_mobile/
