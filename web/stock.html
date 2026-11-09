@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1117">
+<title>个股分析 · 妖股雷达</title>
+<link rel="stylesheet" href="/stock.css">
+</head>
+<body>
+
+<header class="appbar">
+  <div class="appbar-top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="24" height="24"><rect width="64" height="64" rx="14" fill="#0d1626"/><path d="M12 44l10-12 8 7 12-19 10 9" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div class="brand-text">
+        <h1>个股分析</h1>
+        <p class="status-line"><span class="dot" id="statusBadge"></span><span id="statusText">数据加载中</span></p>
+      </div>
+    </div>
+    <nav class="appnav">
+      <a class="nav-btn on" href="/">个股分析</a>
+      <a class="nav-btn" href="/radar">妖股雷达</a>
+    </nav>
+  </div>
+  <div class="search-box" id="searchBox">
+    <svg class="search-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
+           placeholder="股票名称或代码，如 贵州茅台 / 600519" aria-label="股票搜索">
+    <button id="searchBtn" class="btn-primary">分析</button>
+    <div class="suggest" id="suggest" hidden></div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- 首页：市场全景 -->
+  <section id="marketView">
+    <div class="mk-hero" id="mkHero"><div class="mk-skeleton">正在加载市场全景…</div></div>
+
+    <section class="card" id="mkSectors"></section>
+
+    <section class="card" id="mkLimits"></section>
+
+    <section class="card" id="mkUpPool"></section>
+
+    <section class="card" id="mkDownPool"></section>
+
+    <section class="card" id="mkBreakPool"></section>
+
+    <div class="mk-hot-grid" id="mkHot"></div>
+
+    <div class="mk-foot" id="mkFoot"></div>
+  </section>
+
+  <!-- 加载中 -->
+  <section id="loadingState" class="loading" hidden>
+    <div class="loading-head">
+      <div class="spinner"></div>
+      <div>
+        <h2 id="loadingTitle">正在分析…</h2>
+        <p id="loadingStage">准备数据</p>
+      </div>
+      <div class="loading-timer" id="loadingTimer">0.0s</div>
+    </div>
+    <p class="loading-tip">首次分析约 5~10 秒（行情 + 三大报表 + 板块 + 同业对比）</p>
+  </section>
+
+  <!-- 错误 -->
+  <section id="errorState" class="error-box" hidden>
+    <h2>分析失败</h2>
+    <p id="errorMsg"></p>
+    <button id="errorRetry" class="btn-primary">重新分析</button>
+  </section>
+
+  <!-- 分析结果 -->
+  <section id="result" hidden>
+    <div id="backBar" class="back-bar" hidden>
+      <button id="backBtn" class="btn-ghost">← 返回市场全景</button>
+      <button id="expandAll" class="btn-ghost">展开全部</button>
+    </div>
+
+    <div class="quote-card" id="quoteCard"></div>
+    <div class="facts" id="keyFacts"></div>
+
+    <div class="grid-2">
+      <section class="card" id="sec-score"></section>
+      <section class="card" id="sec-narrative"></section>
+    </div>
+    <section class="card" id="sec-fundamentals"></section>
+    <section class="card" id="sec-trends"></section>
+    <section class="card" id="sec-dupont"></section>
+    <section class="card" id="sec-performance"></section>
+    <section class="card" id="sec-moat"></section>
+    <section class="card" id="sec-industry"></section>
+    <div class="grid-2">
+      <section class="card" id="sec-valuation"></section>
+      <section class="card" id="sec-capital"></section>
+    </div>
+    <section class="card" id="sec-popularity"></section>
+    <section class="card" id="sec-recent5"></section>
+    <section class="card" id="sec-tech"></section>
+    <section class="card" id="sec-dividend"></section>
+    <section class="card" id="sec-risk"></section>
+    <section class="card" id="sec-peers"></section>
+    <footer class="footer" id="footer"></footer>
+  </section>
+
+</main>
+
+<script src="/stock.js"></script>
+</body>
+</html>

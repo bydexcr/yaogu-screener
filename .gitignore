@@ -44,3 +44,7 @@ android/keystore.jks
 # Windows/测试缓存
 desktop.ini
 **/data_mobile/
+
+# ---- 个股分析页：板块成分索引落盘缓存（运行时生成，按日可重建） ----
+stock_membership_*.json
+**/stock_membership_*.json

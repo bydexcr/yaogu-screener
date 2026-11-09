@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
-"""零依赖本地网页看板：引擎状态每 ~3s 由前端轮询 /api/state。"""
+"""
+零依赖本地网页看板 + 个股分析页
+  GET /                    → 个股分析首页（市场全景 + 搜索 + 分析结果）
+  GET /radar               → 妖股雷达看板（原 index.html，轮询 /api/state）
+  GET /api/state           → 引擎状态 JSON
+  GET /api/market           → 市场全景
+  GET /api/stock?q=…        → 个股综合分析
+  GET /api/market/sector?code=… → 板块成分股
+  GET /api/search?q=…        → 代码/名称联想
+  GET /stock.css|/stock.js  → 个股分析页静态资源
+"""
 from __future__ import annotations
 
 import json
@@ -7,21 +17,41 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Callable
+from urllib.parse import parse_qs, urlparse
 
 WEB_DIR = Path(__file__).resolve().parent
 _STATE_MARK = "window.__DSH_STATE__ = null;"
 
 
-def _load_index_html() -> str:
-    """优先读 index.html；打包进 APK 时文件可能缺失，退化为 web.index_html 模块内的字符串。"""
-    idx = WEB_DIR / "index.html"
-    if idx.exists():
-        return idx.read_text(encoding="utf-8")
+# ------------------------------------------------------------------ 资源加载
+def _read_asset(name: str, module_attr: str, module_name: str) -> str:
+    f = WEB_DIR / name
+    if f.exists():
+        return f.read_text(encoding="utf-8")
     try:
-        from web.index_html import HTML  # 由构建脚本生成
-        return HTML
+        mod = __import__(module_name, fromlist=[module_attr])
+        return getattr(mod, module_attr)
     except Exception:
-        return "<h1>index.html 缺失</h1>"
+        return ""
+
+
+def _load_index_html() -> str:
+    """妖股雷达看板 HTML：优先读 index.html，打包进 APK 时退化为 web.index_html 模块。"""
+    html = _read_asset("index.html", "HTML", "web.index_html")
+    return html or "<h1>index.html 缺失</h1>"
+
+
+def _load_stock_html() -> str:
+    html = _read_asset("stock.html", "HTML", "web.stock_assets")
+    return html or "<h1>stock.html 缺失</h1>"
+
+
+def _load_stock_css() -> str:
+    return _read_asset("stock.css", "CSS", "web.stock_assets")
+
+
+def _load_stock_js() -> str:
+    return _read_asset("stock.js", "JS", "web.stock_assets")
 
 
 def save_snapshot_html(state: dict) -> str:
@@ -31,6 +61,42 @@ def save_snapshot_html(state: dict) -> str:
     if _STATE_MARK not in html:
         raise RuntimeError("index.html 缺少状态占位符")
     return html.replace(_STATE_MARK, f"window.__DSH_STATE__ = {payload};", 1)
+
+
+# ------------------------------------------------------------------ 业务接口
+def api_market() -> dict:
+    try:
+        from web import stock_market
+    except ImportError:
+        import stock_market  # type: ignore
+    return stock_market.dashboard()
+
+
+def api_stock(query: str) -> dict:
+    try:
+        from web import stock_analysis
+    except ImportError:
+        import stock_analysis  # type: ignore
+    return stock_analysis.analyze(query)
+
+
+def api_sector(code: str) -> dict:
+    try:
+        from web import stock_market
+    except ImportError:
+        import stock_market  # type: ignore
+    out = stock_market.sector_detail(code)
+    out["ok"] = True
+    return out
+
+
+def api_search(q: str) -> dict:
+    try:
+        from web import stock_data
+    except ImportError:
+        import stock_data  # type: ignore
+    items = stock_data.search(q, 12) if q else []
+    return {"ok": True, "items": [i for i in items if i.get("assetType") == "a-share"]}
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -44,9 +110,8 @@ class _Handler(BaseHTTPRequestHandler):
     def _authed(self) -> bool:
         if not self.token:
             return True
-        from urllib.parse import urlparse, parse_qs
         qs = parse_qs(urlparse(self.path).query)
-        return (qs.get("token", [""])[0] == self.token)
+        return qs.get("token", [""])[0] == self.token
 
     def _send(self, code: int, body: bytes, ctype: str):
         self.send_response(code)
@@ -56,18 +121,68 @@ class _Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _json(self, obj, code: int = 200):
+        self._send(code, json.dumps(obj, ensure_ascii=False, default=str).encode("utf-8"),
+                   "application/json; charset=utf-8")
+
     def do_GET(self):  # noqa: N802
         if not self._authed():
             self._send(401, "需要访问令牌：请在网址后加 ?token=<你的令牌>".encode("utf-8"),
                        "text/plain; charset=utf-8")
             return
-        if self.path.startswith("/api/state"):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        qs = parse_qs(parsed.query)
+
+        if path.startswith("/api/state"):
             self._send(200, self.get_state().encode("utf-8"), "application/json; charset=utf-8")
-        elif self.path.startswith("/") and self.path.split("?")[0] in ("/", "/index.html"):
+            return
+        if path.startswith("/api/market/sector"):
+            code = (qs.get("code", [""])[0] or "").strip()
+            if not code:
+                self._json({"ok": False, "error": "缺少参数 code"}, 400)
+                return
+            self._json(self._safe(api_sector, code))
+            return
+        if path.startswith("/api/market"):
+            self._json(self._safe(api_market))
+            return
+        if path.startswith("/api/search"):
+            self._json(self._safe(api_search, (qs.get("q", [""])[0] or "").strip()))
+            return
+        if path.startswith("/api/stock"):
+            q = (qs.get("q", [""])[0] or "").strip()
+            if not q:
+                self._json({"ok": False, "error": "缺少参数 q"}, 400)
+                return
+            self._json(self._safe(api_stock, q))
+            return
+        if path in ("/stock.css",):
+            self._send(200, _load_stock_css().encode("utf-8"), "text/css; charset=utf-8")
+            return
+        if path in ("/stock.js",):
+            self._send(200, _load_stock_js().encode("utf-8"), "text/javascript; charset=utf-8")
+            return
+        if path in ("/", "/index.html", "/stock"):
+            if path == "/radar":
+                self._send(200, self.index_html.encode("utf-8"), "text/html; charset=utf-8")
+            else:
+                self._send(200, _load_stock_html().encode("utf-8"), "text/html; charset=utf-8")
+            return
+        if path == "/radar":
             self._send(200, self.index_html.encode("utf-8"), "text/html; charset=utf-8")
-        else:
-            self.send_response(404)
-            self.end_headers()
+            return
+        self.send_response(404)
+        self.end_headers()
+
+    @staticmethod
+    def _safe(fn, *args):
+        try:
+            return fn(*args)
+        except LookupError as e:
+            return {"ok": False, "error": str(e)}
+        except Exception as e:  # noqa: BLE001
+            return {"ok": False, "error": f"{type(e).__name__}: {e}"}
 
     def do_OPTIONS(self):  # noqa: N802
         self.send_response(204)
@@ -100,6 +215,16 @@ class Dashboard:
             raise RuntimeError(f"网页看板端口被占用（{self.host}:{self.port}~{self.port + 19}）")
         self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
         self._thread.start()
+        # 后台预热板块成分索引（首次约 30~90 秒，之后走落盘缓存）
+        try:
+            from web.stock_data import MEMBERSHIP
+        except ImportError:
+            try:
+                from stock_data import MEMBERSHIP  # type: ignore
+            except Exception:
+                MEMBERSHIP = None
+        if MEMBERSHIP is not None:
+            threading.Thread(target=MEMBERSHIP.ensure, daemon=True).start()
         return self
 
     def stop(self):

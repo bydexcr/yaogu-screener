@@ -1,0 +1,1535 @@
+(function () {
+  'use strict';
+
+  const $ = (s) => document.querySelector(s);
+  const el = (id) => document.getElementById(id);
+
+  const state = {
+    data: null,
+    market: null,
+    loading: false,
+    query: '',
+    sectorKind: 'l1',
+    sectorSort: 'change',
+    sectorOpen: null,
+    suggestIndex: -1,
+    suggestItems: [],
+  };
+
+  /* ------------------------------ 格式化 ------------------------------ */
+  const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+  const n = (v, d = 2) => (isNum(v) ? v.toFixed(d) : '—');
+  const pct = (v, d = 2) => (isNum(v) ? `${v > 0 ? '+' : ''}${v.toFixed(d)}%` : '—');
+  const plainPct = (v, d = 2) => (isNum(v) ? `${v.toFixed(d)}%` : '—');
+  const cls = (v) => (!isNum(v) ? 'flat' : v > 0 ? 'up' : v < 0 ? 'down' : 'flat');
+  const money = (v) => {
+    if (!isNum(v)) return '—';
+    const a = Math.abs(v);
+    if (a >= 1e12) return `${(v / 1e12).toFixed(2)}万亿`;
+    if (a >= 1e8) return `${(v / 1e8).toFixed(2)}亿`;
+    if (a >= 1e4) return `${(v / 1e4).toFixed(2)}万`;
+    return v.toFixed(2);
+  };
+  const vol = (v) => {
+    if (!isNum(v)) return '—';
+    const a = Math.abs(v);
+    if (a >= 1e8) return `${(v / 1e8).toFixed(2)}亿股`;
+    if (a >= 1e4) return `${(v / 1e4).toFixed(2)}万股`;
+    return `${v.toFixed(0)}股`;
+  };
+  const sharesFmt = (v) => {
+    if (!isNum(v)) return '—';
+    if (Math.abs(v) >= 1e8) return `${(v / 1e8).toFixed(2)} 亿股`;
+    if (Math.abs(v) >= 1e4) return `${(v / 1e4).toFixed(2)} 万股`;
+    return `${v.toFixed(0)} 股`;
+  };
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const levelClass = (lv) => `s-${String(lv || '信息')}`;
+
+  function kpi(k, v, s, variant = '') {
+    return `<div class="kpi ${variant}"><div class="k">${esc(k)}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ''}</div>`;
+  }
+  function cardTitle(t, sub) {
+    return `<h2>${esc(t)}</h2>${sub ? `<p class="sub">${sub}</p>` : ''}`;
+  }
+
+  /* ------------------------------ SVG 图 ------------------------------ */
+  function candleChart(candles, opts = {}) {
+    if (!candles || candles.length < 2) return '<p class="badge-note">日线数据不足，无法绘制。</p>';
+    const W = 780;
+    const H = opts.height || 250;
+    const volH = opts.volume === false ? 0 : 52;
+    const gap = 14;
+    const priceH = H - volH - gap - 18;
+    const padL = 4;
+    const padR = 54;
+    const innerW = W - padL - padR;
+
+    const highs = candles.map((c) => c.high).filter(isNum);
+    const lows = candles.map((c) => c.low).filter(isNum);
+    const maxP = Math.max(...highs);
+    const minP = Math.min(...lows);
+    const pad = (maxP - minP) * 0.06 || maxP * 0.01;
+    const top = maxP + pad;
+    const bottom = minP - pad;
+    const yOf = (p) => 12 + ((top - p) / (top - bottom || 1)) * priceH;
+
+    const maxV = Math.max(...candles.map((c) => c.volume || 0));
+    const vTop = 12 + priceH + gap;
+    const yVol = (v) => vTop + volH - ((v || 0) / (maxV || 1)) * volH;
+
+    const step = innerW / candles.length;
+    const bw = Math.max(1.4, step * 0.6);
+
+    let grid = '';
+    for (let i = 0; i <= 3; i += 1) {
+      const p = bottom + ((top - bottom) * i) / 3;
+      const y = yOf(p);
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="#16233a" stroke-width="1"/>`;
+      grid += `<text x="${padL + innerW + 6}" y="${(y + 3).toFixed(1)}">${p.toFixed(2)}</text>`;
+    }
+
+    let body = '';
+    let volBody = '';
+    let maPts = [];
+    candles.forEach((c, i) => {
+      const x = padL + i * step + step / 2;
+      const color = c.close >= c.open ? '#ff4d4f' : '#17b26a';
+      const yO = yOf(c.open);
+      const yC = yOf(c.close);
+      const yH = yOf(c.high);
+      const yL = yOf(c.low);
+      body += `<line x1="${x.toFixed(1)}" y1="${yH.toFixed(1)}" x2="${x.toFixed(1)}" y2="${yL.toFixed(1)}" stroke="${color}" stroke-width="1"/>`;
+      body += `<rect x="${(x - bw / 2).toFixed(1)}" y="${Math.min(yO, yC).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1, Math.abs(yC - yO)).toFixed(1)}" fill="${color}" rx="0.5"/>`;
+      if (volH) volBody += `<rect x="${(x - bw / 2).toFixed(1)}" y="${yVol(c.volume).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.6, vTop + volH - yVol(c.volume)).toFixed(1)}" fill="${color}" opacity="0.42" rx="0.5"/>`;
+      if (i >= candles.length - 20) {
+        const slice = candles.slice(Math.max(0, i - 19), i + 1).map((k) => k.close);
+        const ma = slice.reduce((a, b) => a + b, 0) / slice.length;
+        maPts.push(`${x.toFixed(1)},${yOf(ma).toFixed(1)}`);
+      }
+    });
+
+    let dates = '';
+    const tick = Math.max(1, Math.floor(candles.length / 6));
+    candles.forEach((c, i) => {
+      if (i % tick === 0 || i === candles.length - 1) {
+        const x = padL + i * step + step / 2;
+        dates += `<text x="${x.toFixed(1)}" y="${H - 2}" text-anchor="middle">${String(c.date).slice(5)}</text>`;
+      }
+    });
+
+    const last = candles[candles.length - 1];
+    const lastColor = last.close >= last.open ? '#ff4d4f' : '#17b26a';
+    return `
+    <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="K线图">
+      ${grid}
+      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="#16233a"/>` : ''}
+      ${volBody}
+      ${body}
+      ${maPts.length > 2 ? `<polyline points="${maPts.join(' ')}" fill="none" stroke="#7c8cff" stroke-width="1.4" opacity="0.9"/>` : ''}
+      <line x1="${padL}" y1="${yOf(last.close).toFixed(1)}" x2="${padL + innerW}" y2="${yOf(last.close).toFixed(1)}" stroke="${lastColor}" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.6"/>
+      ${dates}
+    </svg>`;
+  }
+
+  function rankChart(trend) {
+    if (!trend || trend.length < 3) return '<p class="badge-note">热度趋势数据不足（该股近期未进入热度统计样本）。</p>';
+    const W = 780;
+    const H = 200;
+    const padL = 46;
+    const padR = 12;
+    const innerW = W - padL - padR;
+    const maxRank = Math.max(...trend.map((t) => t.rank), 10);
+    const scaleMax = Math.max(maxRank, 100);
+    const yOf = (r) => 12 + (Math.log10(Math.max(1, r)) / Math.log10(scaleMax)) * (H - 42);
+    const step = innerW / Math.max(1, trend.length - 1);
+
+    let grid = '';
+    [1, 10, 100, 1000].filter((v) => v <= scaleMax).forEach((r) => {
+      const y = yOf(r);
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#16233a"/>`;
+      grid += `<text x="${padL - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end">#${r}</text>`;
+    });
+
+    const pts = trend.map((t, i) => {
+      const x = padL + i * step;
+      return { x, y: yOf(t.rank), rank: t.rank, date: t.date };
+    });
+    const line = pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const area = `${padL},${(H - 28).toFixed(1)} ${line} ${(padL + (trend.length - 1) * step).toFixed(1)},${(H - 28).toFixed(1)}`;
+
+    const dotStep = Math.max(1, Math.floor(trend.length / 10));
+    let dots = '';
+    pts.forEach((p, i) => {
+      if (i % dotStep === 0 || i === pts.length - 1) {
+        dots += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="#22d3ee"/>`;
+        dots += `<text x="${p.x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${String(p.date).slice(5)}</text>`;
+      }
+    });
+    const best = trend.reduce((a, b) => (b.rank < a.rank ? b : a), trend[0]);
+    return `
+    <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="热度排名趋势">
+      ${grid}
+      <polygon points="${area}" fill="rgba(34,211,238,0.10)"/>
+      <polyline points="${line}" fill="none" stroke="#22d3ee" stroke-width="1.8"/>
+      ${dots}
+      <text x="${padL}" y="10">排名越靠上越热门 · 最佳 #${best.rank}</text>
+    </svg>`;
+  }
+
+  function profitBars(quarters) {
+    if (!quarters || quarters.length < 2) return '<p class="badge-note">单季数据不足。</p>';
+    const W = 780;
+    const H = 190;
+    const padL = 8;
+    const padR = 8;
+    const innerW = W - padL - padR;
+    const vals = quarters.map((q) => q.profit).filter(isNum);
+    const maxV = Math.max(...vals, 1);
+    const minV = Math.min(...vals, 0);
+    const span = maxV - minV || maxV;
+    const zeroY = 14 + (maxV / span) * (H - 46);
+    const step = innerW / quarters.length;
+    const bw = Math.max(3, step * 0.56);
+    let bars = '';
+    quarters.forEach((q, i) => {
+      const x = padL + i * step + step / 2;
+      const y = 14 + ((maxV - (q.profit || 0)) / span) * (H - 46);
+      const h = Math.abs(zeroY - y);
+      const up = (q.profitYoY || 0) >= 0;
+      const color = up ? '#ff4d4f' : '#17b26a';
+      bars += `<rect x="${(x - bw / 2).toFixed(1)}" y="${Math.min(y, zeroY).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" fill="${color}" opacity="0.78" rx="1.5"/>`;
+      if (i % 2 === 0 || quarters.length <= 8) {
+        bars += `<text x="${x.toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(String(q.label).replace('Q', 'Q'))}</text>`;
+      }
+    });
+    return `
+    <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="单季归母净利润">
+      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="#243550"/>
+      ${bars}
+    </svg>`;
+  }
+
+  /* ------------------------------ 渲染 ------------------------------ */
+  function renderQuote(d) {
+    const q = d.quote;
+    const fr = d.fundamentals;
+    const tags = [];
+    if (q.board) tags.push(`<span class="tag">${q.board}</span>`);
+    if (q.limit && q.limit.label) tags.push(`<span class="tag ${q.limit.isLimitUp || q.limit.isLimitDown ? 'warn' : 'accent'}">${q.limit.label}</span>`);
+    if (q.isST) tags.push('<span class="tag warn">ST / 风险警示</span>');
+    (fr.industry || []).slice(0, 3).forEach((i) => tags.push(`<span class="tag accent">${esc(i.name)}</span>`));
+    if (isNum(d.scores.overall)) tags.push(`<span class="tag">综合评分 ${d.scores.overall}</span>`);
+
+    el('quoteCard').innerHTML = `
+      <div class="qc-top">
+        <div>
+          <div><span class="qc-name">${esc(q.name)}</span><span class="qc-code">${esc(q.thscode)}</span></div>
+          <div class="qc-tags">${tags.join('')}</div>
+        </div>
+        <div class="qc-price">
+          <div class="p ${cls(q.changePct)}">${n(q.lastPrice)}</div>
+          <div class="chg ${cls(q.changePct)}">${isNum(q.change) ? (q.change > 0 ? '+' : '') + q.change.toFixed(2) : '—'} · ${pct(q.changePct)}</div>
+        </div>
+      </div>
+      <div class="qc-stats">
+        ${[
+          ['今开', n(q.open), ''],
+          ['最高', n(q.high), ''],
+          ['最低', n(q.low), ''],
+          ['昨收', n(q.prevClose), ''],
+          ['振幅', plainPct(q.amplitude), ''],
+          ['成交量', vol(q.volume), ''],
+          ['成交额', money(q.turnover), ''],
+          ['总市值', money(fr.size.marketCap), '按股本推算'],
+          ['总股本', sharesFmt(fr.size.shares), '按净利/EPS 推算'],
+          ['换手率', plainPct(d.capital.turnoverRate), '总股本口径'],
+        ].map(([k, v, s]) => `<div class="qc-stat"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="k" style="font-size:10px;margin-top:2px">${s}</div>` : ''}</div>`).join('')}
+      </div>`;
+  }
+
+  /* ------------------------------ 通用折线 / 柱状图 ------------------------------ */
+  function lineChart(opts) {
+    const { series, points, height = 210, refLine = null, ySuffix = '', yDigits = 2 } = opts;
+    const rows = (points || []).filter((p) => series.some((s) => isNum(p.values[s.key])));
+    if (rows.length < 2) return '<p class="badge-note">可用数据点不足，无法绘制趋势。</p>';
+    const W = 780;
+    const H = height;
+    const padL = 48;
+    const padR = 20;
+    const padT = 14;
+    const padB = 26;
+    const vals = rows.flatMap((p) => series.map((s) => p.values[s.key])).filter(isNum);
+    let min = Math.min(...vals);
+    let max = Math.max(...vals);
+    if (isNum(refLine)) { min = Math.min(min, refLine); max = Math.max(max, refLine); }
+    const rawSpan = max - min || Math.abs(max) || 1;
+    min -= rawSpan * 0.14;
+    max += rawSpan * 0.14;
+    const span = max - min || 1;
+    const xOf = (i) => padL + (rows.length === 1 ? 0 : (i / (rows.length - 1)) * (W - padL - padR));
+    const yOf = (v) => padT + ((max - v) / span) * (H - padT - padB);
+
+    let grid = '';
+    for (let i = 0; i <= 3; i += 1) {
+      const v = min + (span * i) / 3;
+      const y = yOf(v);
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#16233a"/>`;
+      grid += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(yDigits)}${ySuffix}</text>`;
+    }
+    if (isNum(refLine)) {
+      grid += `<line x1="${padL}" y1="${yOf(refLine).toFixed(1)}" x2="${W - padR}" y2="${yOf(refLine).toFixed(1)}" stroke="#4a6588" stroke-dasharray="4 4"/>`;
+    }
+
+    let paths = '';
+    let dots = '';
+    series.forEach((s) => {
+      const pts = rows.map((p, i) => ({ i, v: p.values[s.key] })).filter((q) => isNum(q.v));
+      if (pts.length < 2) return;
+      paths += `<polyline points="${pts.map((q) => `${xOf(q.i).toFixed(1)},${yOf(q.v).toFixed(1)}`).join(' ')}" fill="none" stroke="${s.color}" stroke-width="1.8" stroke-linejoin="round"/>`;
+      const lastPt = pts[pts.length - 1];
+      dots += `<circle cx="${xOf(lastPt.i).toFixed(1)}" cy="${yOf(lastPt.v).toFixed(1)}" r="2.6" fill="${s.color}"/>`;
+      dots += `<text x="${(xOf(lastPt.i) + 6).toFixed(1)}" y="${(yOf(lastPt.v) - 5).toFixed(1)}" fill="${s.color}">${lastPt.v.toFixed(yDigits)}${ySuffix}</text>`;
+    });
+
+    let labels = '';
+    const tick = Math.max(1, Math.ceil(rows.length / 8));
+    rows.forEach((p, i) => {
+      if (i % tick === 0 || i === rows.length - 1) {
+        labels += `<text x="${xOf(i).toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(p.label)}</text>`;
+      }
+    });
+
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.title || '趋势图')}">${grid}${paths}${dots}${labels}</svg>
+      <div class="mini-legend">${series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join('')}${isNum(refLine) ? `<span><i style="background:#4a6588"></i>参考线 ${refLine}${ySuffix}</span>` : ''}</div>`;
+  }
+
+  function barChart(opts) {
+    const { bars, height = 180, ySuffix = '', refLine = null, digits = 2 } = opts;
+    const rows = (bars || []).filter((b) => isNum(b.value));
+    if (rows.length < 2) return '<p class="badge-note">可用数据点不足。</p>';
+    const W = 780;
+    const H = height;
+    const padL = 48;
+    const padR = 14;
+    const padT = 14;
+    const padB = 26;
+    const vals = rows.map((b) => b.value);
+    const max = Math.max(...vals, isNum(refLine) ? refLine : -Infinity, 0);
+    const min = Math.min(...vals, 0);
+    const span = (max - min) || 1;
+    const yOf = (v) => padT + ((max - v) / span) * (H - padT - padB);
+    const step = (W - padL - padR) / rows.length;
+    const bw = Math.max(4, step * 0.55);
+    let out = '';
+    for (let i = 0; i <= 3; i += 1) {
+      const v = min + (span * i) / 3;
+      const y = yOf(v);
+      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#16233a"/>`;
+      out += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(digits)}${ySuffix}</text>`;
+    }
+    if (isNum(refLine)) {
+      out += `<line x1="${padL}" y1="${yOf(refLine).toFixed(1)}" x2="${W - padR}" y2="${yOf(refLine).toFixed(1)}" stroke="#7c8cff" stroke-dasharray="4 4"/>`;
+    }
+    rows.forEach((b, i) => {
+      const x = padL + i * step + step / 2;
+      const y = yOf(b.value);
+      const zeroY = yOf(0);
+      const color = b.color || (b.value >= (isNum(refLine) ? refLine : 0) ? '#2fd4a0' : '#ff6b6b');
+      out += `<rect x="${(x - bw / 2).toFixed(1)}" y="${Math.min(y, zeroY).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1, Math.abs(zeroY - y)).toFixed(1)}" fill="${color}" opacity="0.85" rx="1.5"/>`;
+      if (rows.length <= 12 || i % 2 === 0) {
+        out += `<text x="${x.toFixed(1)}" y="${(Math.min(y, zeroY) - 4).toFixed(1)}" text-anchor="middle" fill="#9fb0cc">${b.value.toFixed(digits)}</text>`;
+        out += `<text x="${x.toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(b.label)}</text>`;
+      }
+    });
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.title || '柱状图')}">${out}</svg>`;
+  }
+
+  function histogram(opts) {
+    const { values, marker, bins = 12, height = 150, label = '' } = opts;
+    const vals = (values || []).filter(isNum).slice().sort((a, b) => a - b);
+    if (vals.length < 5) return '<p class="badge-note">样本不足，无法绘制分布。</p>';
+    const cap = vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.97))] || vals[vals.length - 1];
+    const min = Math.min(...vals, 0);
+    const span = (cap - min) || 1;
+    const counts = new Array(bins).fill(0);
+    for (const v of vals) {
+      const idx = Math.min(bins - 1, Math.max(0, Math.floor(((Math.min(v, cap) - min) / span) * bins)));
+      counts[idx] += 1;
+    }
+    const maxCount = Math.max(...counts, 1);
+    const W = 780;
+    const H = height;
+    const padL = 10;
+    const padR = 10;
+    const padT = 12;
+    const padB = 24;
+    const step = (W - padL - padR) / bins;
+    let out = '';
+    counts.forEach((c, i) => {
+      const h = (c / maxCount) * (H - padT - padB);
+      const x = padL + i * step;
+      const lo = min + (span * i) / bins;
+      const hi = min + (span * (i + 1)) / bins;
+      const isSelf = isNum(marker) && marker >= lo && marker <= hi;
+      out += `<rect x="${(x + 1).toFixed(1)}" y="${(H - padB - h).toFixed(1)}" width="${(step - 2).toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" fill="${isSelf ? '#22d3ee' : '#2a3d5c'}" rx="1.5"/>`;
+      if (i % 2 === 0) out += `<text x="${(x + step / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle">${lo.toFixed(1)}</text>`;
+    });
+    if (isNum(marker)) {
+      const x = padL + ((Math.min(marker, cap) - min) / span) * (W - padL - padR);
+      out += `<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${H - padB}" stroke="#ffb020" stroke-dasharray="4 3"/>`;
+      out += `<text x="${(x + 4).toFixed(1)}" y="${padT + 8}" fill="#ffb020">本股 ${marker}</text>`;
+    }
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${out}</svg>`;
+  }
+
+  function renderScores(d) {
+    const s = d.scores;
+    const circ = 2 * Math.PI * 46;
+    const pctv = isNum(s.overall) ? s.overall : 0;
+    const dash = (pctv / 100) * circ;
+    el('sec-score').innerHTML = `${cardTitle('综合评分', '六个维度加权（权重随可用数据自动归一），全部由下方量化指标推导')}
+      <div class="score-top">
+        <div class="score-ring">
+          <svg viewBox="0 0 110 110" width="118" height="118">
+            <circle cx="55" cy="55" r="46" fill="none" stroke="#16233a" stroke-width="9"/>
+            <circle cx="55" cy="55" r="46" fill="none" stroke="url(#sg)" stroke-width="9" stroke-linecap="round"
+              stroke-dasharray="${dash.toFixed(1)} ${(circ - dash).toFixed(1)}" transform="rotate(-90 55 55)"/>
+            <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#7c8cff"/>
+            </linearGradient></defs>
+          </svg>
+          <div class="num"><span class="val">${isNum(s.overall) ? s.overall : '—'}</span><small>/100</small></div>
+        </div>
+        <div class="score-meta">
+          <div class="grade">${esc(s.grade || '—')}</div>
+          <div class="grade-sub">评分口径：基本面质量、成长性、估值性价比、盘面资金、市场热度、技术走势。<br/>分数越高代表该维度在样本中的相对位置越靠前，不代表未来收益。</div>
+        </div>
+      </div>
+      <div class="bars">
+        ${(s.breakdown || []).map((b) => `
+          <div class="bar-row">
+            <div class="lb">${esc(b.label)}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.max(2, b.score)}%"></div></div>
+            <div class="vv">${b.score.toFixed(1)}</div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  function renderNarrative(d) {
+    const nz = d.narrative;
+    const list = (arr, empty) => (arr && arr.length ? `<ul>${arr.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : `<p class="badge-note">${empty}</p>`);
+    const block = (title, text) => (text ? `<h3>${esc(title)}</h3><p class="sub" style="margin:0;color:var(--text-dim);font-size:12.8px;line-height:1.75">${esc(text)}</p>` : '');
+    el('sec-narrative').innerHTML = `${cardTitle('深度解读', '规则化描述：每条结论都能在下方数字中找到依据')}
+      <div class="narr">
+        <p class="headline">${esc(nz.headline)}</p>
+        ${block('近 5 日区间表现', nz.fiveDayText)}
+        ${block('财务趋势', (nz.trendNotes || []).map((c) => (c && c.text ? c.text : c)).slice(0, 3).join('；') + (nz.trendNotes && nz.trendNotes.length ? '。' : ''))}
+        ${block('盈利结构（杜邦）', nz.dupontText)}
+        ${block('行业地位', nz.industryText)}
+        ${block('股东回报', nz.dividendText)}
+        ${block('交易行为', nz.tradingText)}
+        ${block('风险检查', nz.riskText)}
+        <h3>积极信号</h3>
+        ${list(nz.highlights, '当前可量化的积极信号不明显。')}
+        <h3>风险与瑕疵</h3>
+        ${list(nz.risks, '未触发主要风险阈值。')}
+      </div>`;
+  }
+
+  function renderFundamentals(d) {
+    const f = d.fundamentals;
+    const bal = f.balance || {};
+    const cf = f.cashflow || {};
+    const q = f.quality || {};
+    const r = f.ratios || {};
+    const rep = f.latestReport;
+    el('sec-fundamentals').innerHTML = `${cardTitle('企业基本面',
+      rep ? `最新年报：${rep.fiscalYear} 年（报告期 ${esc(rep.periodEnd || '—')}）· 金额单位：元` : '未取到财报数据')}
+      <div class="tag-cloud" style="margin-bottom:16px">
+        ${(f.industry || []).map((i) => `<span class="tag accent">${esc(i.name)}</span>`).join('')}
+        ${(f.concepts || []).slice(0, 14).map((c) => `<span class="tag">${esc(c.name)}</span>`).join('')}
+        ${(f.concepts || []).length > 14 ? `<span class="tag">+${f.concepts.length - 14}</span>` : ''}
+      </div>
+      <div class="kpi-grid">
+        ${kpi('营业总收入', money(f.income.revenue), `同比 ${pct(d.performance.summary.revenueYoY)}`, cls(d.performance.summary.revenueYoY) === 'up' ? 'good' : '')}
+        ${kpi('归母净利润', money(f.income.parentNetProfit), `同比 ${pct(d.performance.summary.profitYoY)}`)}
+        ${kpi('毛利率', plainPct(r.grossMargin), '经营定价能力')}
+        ${kpi('净利率', plainPct(r.netMargin), '')}
+        ${kpi('ROE(加权)', plainPct(q.roe), isNum(q.roeDeducted) ? `扣非 ${plainPct(q.roeDeducted)}` : '')}
+        ${kpi('ROA', plainPct(q.roa), '')}
+        ${kpi('资产负债率', plainPct(q.assetsDebtRatio), '')}
+        ${kpi('流动比率', n(q.currentRatio, 2), `速动 ${n(q.quickRatio, 2)}`)}
+        ${kpi('总资产', money(bal.assetsTotal), `负债 ${money(bal.totalDebt)}`)}
+        ${kpi('股东权益', money(bal.equity), '')}
+        ${kpi('货币资金', money(bal.cash), `占总资产 ${plainPct(bal.cashToAssets)}`)}
+        ${kpi('应收账款', money(bal.receivable), `周转 ${n(q.receivableTurnover, 2)} 次`)}
+        ${kpi('经营现金流', money(cf.operating), `为净利 ${n(cf.ocfToProfit, 2)} 倍`, isNum(cf.ocfToProfit) && cf.ocfToProfit >= 1 ? 'good' : isNum(cf.ocfToProfit) && cf.ocfToProfit < 0.4 ? 'bad' : '')}
+        ${kpi('自由现金流', money(cf.freeCashFlow), `资本开支 ${money(cf.capex)}`)}
+        ${kpi('研发费用', money(f.income.rdExpense), `占营收 ${plainPct(r.rdRatio)}`)}
+        ${kpi('现金分红(含付息)', money(cf.dividendsPaid), '')}
+      </div>
+      <div class="badge-note">数据来自同花顺财报接口；比率优先取「财务指标」口径，缺失时用报表科目自行计算。金额为年报累计口径。</div>`;
+  }
+
+  function renderPerformance(d) {
+    const p = d.performance;
+    const s = p.summary;
+    el('sec-performance').innerHTML = `${cardTitle('业绩成长轨迹', '年报口径 + 单季拆解（单季 = 累计值差分）')}
+      <div class="kpi-grid" style="margin-bottom:16px">
+        ${kpi('营收 3 年复合', pct(s.revenueCagr3), 'CAGR')}
+        ${kpi('净利 3 年复合', pct(s.profitCagr3), 'CAGR')}
+        ${kpi('连续增长年数', isNum(s.consecutiveGrowthYears) ? `${s.consecutiveGrowthYears} 年` : '—', '营收同比 > 0')}
+        ${kpi('近 4 季盈利增长', isNum(s.quartersWithPositiveYoY) ? `${s.quartersWithPositiveYoY} / 4` : '—', '单季归母净利同比为正')}
+        ${kpi('近三年平均营收增速', pct(s.avgRevenueGrowthPrev3), '')}
+        ${kpi('最新单季归母净利', money(s.latestQuarter && s.latestQuarter.profit), s.latestQuarter ? `${esc(s.latestQuarter.label)} 同比 ${pct(s.latestQuarter.profitYoY)}` : '')}
+      </div>
+      <div class="table-wrap" style="margin-bottom:16px">
+        <table>
+          <thead><tr><th>年度</th><th>营业收入</th><th>营收同比</th><th>归母净利</th><th>净利同比</th><th>毛利率</th><th>净利率</th><th>EPS</th></tr></thead>
+          <tbody>
+          ${p.annual.slice().reverse().map((a) => `<tr>
+            <td>${a.fiscalYear}</td>
+            <td>${money(a.revenue)}</td>
+            <td class="${cls(a.revenueYoY)}">${pct(a.revenueYoY)}</td>
+            <td>${money(a.parentNetProfit)}</td>
+            <td class="${cls(a.profitYoY)}">${pct(a.profitYoY)}</td>
+            <td>${plainPct(a.grossMargin)}</td>
+            <td>${plainPct(a.netMargin)}</td>
+            <td>${n(a.eps, 3)}</td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <h3 style="font-size:13px;color:#cfe3ff;margin:0 0 8px">近 12 个单季归母净利润（亿元）</h3>
+      ${profitBars(p.quarterly)}
+      <div class="legend"><span><i style="background:#ff4d4f"></i>同比正增长</span><span><i style="background:#17b26a"></i>同比下滑</span></div>
+      <div class="table-wrap" style="margin-top:16px">
+        <table>
+          <thead><tr><th>单季</th><th>单季营收</th><th>营收同比</th><th>单季归母净利</th><th>净利同比</th><th>毛利率</th></tr></thead>
+          <tbody>
+          ${p.quarterly.slice().reverse().map((qq) => `<tr>
+            <td>${esc(qq.label)}</td>
+            <td>${money(qq.revenue)}</td>
+            <td class="${cls(qq.revenueYoY)}">${pct(qq.revenueYoY)}</td>
+            <td>${money(qq.profit)}</td>
+            <td class="${cls(qq.profitYoY)}">${pct(qq.profitYoY)}</td>
+            <td>${plainPct(qq.grossMargin)}</td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  function renderMoat(d) {
+    const m = d.moat;
+    el('sec-moat').innerHTML = `${cardTitle('主营业务优势（数据证据）', '不含公司公告文本，全部由财务与行情数据推导：毛利率看定价权、ROE 看资本效率、现金流看利润含金量、周转看产业链地位')}
+      <div class="moat-list">
+        ${m.items.map((it, i) => `
+          <div class="moat-item lv-${esc(it.level)}">
+            <div class="idx">${String(i + 1).padStart(2, '0')}</div>
+            <div>
+              <div class="ttl">${esc(it.title)}<span class="metric">${esc(it.metric)}</span><span class="lv-badge ${levelClass(it.level)}">${esc(it.level)}</span></div>
+              <div class="ev">${esc(it.evidence)}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="badge-note">${esc(m.summary)}</div>`;
+  }
+
+  function renderKeyFacts(d) {
+    const facts = d.keyFacts || [];
+    el('keyFacts').innerHTML = facts.map((f) => `<div class="fact">
+      <div class="fl">${esc(f.label)}</div>
+      <div class="fv">${esc(f.value)}</div>
+      ${f.note ? `<div class="fn">${esc(f.note)}</div>` : ''}
+    </div>`).join('');
+  }
+
+  function renderTrends(d) {
+    const t = d.trends || {};
+    const years = (t.years || []).filter((y) => isNum(y.revenue));
+    const points = years.map((y) => ({
+      label: String(y.year),
+      values: { grossMargin: y.grossMargin, netMargin: y.netMargin, roe: y.roe },
+    }));
+    const ocfBars = years.filter((y) => isNum(y.ocfToProfit)).map((y) => ({ label: String(y.year), value: y.ocfToProfit }));
+    const rateRows = (t.ratioSeries || []).filter((r) => String(r.label).endsWith('FY'));
+    const concl = t.conclusions || [];
+
+    el('sec-trends').innerHTML = `${cardTitle('多期财务趋势', '近 8 个财年的利润率 / ROE 演化，叠加 6 个年度报告期的财务指标（同花顺指标口径）')}
+      ${points.length >= 2 ? `<div class="chart-box"><h3 class="chart-title">利润率与 ROE 趋势（%）</h3>${lineChart({
+        series: [
+          { key: 'grossMargin', label: '毛利率', color: '#22d3ee' },
+          { key: 'netMargin', label: '净利率', color: '#7c8cff' },
+          { key: 'roe', label: 'ROE（平均净资产）', color: '#ffb020' },
+        ],
+        points,
+        ySuffix: '%',
+        height: 220,
+      })}</div>` : ''}
+      ${ocfBars.length >= 2 ? `<div class="chart-box"><h3 class="chart-title">经营现金流 / 净利润（倍，蓝线为 1 倍参考）</h3>${barChart({ bars: ocfBars, refLine: 1, digits: 2, height: 170 })}</div>` : ''}
+      ${points.length >= 3 ? `<div class="chart-box"><h3 class="chart-title">期间费用率趋势（% of 营收）</h3>${lineChart({
+        series: [
+          { key: 'salesFeeRatio', label: '销售费用率', color: '#ff8a65' },
+          { key: 'manageFeeRatio', label: '管理费用率', color: '#9ccc65' },
+          { key: 'rdRatio', label: '研发费用率', color: '#64b5f6' },
+          { key: 'taxRate', label: '实际税率', color: '#b39ddb' },
+        ],
+        points: years.map((y) => ({
+          label: String(y.year),
+          values: { salesFeeRatio: y.salesFeeRatio, manageFeeRatio: y.manageFeeRatio, rdRatio: y.rdRatio, taxRate: y.taxRate },
+        })),
+        ySuffix: '%',
+        height: 190,
+      })}</div>` : ''}
+      <div class="table-wrap" style="margin-top:16px">
+        <table>
+          <thead><tr><th>年度</th><th>营收</th><th>营收同比</th><th>归母净利</th><th>净利同比</th><th>毛利率</th><th>净利率</th><th>ROE</th><th>资产负债率</th><th>现金流/净利</th><th>EPS</th></tr></thead>
+          <tbody>
+          ${years.slice().reverse().map((y) => `<tr>
+            <td>${y.year}</td>
+            <td>${money(y.revenue)}</td>
+            <td class="${cls(y.revenueYoY)}">${pct(y.revenueYoY)}</td>
+            <td>${money(y.parentProfit)}</td>
+            <td class="${cls(y.profitYoY)}">${pct(y.profitYoY)}</td>
+            <td>${plainPct(y.grossMargin)}</td>
+            <td>${plainPct(y.netMargin)}</td>
+            <td>${plainPct(y.roe)}</td>
+            <td>${plainPct(y.debtRatio)}</td>
+            <td class="${isNum(y.ocfToProfit) && y.ocfToProfit >= 1 ? 'up' : isNum(y.ocfToProfit) && y.ocfToProfit < 0.6 ? 'down' : ''}">${n(y.ocfToProfit, 2)}</td>
+            <td>${n(y.eps, 3)}</td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      ${rateRows.length >= 2 ? `
+      <div class="table-wrap" style="margin-top:14px">
+        <table>
+          <thead><tr><th>报告期</th><th>加权 ROE</th><th>扣非 ROE</th><th>毛利率</th><th>净利率</th><th>资产负债率</th><th>流动比率</th><th>应收周转</th><th>总资产周转</th><th>净利现金含量</th></tr></thead>
+          <tbody>
+          ${rateRows.slice().reverse().map((r) => `<tr>
+            <td>${esc(r.label)}</td>
+            <td>${plainPct(r.roe)}</td>
+            <td>${plainPct(r.roeDeducted)}</td>
+            <td>${plainPct(r.grossMargin)}</td>
+            <td>${plainPct(r.netMargin)}</td>
+            <td>${plainPct(r.debtRatio)}</td>
+            <td>${n(r.currentRatio, 2)}</td>
+            <td>${n(r.receivableTurnover, 2)}</td>
+            <td>${n(r.assetTurnover, 3)}</td>
+            <td>${plainPct(r.netProfitCashContent)}</td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+      ${concl.length ? `<div class="concl-list">${concl.map((c) => `<div class="concl ${c.tone}"><span class="ic">${c.tone === 'good' ? '▲' : c.tone === 'bad' ? '▼' : '·'}</span><span>${esc(c.text)}</span></div>`).join('')}</div>` : ''}
+      <div class="badge-note">ROE 采用「归母净利 ÷ 期初期末平均净资产」；财务指标表中的口径为同花顺加权 ROE。年报期间可比，季报为年内累计值。</div>`;
+  }
+
+  function renderDupont(d) {
+    const dp = d.dupont || {};
+    if (!dp.available) {
+      el('sec-dupont').innerHTML = `${cardTitle('杜邦分解')}<p class="badge-note">报表科目不足（缺少营业成本或资产负债表数据），无法做杜邦分解。</p>`;
+      return;
+    }
+    const series = (dp.series || []).filter((s) => isNum(s.roe));
+    el('sec-dupont').innerHTML = `${cardTitle('杜邦分解', `ROE = 净利率 × 总资产周转率 × 权益乘数（${dp.year} 年，期初期末平均口径）`)}
+      <div class="dupont-grid">
+        ${dp.factors.map((f) => `<div class="dupont-card">
+          <div class="dl">${esc(f.label)}</div>
+          <div class="dv">${n(f.value, f.unit === '%' ? 2 : 3)}${esc(f.unit)}</div>
+          <div class="dd">${esc(f.desc)}</div>
+        </div>`).join('')}
+      </div>
+      <div class="dupont-eq">
+        净利率 <b>${n(dp.factors[0].value)}%</b> × 周转 <b>${n(dp.factors[1].value, 3)}</b> 次 × 杠杆 <b>${n(dp.factors[2].value, 2)}</b> 倍
+        ≈ ROE <b>${n(dp.approxRoe)}%</b>${isNum(dp.reportedRoeAnnual) ? `（同口径加权 ROE ${n(dp.reportedRoeAnnual)}%）` : ''}
+      </div>
+      ${series.length >= 2 ? `<div class="chart-box"><h3 class="chart-title">ROE 及其驱动因子（近似口径，%）</h3>${lineChart({
+        series: [
+          { key: 'roe', label: 'ROE', color: '#ffb020' },
+          { key: 'netMargin', label: '净利率', color: '#22d3ee' },
+          { key: 'turnover', label: '总资产周转率(次)', color: '#7c8cff' },
+        ],
+        points: series.map((s) => ({ label: String(s.year), values: { roe: s.roe, netMargin: s.netMargin, turnover: isNum(s.assetTurnover) ? s.assetTurnover * 50 : null } })),
+        ySuffix: '',
+        height: 200,
+      })}</div><div class="badge-note">为便于同图对比，总资产周转率被放大 50 倍显示（0.5 次 → 25），实际数值见上方卡片。</div>` : ''}
+      ${dp.contribution ? `<div class="concl-list"><div class="concl flat"><span class="ic">·</span><span>${esc(dp.contribution)}</span></div>${dp.conclusion ? `<div class="concl flat"><span class="ic">·</span><span>${esc(dp.conclusion)}</span></div>` : ''}</div>` : (dp.conclusion ? `<div class="concl-list"><div class="concl flat"><span class="ic">·</span><span>${esc(dp.conclusion)}</span></div></div>` : '')}`;
+  }
+
+  function renderIndustry(d) {
+    const ir = d.industryRank || {};
+    const rows = ir.rows || [];
+    if (!rows.length) {
+      el('sec-industry').innerHTML = `${cardTitle('行业地位')}<p class="badge-note">同行业样本不足，暂无法做横截面定位。</p>`;
+      return;
+    }
+    const chips = [];
+    const r = ir.ranks || {};
+    const addChip = (label, obj, suffix = '') => {
+      if (obj && isNum(obj.rank)) chips.push(`<span class="risk-pill">${label} 第 ${obj.rank}/${obj.total}${suffix ? ` · 中位 ${obj.median}${suffix}` : ''}</span>`);
+    };
+    addChip('ROE', r.roe, '%');
+    addChip('毛利率', r.grossMargin, '%');
+    addChip('净利率', r.netMargin, '%');
+    addChip('净利增速', r.profitYoY, '%');
+    addChip('PE(低→高)', r.pe);
+    addChip('成交额', r.turnover);
+    el('sec-industry').innerHTML = `${cardTitle('行业地位（横截面）', `${esc(ir.universeLabel || '同行业')} · ${ir.sampleSize} 只样本（自身 + 相似公司，同报告期指标 ${esc(d.fundamentals.quality && d.fundamentals.quality.report ? d.fundamentals.quality.report : '—')}）`)}
+      <div class="risk-summary">${chips.join('')}</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>公司</th><th>PE</th><th>PB</th><th>ROE</th><th>毛利率</th><th>净利率</th><th>营收同比</th><th>净利同比</th><th>成交额</th></tr></thead>
+          <tbody>
+          ${rows.map((row) => `<tr class="${row.isSelf ? 'self-row' : ''}">
+            <td>${esc(row.name)}${row.isSelf ? ' <span class="tag accent" style="font-size:10px">本股</span>' : (row.similarity ? ` <span style="color:var(--text-mute);font-size:10.5px">相似 ${row.similarity}</span>` : '')}</td>
+            <td class="${row.isSelf ? 'strong' : ''}">${n(row.pe)}</td>
+            <td class="${row.isSelf ? 'strong' : ''}">${n(row.pb)}</td>
+            <td class="${row.isSelf ? 'strong' : ''}">${plainPct(row.roe)}</td>
+            <td class="${row.isSelf ? 'strong' : ''}">${plainPct(row.grossMargin)}</td>
+            <td class="${row.isSelf ? 'strong' : ''}">${plainPct(row.netMargin)}</td>
+            <td class="${row.isSelf ? 'strong' : ''} ${cls(row.revenueYoY)}">${pct(row.revenueYoY)}</td>
+            <td class="${row.isSelf ? 'strong' : ''} ${cls(row.profitYoY)}">${pct(row.profitYoY)}</td>
+            <td>${money(row.turnover)}</td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="concl-list"><div class="concl flat"><span class="ic">·</span><span>${esc(ir.conclusion || '')}</span></div></div>
+      <div class="badge-note">排名基于同报告期财务指标与最新估值；样本为相似度最高的公司，若样本数少则仅代表「可比公司组」内部高低。</div>`;
+  }
+
+  function renderDividend(d) {
+    const dv = d.dividends || {};
+    if (!dv.available) {
+      el('sec-dividend').innerHTML = `${cardTitle('分红送转')}<p class="badge-note">${esc(dv.conclusion || '近 6 年无除权除息记录。')}</p>`;
+      return;
+    }
+    const recent = (dv.events || []).slice(0, 8);
+    el('sec-dividend').innerHTML = `${cardTitle('分红送转（近 10 年）', '来自同花顺公司行动接口，除权除息日口径')}
+      <div class="kpi-grid" style="margin-bottom:16px">
+        ${kpi('股息率 (TTM)', plainPct(dv.dividendYieldTTM), '近 12 个月每股派息/现价', isNum(dv.dividendYieldTTM) && dv.dividendYieldTTM >= 2 ? 'good' : '')}
+        ${kpi('连续分红年数', `${dv.consecutiveYears} 年`, `覆盖 ${dv.yearsCovered} 个年度`)}
+        ${kpi('区间每股累计派息', `${n(dv.perShareSum6y, 3)} 元`, '近 10 年合计')}
+        ${kpi('近 12 个月派息总额', money(dv.payoutLast12m), '按总股本折算')}
+        ${kpi('分红/归母净利', plainPct(dv.payoutRatio), '近 12 个月派息 ÷ 最新年报净利', isNum(dv.payoutRatio) && dv.payoutRatio > 30 ? 'good' : '')}
+        ${kpi('除权除息次数', `${(dv.events || []).length} 次`, `年均 ${n(dv.avgPerYear, 3)} 元/股`)}
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>除权除息日</th><th>每股派息(元)</th><th>每股送转(股)</th><th>备注</th></tr></thead>
+          <tbody>
+          ${recent.map((e) => `<tr>
+            <td>${esc(e.exDate)}</td>
+            <td>${n(e.dividendPerShare, 4)}</td>
+            <td>${isNum(e.bonusPerShare) && e.bonusPerShare > 0 ? n(e.bonusPerShare, 4) : '—'}</td>
+            <td>${isNum(e.bonusPerShare) && e.bonusPerShare > 0 ? '含送转' : '现金分红'}</td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="concl-list"><div class="concl ${isNum(dv.dividendYieldTTM) && dv.dividendYieldTTM >= 2 ? 'good' : 'flat'}"><span class="ic">·</span><span>${esc(dv.conclusion || '')}</span></div></div>`;
+  }
+
+  function renderRisk(d) {
+    const rm = d.riskMatrix || {};
+    const rows = rm.rows || [];
+    const sm = rm.summary || {};
+    const statusText = { alert: '警戒', watch: '观察', ok: '正常' };
+    el('sec-risk').innerHTML = `${cardTitle('风险矩阵', '把规则、阈值、当前值并列检查；不是评级，只是把「哪些条件已被触发」列清楚')}
+      <div class="risk-summary">
+        <span class="risk-pill ${sm.alert ? 'alert' : 'ok'}">触发阈值 ${sm.alert || 0} 项</span>
+        <span class="risk-pill ${sm.watch ? 'watch' : 'ok'}">需观察 ${sm.watch || 0} 项</span>
+        <span class="risk-pill ok">正常 ${sm.ok || 0} 项</span>
+        <span class="risk-pill">整体：${esc(rm.level || '—')}</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>维度</th><th>检查项</th><th>阈值</th><th>当前值</th><th>状态</th></tr></thead>
+          <tbody>
+          ${rows.map((r) => `<tr>
+            <td>${esc(r.dim)}</td>
+            <td>${esc(r.item)}</td>
+            <td style="text-align:left;font-family:inherit;color:var(--text-mute)">${esc(r.threshold)}</td>
+            <td>${esc(String(r.value))}</td>
+            <td><span class="st ${r.status}">${statusText[r.status] || r.status}</span></td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  function renderValuation(d) {
+    const v = d.valuation;
+    const u = d.universe || {};
+    const st = u.industryStats || {};
+    el('sec-valuation').innerHTML = `${cardTitle('估值水平', `同业样本 ${isNum(st.sampleSize) ? st.sampleSize : 0} 只（${esc(u.label || '同行业')}）取中位数对比`)}
+      <div class="kpi-grid">
+        ${kpi('PE (TTM)', n(v.peTtm), isNum(v.pePercentile) ? `同业分位 ${v.pePercentile}%` : (v.pePositive === false ? '亏损，负 PE 不参与分位' : ''))}
+        ${kpi('PB (MRQ)', n(v.pb), isNum(v.pbPercentile) ? `同业分位 ${v.pbPercentile}%` : '')}
+        ${kpi('PS (TTM)', n(v.ps), '')}
+        ${kpi('PCF (TTM)', n(v.pcf), '')}
+        ${kpi('盈利收益率', plainPct(v.earningsYield), '1/PE')}
+        ${kpi('同业 PE 中位', n(st.peMedian), isNum(v.peTtm) && isNum(st.peMedian) ? (v.peTtm < st.peMedian ? '低于同业中位' : '高于同业中位') : '')}
+        ${kpi('同业 PB 中位', n(st.pbMedian), isNum(v.pb) && isNum(st.pbMedian) ? (v.pb < st.pbMedian ? '低于同业中位' : '高于同业中位') : '')}
+        ${kpi('样本 ROE 参考', plainPct(v.roe), '本股口径')}
+      </div>
+      ${isNum(v.pePercentile) ? `
+      <div style="margin-top:16px">
+        <div class="bar-row" style="grid-template-columns:110px 1fr 60px">
+          <div class="lb">PE 相对便宜度</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.max(2, 100 - v.pePercentile)}%"></div></div>
+          <div class="vv">${(100 - v.pePercentile).toFixed(1)}%</div>
+        </div>
+        <div class="bar-row" style="grid-template-columns:110px 1fr 60px;margin-top:8px">
+          <div class="lb">PB 相对便宜度</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${isNum(v.pbPercentile) ? Math.max(2, 100 - v.pbPercentile) : 0}%"></div></div>
+          <div class="vv">${isNum(v.pbPercentile) ? `${(100 - v.pbPercentile).toFixed(1)}%` : '—'}</div>
+        </div>
+        <div class="badge-note">条越满表示相对同业越便宜（= 100 - 同业分位）。同业分位按 PE(TTM)/PB(MRQ) 横截面计算，亏损公司（负 PE）不参与。</div>
+        ${(st.peList || []).length >= 8 ? `<div class="chart-box"><h3 class="chart-title">同业 PE 分布（横轴 PE，柱高为家数，橙线为本股）</h3>${histogram({ values: st.peList, marker: v.peTtm, label: '同业 PE 分布' })}</div>` : ''}
+      </div>` : '<div class="badge-note">同业样本不足，未计算相对分位。</div>'}`;
+  }
+
+  function renderCapital(d) {
+    const c = d.capital;
+    const dt = c.dragonTiger;
+    const ts = d.tradingStats || {};
+    el('sec-capital').innerHTML = `${cardTitle('盘面资金', '成交额/换手率/量比/量价配合 + 龙虎榜席位 + 近 120 日交易行为统计（不提供主力资金净流入，不做推测）')}
+      <div class="kpi-grid">
+        ${kpi('今日成交额', money(c.turnover), isNum(c.turnoverRank) ? `全市场第 ${c.turnoverRank} 名` : '')}
+        ${kpi('换手率', plainPct(c.turnoverRate), '按总股本')}
+        ${kpi('量比(vs 20日均)', n(c.volRatio20, 2), isNum(c.volRatio20) && c.volRatio20 > 1.5 ? '明显放量' : '')}
+        ${kpi('5日 vs 20日成交', isNum(c.amountRatio5v20) ? `${c.amountRatio5v20 > 0 ? '+' : ''}${c.amountRatio5v20}%` : '—', '')}
+        ${kpi('量价配合', esc(c.priceVolume.pattern), `上涨日成交占比 ${plainPct(c.priceVolume.upDayTurnoverShare, 1)}`)}
+        ${kpi('20日均成交额', money(c.avgTurnover20), `5日 ${money(ts.avgTurnover5)} / 60日 ${money(ts.avgTurnover60)}`)}
+        ${kpi('振幅', plainPct(c.amplitude), '')}
+        ${kpi('收盘位置', isNum(c.closePosition) ? `${c.closePosition}%` : '—', '0=最低 100=最高')}
+        ${kpi('今日成交额分位', isNum(ts.turnoverPercentile120) ? `${ts.turnoverPercentile120}%` : '—', '近 120 个交易日')}
+        ${kpi('连续放量天数', isNum(ts.volumeStreak) ? `${ts.volumeStreak} 天` : '—', '量比 > 1.3 连续天数')}
+        ${kpi('近 10 日量价', esc(ts.divergence || '—'), `价格 ${pct(ts.priceChg10)} / 成交额 ${pct(ts.turnoverChg10)}`)}
+        ${kpi('近 120 日涨停', `${ts.limitUpDays120 ?? 0} 次`, `跌停 ${ts.limitDownDays120 ?? 0} 次 · 炸板 ${ts.breakUpDays120 ?? 0} 次`)}
+        ${kpi('龙虎榜上榜', dt.count ? `${dt.count} 次` : '近 4 日未上榜', dt.count ? `净额 ${money(dt.netValueSum)}` : '')}
+        ${kpi('机构净买入', dt.count ? money(dt.orgNetSum) : '—', dt.count ? `游资 ${money(dt.hotMoneyNetSum)}` : '')}
+      </div>
+      ${(ts.limitEvents || []).length ? `
+      <h3 style="font-size:13px;color:#cfe3ff;margin:18px 0 8px">近 120 日涨跌停 / 触板记录</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>日期</th><th>类型</th><th>当日涨跌幅</th></tr></thead>
+          <tbody>
+          ${ts.limitEvents.map((e) => `<tr><td>${esc(e.date)}</td><td>${esc(e.type)}</td><td class="${cls(e.chg)}">${pct(e.chg)}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+      ${dt.count ? `
+      <h3 style="font-size:13px;color:#cfe3ff;margin:18px 0 8px">龙虎榜明细</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>交易日</th><th>区间</th><th>净买入</th><th>净买占比</th><th>机构净额</th><th>游资净额</th><th>上榜原因</th></tr></thead>
+          <tbody>
+          ${dt.records.map((r) => `<tr>
+            <td>${esc(r.tradeDate || '—')}</td>
+            <td>${r.rangeDays || 1} 日</td>
+            <td class="${cls(r.netValue)}">${money(r.netValue)}</td>
+            <td class="${cls(r.netRate)}">${plainPct((r.netRate || 0) * 100)}</td>
+            <td class="${cls(r.orgNetValue)}">${money(r.orgNetValue)}</td>
+            <td class="${cls(r.hotMoneyNetValue)}">${money(r.hotMoneyNetValue)}</td>
+            <td>${esc(r.limitReason || '—')}</td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : '<div class="badge-note">最近 4 个交易日未进入龙虎榜。龙虎榜为交易所披露的异动席位数据，未上榜不代表无大资金活动。</div>'}`;
+  }
+
+  function renderPopularity(d) {
+    const p = d.popularity;
+    const ls = p.limitStatus || {};
+    const lr = p.limitRecord || {};
+    el('sec-popularity').innerHTML = `${cardTitle('市场热度', '热股榜排名 + 近 120 日热度轨迹 + 成交额全市场分位 + 涨跌停与封板状态')}
+      <div class="kpi-grid" style="margin-bottom:18px">
+        ${kpi('涨跌停状态', ls.label ? esc(ls.label) : '未触板', isNum(ls.limitPct) ? `涨跌停幅度 ${ls.limitPct}%` : '', ls.isLimitUp ? 'bad' : ls.isLimitDown ? 'good' : '')}
+        ${isNum(lr.continueDayCount) ? kpi('封板梯队', esc(lr.continueDayText || `${lr.continueDayCount} 连板`), isNum(lr.limitUpTime) || lr.limitUpTime ? `首次封板 ${esc(lr.limitUpTime || lr.firstSealTime || '—')}` : '') : ''}
+        ${isNum(lr.sealMoney) ? kpi('封单金额', money(lr.sealMoney), `最大封单 ${money(lr.maxSealMoney)}`) : ''}
+        ${isNum(lr.openTimes) ? kpi('开板次数', `${lr.openTimes} 次`, lr.openTimes > 2 ? '封板不稳' : '') : ''}
+        ${kpi('今日热度排名', p.rankToday ? `#${p.rankToday}` : '—', p.inTop30Today ? '进入热股榜 TOP30' : (p.rankToday ? '近期上榜' : '未进入统计'))}
+        ${kpi('飙升榜排名', p.skyrocketRank ? `#${p.skyrocketRank}` : '未上榜', isNum(p.skyrocketHeat) ? `热度值 ${Number(p.skyrocketHeat).toLocaleString('zh-CN')}` : '')}
+        ${kpi('热度值', isNum(p.heatToday) ? Number(p.heatToday).toLocaleString('zh-CN') : '—', '')}
+        ${kpi('近 10 日平均排名', n(p.avgRank10, 1), '')}
+        ${kpi('上榜 TOP50 天数', `${p.daysTop50} 天`, `TOP10 ${p.daysTop10} 天`)}
+        ${kpi('成交额分位', isNum(p.turnoverPercentile) ? `${p.turnoverPercentile}%` : '—', '全市场')}
+        ${kpi('涨幅分位', isNum(p.changePercentile) ? `${p.changePercentile}%` : '—', '今日全市场')}
+        ${kpi('热度综合分', n(p.heatScore, 1), '0-100')}
+      </div>
+      ${lr.reason ? `<div class="badge-note" style="border-color:rgba(255,176,32,.35);color:#e8c37a">涨停/异动原因（同花顺涨停池）：${esc(lr.reason)}${lr.date ? ` · 数据日 ${esc(lr.date)}` : ''}</div>` : ''}
+      ${rankChart(p.trend)}`;
+  }
+
+  function renderRecent5(d) {
+    const r = d.recent5;
+    const s = r.summary;
+    const sec = d.sector;
+    const vsSector = isNum(sec.relative5)
+      ? `${sec.relative5 >= 0 ? '跑赢' : '跑输'}板块 ${Math.abs(sec.relative5).toFixed(2)} 个百分点`
+      : null;
+    el('sec-recent5').innerHTML = `${cardTitle('近 5 个交易日盘面走势', `区间 ${esc(s.startDate || '—')} ~ ${esc(s.endDate || '—')} · 前复权口径`)}
+      <div class="kpi-grid" style="margin-bottom:18px">
+        ${kpi('5 日累计涨跌', pct(s.cumChangePct), vsSector || '—', cls(s.cumChangePct) === 'up' ? 'good' : cls(s.cumChangePct) === 'down' ? 'bad' : '')}
+        ${kpi('涨跌天数', `${s.upDays} 涨 / ${s.downDays} 跌`, `平 ${s.flatDays} 天`)}
+        ${kpi('累计成交额', money(s.cumTurnover), `日均 ${money(s.avgTurnover)}`)}
+        ${kpi('平均振幅', plainPct(s.avgAmplitude), '')}
+        ${kpi('区间最大回撤', plainPct(s.maxDrawdown), '收盘价口径', isNum(s.maxDrawdown) && s.maxDrawdown < -8 ? 'bad' : '')}
+        ${kpi('量能趋势', isNum(s.volumeTrend) ? `${s.volumeTrend > 0 ? '+' : ''}${s.volumeTrend}%` : '—', '后 2 日 vs 前 2 日')}
+      </div>
+      ${candleChart(r.rows.map((x) => ({ date: x.date, open: x.open, high: x.high, low: x.low, close: x.close, volume: x.volume })), { height: 210 })}
+      <div class="table-wrap" style="margin-top:16px">
+        <table>
+          <thead><tr><th>日期</th><th>开盘</th><th>最高</th><th>最低</th><th>收盘</th><th>涨跌幅</th><th>振幅</th><th>成交量</th><th>成交额</th><th>量比(vs5日)</th><th>收盘位置</th></tr></thead>
+          <tbody>
+          ${r.rows.map((x) => `<tr>
+            <td>${esc(x.date)}</td>
+            <td>${n(x.open)}</td>
+            <td>${n(x.high)}</td>
+            <td>${n(x.low)}</td>
+            <td class="${cls(x.changePct)}">${n(x.close)}</td>
+            <td class="${cls(x.changePct)}">${pct(x.changePct)}</td>
+            <td>${plainPct(x.amplitude)}</td>
+            <td>${vol(x.volume)}</td>
+            <td>${money(x.turnover)}</td>
+            <td>${n(x.volumeRatio5, 2)}</td>
+            <td>${isNum(x.closePosition) ? `${x.closePosition}%` : '—'}</td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="badge-note">「收盘位置」= (收盘-最低)/(最高-最低)，衡量当日多空收盘强弱；「跑赢板块」为 5 日累计涨跌减去所属一级行业指数同期涨跌。</div>`;
+  }
+
+  function renderTech(d) {
+    const t = d.trendTech;
+    const sec = d.sector;
+    el('sec-tech').innerHTML = `${cardTitle('技术形态与中期走势', '前复权日线 · 近 40 个交易日 K 线（紫线为 20 日均线）')}
+      ${candleChart(t.candles, { height: 260 })}
+      <div class="kpi-grid" style="margin-top:16px">
+        ${kpi('均线状态', esc(t.state), `MA5 ${n(t.ma5)} / MA20 ${n(t.ma20)}`)}
+        ${kpi('5 日涨幅', pct(t.ret5), '', cls(t.ret5) === 'up' ? 'good' : cls(t.ret5) === 'down' ? 'bad' : '')}
+        ${kpi('20 日涨幅', pct(t.ret20), '')}
+        ${kpi('60 日涨幅', pct(t.ret60), '')}
+        ${kpi('年化波动率', plainPct(t.volatilityAnnual), '20 日收益率年化')}
+        ${kpi('60 日最大回撤', plainPct(t.maxDrawdown60), '')}
+        ${kpi('20 日支撑', n(t.support20), '区间最低')}
+        ${kpi('20 日压力', n(t.resistance20), '区间最高')}
+        ${kpi('60 日区间', `${n(t.low60)} ~ ${n(t.high60)}`, '')}
+        ${kpi('板块 5 日', pct(sec.focus && sec.focus.ret5), esc((sec.focus && sec.focus.name) || '—'))}
+      </div>
+      ${(sec.industries || []).length ? `<div style="margin-top:16px">
+        <h3 style="font-size:13px;color:#cfe3ff;margin:0 0 8px">所属行业板块当日表现</h3>
+        <div class="tag-cloud">${sec.industries.map((i) => `<span class="tag">${esc(i.name)} <b class="${cls(i.changePct)}" style="font-family:var(--mono)">${pct(i.changePct)}</b></span>`).join('')}</div>
+      </div>` : ''}`;
+  }
+
+  function renderPeers(d) {
+    const u = d.universe || {};
+    el('sec-peers').innerHTML = `${cardTitle('高度相似的 5 只股票', esc(d.narrative.peerText))}
+      <div class="peer-grid">
+        ${d.peers.map((p, i) => `
+          <div class="peer-card" data-code="${esc(p.ticker)}">
+            <div class="rank">#${i + 1}</div>
+            <div class="pn">${esc(p.name)}</div>
+            <div class="pc">${esc(p.thscode)}</div>
+            <div class="sim"><div class="track"><div class="fill" style="width:${Math.max(4, p.similarity)}%"></div></div><div class="val">${p.similarity}</div></div>
+            <div class="pm">
+              <span class="${cls(p.changePct)}">${pct(p.changePct)}</span>
+              <span>PE ${n(p.peTtm)}</span>
+              <span>PB ${n(p.pb)}</span>
+            </div>
+            <div class="pm" style="margin-top:6px"><span>20日 ${pct(p.ret20)}</span><span>成交 ${money(p.turnover)}</span></div>
+            <div class="dims">
+              ${(p.detail || []).map((dt) => `<div class="dim"><span class="dl2">${esc(dt.label)}</span><span class="dt2"><i style="width:${Math.max(3, dt.score)}%"></i></span><span class="dv2">${dt.score}</span></div>`).join('')}
+            </div>
+            <div class="rs">${p.reasons.map((r) => `<span>· ${esc(r)}</span>`).join('')}</div>
+          </div>`).join('') || '<p class="badge-note">样本不足，暂无法给出相似度排序。</p>'}
+      </div>
+      <div class="badge-note">相似度 = 股价节奏相关性 30% + 估值接近度 20% + 体量流动性 20% + 动量接近度 15% + 题材重合 15%（缺失维度自动归一）。可比池取自「${esc(u.label || '同行业')}」，共 ${isNum(u.size) ? u.size : 0} 只。点击任意卡片可直接分析该股。</div>`;
+    el('sec-peers').querySelectorAll('.peer-card').forEach((node) => {
+      node.addEventListener('click', () => {
+        const code = node.getAttribute('data-code');
+        if (code) runAnalysis(code, true);
+      });
+    });
+  }
+
+  function renderFooter(d) {
+    const m = d.meta;
+    el('footer').innerHTML = `
+      <div><b>数据来源</b>：同花顺金融数据服务（hithink-finance）· ${(m.sources || []).join(' / ')}</div>
+      <div><b>交易日</b>：${esc(m.tradeDate || '—')} · <b>复权</b>：前复权 · <b>生成时间</b>：${new Date(m.generatedAt).toLocaleString('zh-CN')}</div>
+      <div><b>行业/概念索引</b>：${esc(m.membership && m.membership.status)}（产业 ${m.membership ? m.membership.industries : 0} 个 / 概念 ${m.membership ? m.membership.concepts : 0} 个）</div>
+      ${(m.warnings || []).length ? `<div class="badge-note warn-note">数据提示：${m.warnings.map(esc).join('；')}</div>` : ''}
+      <div style="margin-top:8px">${esc(m.disclaimer)}</div>`;
+  }
+
+  function render(d) {
+    $("#marketView").hidden = true;
+    $("#loadingState").hidden = true;
+    $("#errorState").hidden = true;
+    $("#result").hidden = false;
+    $("#backBar").hidden = false;
+    renderQuote(d);
+    renderKeyFacts(d);
+    renderScores(d);
+    renderNarrative(d);
+    renderFundamentals(d);
+    renderTrends(d);
+    renderDupont(d);
+    renderPerformance(d);
+    renderMoat(d);
+    renderIndustry(d);
+    renderValuation(d);
+    renderCapital(d);
+    renderPopularity(d);
+    renderRecent5(d);
+    renderTech(d);
+    renderDividend(d);
+    renderRisk(d);
+    renderPeers(d);
+    renderFooter(d);
+    $("#statusBadge").classList.remove('busy');
+    $("#statusText").textContent = `已分析 ${d.resolved.name}`;
+    if (typeof initCollapse === "function") initCollapse();
+  }
+
+  /* ------------------------------ 首页：市场全景 ------------------------------ */
+  const fmtYi = (v) => (isNum(v) ? `${(v / 1e8).toFixed(v >= 1e10 ? 0 : 1)}亿` : '—');
+
+  function renderMarketHero(d) {
+    const b = d.breadth;
+    const l = d.limits;
+    if (!b) {
+      el('mkHero').innerHTML = '<div class="mk-skeleton">市场概览数据暂不可用</div>';
+      return;
+    }
+    const total = b.total || 1;
+    const upPct = (b.up / total) * 100;
+    const flatPct = (b.flat / total) * 100;
+    const downPct = (b.down / total) * 100;
+    const maxBucket = Math.max(...b.buckets.map((x) => x.count), 1);
+
+    el('mkHero').innerHTML = `
+      <div class="mk-hero-top">
+        <span class="mk-title">市场全景</span>
+        <span class="mk-date">交易日 ${esc(d.tradeDate || '—')} · 更新 ${new Date(d.generatedAt).toLocaleTimeString('zh-CN')}</span>
+        <button class="mk-refresh" id="mkRefresh">刷新</button>
+      </div>
+      <div class="mk-hero-body">
+        <div class="mk-breadth">
+          <div class="bk-num"><span class="up">${b.up}</span> <span style="font-size:14px;color:var(--text-mute)">涨</span> / <span class="down">${b.down}</span> <span style="font-size:14px;color:var(--text-mute)">跌</span></div>
+          <div class="bk-sub">全市场 ${b.total} 只 · 上涨占比 ${b.upRatio}% · 平盘 ${b.flat}</div>
+          <div class="bk-bar">
+            <i class="u" style="width:${upPct}%"></i>
+            <i class="f" style="width:${flatPct}%"></i>
+            <i class="d" style="width:${downPct}%"></i>
+          </div>
+          <div class="bk-sub" style="margin-top:10px">平均涨幅 <b class="${cls(b.avg)}">${pct(b.avg)}</b> · 中位数 <b class="${cls(b.median)}">${pct(b.median)}</b></div>
+        </div>
+
+        <div class="mk-dist">
+          ${b.buckets.map((x) => {
+    const h = Math.max(2, (x.count / maxBucket) * 78);
+    const color = x.label.includes('-') ? '#17b26a' : (x.label.includes('0~') || x.label.includes('3~') ? '#2f6fa8' : '#ff4d4f');
+    return `<div class="col" title="${esc(x.label)}：${x.count} 只">
+              <div class="cnt">${x.count}</div>
+              <div class="bar" style="height:${h}px;background:${color};opacity:${x.count ? 0.9 : 0.25}"></div>
+              <div class="lb">${esc(x.label)}</div>
+            </div>`;
+  }).join('')}
+        </div>
+
+        <div class="mk-kpis">
+          ${[
+            ['两市成交额', fmtYi(b.turnover), ''],
+            ['涨停家数', l ? `${l.limitUpCount}` : '—', l ? `跌停 ${l.limitDownCount}` : ''],
+            ['封板率', l && isNum(l.sealRate) ? `${l.sealRate}%` : '—', l ? `炸板 ${l.breakCount}` : ''],
+            ['最高连板', l && isNum(l.highestBoard) ? `${l.highestBoard} 板` : '—', l ? `${(l.up || []).filter((x) => (x.continueCount || 1) >= 3).length} 只 3 板以上` : ''],
+          ].map(([k, v, s]) => `<div class="mk-kpi"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ''}</div>`).join('')}
+        </div>
+      </div>`;
+
+    const btn = el('mkRefresh');
+    if (btn) btn.addEventListener('click', () => loadMarket(true));
+  }
+
+  function renderMarketSectors(d) {
+    const sectors = d.sectors;
+    const boards = (sectors && sectors.boards) || {};
+    const labels = (sectors && sectors.labels) || { l1: '一级行业', l2: '细分行业', concept: '概念板块' };
+    const all = boards[state.sectorKind] || [];
+    const kindTabs = [['l1', labels.l1], ['l2', labels.l2], ['concept', labels.concept]];
+    const sortTabs = [['change', '涨幅榜'], ['turnover', '成交额榜']];
+    if (!all.length) {
+      el('mkSectors').innerHTML = `${cardTitle('热门板块', '板块行情聚合自同花顺指数快照')}<p class="badge-note">板块数据暂不可用（或行业/概念索引仍在构建）。</p>`;
+      return;
+    }
+    const sorted = all.slice().sort((a, b) => (state.sectorSort === 'turnover'
+      ? (b.turnover || 0) - (a.turnover || 0)
+      : b.changePct - a.changePct));
+    const items = sorted.slice(0, 12);
+    const weakest = state.sectorSort === 'change'
+      ? ((sectors.bottoms && sectors.bottoms[state.sectorKind]) || [])
+      : [];
+
+    el('mkSectors').innerHTML = `${cardTitle('热门板块', `按${state.sectorSort === 'change' ? '涨幅' : '成交额'}排序 · 共 ${(sectors.totals && sectors.totals[state.sectorKind]) || all.length} 个${esc(labels[state.sectorKind] || '')} · 点击查看成分股`)}
+      <div class="mk-tabs">${kindTabs.map(([k, label]) => `<span class="mk-tab ${state.sectorKind === k ? 'on' : ''}" data-kind="${k}">${label}</span>`).join('')}
+        <span style="width:8px"></span>
+        ${sortTabs.map(([k, label]) => `<span class="mk-tab ${state.sectorSort === k ? 'on' : ''}" data-sort="${k}">${label}</span>`).join('')}
+      </div>
+      <div class="mk-sector-list">
+        ${items.map((s, i) => `<div class="mk-sector" data-code="${esc(s.code)}">
+          <div class="idx">${i + 1}</div>
+          <div>
+            <div class="nm">${esc(s.name)}<em>${s.memberCount} 只 · 涨 ${s.upCount}/跌 ${s.downCount}</em></div>
+            <div class="lead">${s.leader ? `领涨 ${esc(s.leader.name)} <span class="${cls(s.leader.changePct)}">${pct(s.leader.changePct)}</span>` : '—'}</div>
+          </div>
+          <div>
+            <div class="pct ${cls(s.changePct)}">${pct(s.changePct)}</div>
+            <div class="amt">${fmtYi(s.turnover)}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+      ${weakest.length ? `<div class="badge-note">板块跌幅前列：${weakest.map((s) => `<span class="${cls(s.changePct)}">${esc(s.name)} ${pct(s.changePct)}</span>`).join(' · ')}</div>` : ''}
+      <div class="mk-detail" id="mkSectorDetail" hidden></div>`;
+
+    el('mkSectors').querySelectorAll('.mk-tab[data-kind]').forEach((n) => n.addEventListener('click', () => {
+      state.sectorKind = n.getAttribute('data-kind');
+      renderMarketSectors(state.market);
+    }));
+    el('mkSectors').querySelectorAll('.mk-tab[data-sort]').forEach((n) => n.addEventListener('click', () => {
+      state.sectorSort = n.getAttribute('data-sort');
+      renderMarketSectors(state.market);
+    }));
+    el('mkSectors').querySelectorAll('.mk-sector').forEach((n) => n.addEventListener('click', () => {
+      openSector(n.getAttribute('data-code'));
+    }));
+    if (state.sectorOpen) openSector(state.sectorOpen, true);
+  }
+
+  async function openSector(code, keepOpen) {
+    const box = el('mkSectorDetail');
+    if (!box) return;
+    if (!keepOpen && state.sectorOpen === code && !box.hidden) {
+      box.hidden = true;
+      state.sectorOpen = null;
+      return;
+    }
+    state.sectorOpen = code;
+    box.hidden = false;
+    box.innerHTML = '<p class="badge-note">正在加载板块成分股…</p>';
+    try {
+      const res = await fetch(`/api/market/sector?code=${encodeURIComponent(code)}`);
+      const d = await res.json();
+      if (!d.ok) throw new Error(d.error ? d.error.message : '加载失败');
+      box.innerHTML = `
+        <div class="mk-detail-head">
+          <h4>${esc(d.name || code)}</h4>
+          <span class="sub">${d.memberCount} 只成分 · 涨 ${d.upCount} / 跌 ${d.downCount}</span>
+          <span class="close" id="mkDetailClose">收起</span>
+        </div>
+        <div class="table-wrap" style="max-height:280px;overflow:auto">
+          <table>
+            <thead><tr><th>名称</th><th>现价</th><th>涨跌幅</th><th>成交额</th></tr></thead>
+            <tbody>
+            ${d.members.slice(0, 40).map((m) => `<tr class="mk-stock-row" data-code="${esc(m.ticker)}" style="cursor:pointer">
+              <td>${esc(m.name)}</td>
+              <td>${n(m.lastPrice)}</td>
+              <td class="${cls(m.changePct)}">${pct(m.changePct)}</td>
+              <td>${fmtYi(m.turnover)}</td>
+            </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+      const close = el('mkDetailClose');
+      if (close) close.addEventListener('click', () => { box.hidden = true; state.sectorOpen = null; });
+      box.querySelectorAll('.mk-stock-row').forEach((row) => row.addEventListener('click', () => {
+        runAnalysis(row.getAttribute('data-code'), true);
+      }));
+    } catch (err) {
+      box.innerHTML = `<p class="badge-note">板块成分加载失败：${esc(err.message)}</p>`;
+    }
+  }
+
+  function renderMarketLimits(d) {
+    const l = d.limits;
+    if (!l) {
+      el('mkLimits').innerHTML = `${cardTitle('连板梯队')}<p class="badge-note">涨停池数据暂不可用。</p>`;
+      return;
+    }
+    const maxCount = Math.max(...(l.tiers || []).map((t) => t.count), 1);
+    el('mkLimits').innerHTML = `${cardTitle('连板梯队', `${esc(l.date || '')} · 涨停 ${l.limitUpCount} 家 / 跌停 ${l.limitDownCount} 家 / 炸板 ${l.breakCount} 家`)}
+      <div class="mk-tiers">
+        ${(l.tiers || []).map((t) => `<div class="mk-tier">
+          <div class="tl">${esc(t.label)}</div>
+          <div class="tb"><i style="width:${Math.max(2, (t.count / maxCount) * 100)}%"></i></div>
+          <div class="tc">${t.count}</div>
+        </div>`).join('')}
+      </div>
+      <div class="mk-kpis" style="margin-top:14px">
+        <div class="mk-kpi"><div class="k">封板率</div><div class="v">${isNum(l.sealRate) ? `${l.sealRate}%` : '—'}</div><div class="s">炸板率 ${isNum(l.breakRate) ? `${l.breakRate}%` : '—'}</div></div>
+        <div class="mk-kpi"><div class="k">最高连板</div><div class="v">${isNum(l.highestBoard) ? `${l.highestBoard} 板` : '—'}</div><div class="s">${l.up && l.up[0] ? esc(l.up[0].name) : ''}</div></div>
+      </div>
+      <div class="badge-note">梯队取自连板天梯（2 板及以上）与涨停池家数推算的首板数量。</div>`;
+  }
+
+  function renderMarketPools(d) {
+    const l = d.limits;
+    const mkStockList = (items, valueOf, subOf, emptyText, limit = 10) => (items && items.length ? `<div class="mk-list">
+        ${items.slice(0, limit).map((it, i) => `<div class="mk-item" data-code="${esc(it.ticker)}">
+          <div class="r">${i + 1}</div>
+          <div><div class="n">${esc(it.name)}</div><div class="t">${subOf(it)}</div></div>
+          <div class="v">${valueOf(it)}</div>
+        </div>`).join('')}
+      </div>` : `<p class="badge-note">${emptyText}</p>`);
+
+    el('mkUpPool').innerHTML = `${cardTitle('涨停板明细', l ? `共 ${l.limitUpCount} 家 · 按连板数与封单排序 · 点击进入个股分析` : '')}
+      ${l ? mkStockList(l.up, (it) => `<span class="${cls(it.changePct)}">${it.continueText || `${it.continueCount} 板`}</span>`,
+    (it) => `${esc(it.limitUpTime || '')}${it.sealMoney ? ` · 封单 ${fmtYi(it.sealMoney)}` : ''}${it.openTimes ? ` · 开板 ${it.openTimes} 次` : ''}${it.reason ? ` · ${esc(it.reason)}` : ''}`,
+    '今日无涨停股', 10) : '<p class="badge-note">数据不可用</p>'}`;
+
+    el('mkDownPool').innerHTML = `${cardTitle('跌停板', l ? `共 ${l.limitDownCount} 家` : '')}
+      ${l ? mkStockList(l.down, (it) => `<span class="${cls(it.changePct)}">${pct(it.changePct)}</span>`,
+    (it) => `${esc(it.lastLimitTime || it.firstLimitTime || '')}${isNum(it.turnoverRate) ? ` · 换手 ${plainPct(it.turnoverRate)}` : ''}`,
+    '今日无跌停股', 8) : '<p class="badge-note">数据不可用</p>'}`;
+
+    el('mkBreakPool').innerHTML = `${cardTitle('炸板股', l ? `共 ${l.breakCount} 家 · 按开板次数排序` : '')}
+      ${l ? mkStockList(l.break, (it) => `<span class="${cls(it.changePct)}">${pct(it.changePct)}</span>`,
+    (it) => `${isNum(it.openTimes) ? `开板 ${it.openTimes} 次` : ''}${it.lastSealTime ? ` · 最后封板 ${esc(it.lastSealTime)}` : ''}`,
+    '今日无炸板股', 8) : '<p class="badge-note">数据不可用</p>'}`;
+
+    ['mkUpPool', 'mkDownPool', 'mkBreakPool'].forEach((id) => {
+      el(id).querySelectorAll('.mk-item').forEach((n) => n.addEventListener('click', () => runAnalysis(n.getAttribute('data-code'), true)));
+    });
+  }
+
+  function renderMarketHot(d) {
+    const h = d.hot || {};
+    const cards = [];
+
+    cards.push({ title: '热股榜', sub: '同花顺热股榜（日榜）', items: (h.hot || []).map((x) => ({
+      code: x.ticker, name: x.name, sub: `热度 ${Number(x.heat || 0).toLocaleString('zh-CN')}`, value: `#${x.rank}`,
+    })) });
+
+    cards.push({ title: '飙升榜', sub: '关注度上升最快', items: (h.skyrocket || []).map((x) => ({
+      code: x.ticker, name: x.name, sub: `热度 ${Number(x.heat || 0).toLocaleString('zh-CN')}`, value: `#${x.rank}`,
+    })) });
+
+    cards.push({ title: '龙虎榜净买入', sub: h.date ? `${h.date} 席位净买额` : '', items: (h.dragonTiger || []).map((x) => ({
+      code: x.thscode, name: x.name, sub: `${x.rangeDays || 1} 日${x.limitReason ? ` · ${x.limitReason}` : ''}`, value: `<span class="${cls(x.netValue)}">${fmtYi(x.netValue)}</span>`,
+    })) });
+
+    cards.push({ title: '成交额榜', sub: '全市场资金关注度', items: (h.turnoverTop || []).map((x) => ({
+      code: x.ticker, name: x.name, sub: '', value: `<span class="${cls(x.changePct)}">${pct(x.changePct)}</span> <span style="color:var(--text-mute)">${fmtYi(x.turnover)}</span>`,
+    })) });
+
+    el('mkHot').innerHTML = cards.map((c) => `<section class="card">
+      ${cardTitle(c.title, c.sub)}
+      ${c.items.length ? `<div class="mk-list">${c.items.slice(0, 10).map((it, i) => `<div class="mk-item" data-code="${esc(it.code)}">
+        <div class="r">${i + 1}</div>
+        <div><div class="n">${esc(it.name)}</div>${it.sub ? `<div class="t">${it.sub}</div>` : ''}</div>
+        <div class="v">${it.value}</div>
+      </div>`).join('')}</div>` : '<p class="badge-note">暂无数据</p>'}
+    </section>`).join('');
+
+    el('mkHot').querySelectorAll('.mk-item').forEach((n) => n.addEventListener('click', () => {
+      runAnalysis(n.getAttribute('data-code'), true);
+    }));
+  }
+
+  function renderMarketFoot(d) {
+    const l = d.limits || {};
+    el('mkFoot').innerHTML = `
+      <div>数据来源：同花顺金融数据服务（hithink-finance）· 行情/板块指数快照 · 涨停池/跌停池/炸板池 · 连板天梯 · 热股榜/飙升榜 · 龙虎榜</div>
+      <div>涨跌分布按个股当日涨跌幅分档（±9.8% 为极端档，0% 计入 0~3% 档），涨停/跌停家数以交易所涨停池为准；主板 10%、创业板/科创板 20%、北交所 30%、ST 5%。</div>
+      <div>「领涨股」= 该板块成分股中当日涨幅最高者，成分来自同花顺行业/概念指数。点击任意股票名称可进入深度分析；以上均为数据描述，不构成投资建议。</div>`;
+  }
+
+  function renderMarket(d) {
+    state.market = d;
+    try {
+      renderMarketHero(d);
+      renderMarketSectors(d);
+      renderMarketLimits(d);
+      renderMarketPools(d);
+      renderMarketHot(d);
+      renderMarketFoot(d);
+    } catch (err) {
+      el('mkHero').innerHTML = `<div class="mk-skeleton">市场全景渲染失败：${esc(err.message)}</div>`;
+    }
+    // 顶部快捷标签：热股榜前三 + 固定样本
+    const hot = (d.hot && d.hot.hot) || [];
+    if (hot.length && $("#quickChips")) {
+      $("#quickChips").innerHTML = hot.slice(0, 4).map((h) => `<span class="chip" data-code="${esc(h.ticker)}">${esc(h.name)}</span>`).join('')
+        + '<span class="chip" data-code="600519">贵州茅台</span><span class="chip" data-code="300750">宁德时代</span>';
+      $("#quickChips").querySelectorAll('.chip').forEach((node) => {
+        node.addEventListener('click', () => runAnalysis(node.getAttribute('data-code'), true));
+      });
+    }
+  }
+
+  let marketLoading = false;
+  async function loadMarket(force) {
+    if (marketLoading) return;
+    marketLoading = true;
+    if (force && el('mkHero')) {
+      el('mkHero').innerHTML = '<div class="mk-skeleton">正在刷新市场全景…</div>';
+    }
+    try {
+      const params = new URLSearchParams({ kind: state.sectorKind, sortBy: state.sectorSort });
+      const res = await fetch(`/api/market?${params.toString()}`);
+      const d = await res.json();
+      if (!d.ok) throw new Error(d.error ? d.error.message : '市场数据加载失败');
+      renderMarket(d);
+    } catch (err) {
+      if (el('mkHero')) el('mkHero').innerHTML = `<div class="mk-skeleton">市场全景加载失败：${esc(err.message)}（可直接搜索个股）</div>`;
+    } finally {
+      marketLoading = false;
+    }
+  }
+
+  function showMarket() {
+    $("#marketView").hidden = false;
+    $("#result").hidden = true;
+    $("#loadingState").hidden = true;
+    $("#errorState").hidden = true;
+    $("#backBar").hidden = true;
+    $("#searchInput").value = '';
+    if (!state.market) loadMarket();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    history.replaceState(null, '', location.pathname);
+  }
+
+/* ------------------------------ 手机端控制层 ------------------------------ */
+  const STAGE_HINTS = [
+    '解析股票代码',
+    '拉取行情与 K 线',
+    '读取三大报表',
+    '计算多期指标',
+    '解析行业与概念',
+    '核对龙虎榜与涨跌停',
+    '扫描同行业公司',
+    '计算评分与风险',
+  ];
+  let timerId = null;
+  let hintId = null;
+
+  function updateUrl(query) {
+    const next = `?q=${encodeURIComponent(query)}`;
+    try {
+      if (location.search !== next) history.pushState({ q: query }, '', next);
+    } catch (e) { /* ignore */ }
+  }
+
+  function showLoading(query) {
+    state.loading = true;
+    $("#marketView").hidden = true;
+    $("#result").hidden = true;
+    $("#errorState").hidden = true;
+    $("#backBar").hidden = true;
+    $("#loadingState").hidden = false;
+    $("#loadingTitle").textContent = `正在分析 ${query}`;
+    $("#loadingStage").textContent = STAGE_HINTS[0];
+    $("#statusText").textContent = '分析中';
+    const t0 = Date.now();
+    clearInterval(timerId);
+    clearInterval(hintId);
+    timerId = setInterval(() => {
+      $("#loadingTimer").textContent = `${((Date.now() - t0) / 1000).toFixed(1)}s`;
+    }, 100);
+    let i = 0;
+    hintId = setInterval(() => {
+      i = Math.min(STAGE_HINTS.length - 1, i + 1);
+      $("#loadingStage").textContent = STAGE_HINTS[i];
+    }, 1200);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showError(message, query) {
+    state.loading = false;
+    clearInterval(timerId);
+    clearInterval(hintId);
+    $("#marketView").hidden = true;
+    $("#loadingState").hidden = true;
+    $("#result").hidden = true;
+    $("#errorState").hidden = false;
+    $("#backBar").hidden = false;
+    $("#errorMsg").textContent = message;
+    $("#statusText").textContent = '分析失败';
+    $("#errorRetry").onclick = () => runAnalysis(query, true);
+  }
+
+  async function runAnalysis(query, _stream, opts = {}) {
+    if (!query) return;
+    state.loading = true;
+    state.query = query;
+    showLoading(query);
+    if (!opts.fromHistory) updateUrl(query);
+    try {
+      const res = await fetch(`/api/stock?q=${encodeURIComponent(query)}`);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || '分析失败');
+      if (state.query !== query) return;
+      state.data = json;
+      state.loading = false;
+      clearInterval(timerId);
+      clearInterval(hintId);
+      render(json);
+    } catch (err) {
+      if (state.query !== query) return;
+      showError(err.message || '分析失败', query);
+    }
+  }
+
+  /* ------------------------------ 章节折叠 ------------------------------ */
+  function sectionsOf() {
+    return Array.from(document.querySelectorAll('#result .card'));
+  }
+
+  function initCollapse() {
+    sectionsOf().forEach((card, i) => {
+      const h2 = card.querySelector('h2');
+      if (!h2 || h2.dataset.accBound) return;
+      h2.dataset.accBound = '1';
+      h2.classList.add('acc-head');
+      h2.addEventListener('click', () => card.classList.toggle('collapsed'));
+      // 手机端：默认只展开前 3 个章节
+      card.classList.toggle('collapsed', i > 2);
+    });
+    const all = el('expandAll');
+    if (all) all.textContent = '展开全部';
+  }
+
+  function bindExpandAll() {
+    const all = el('expandAll');
+    if (!all) return;
+    all.addEventListener('click', () => {
+      const cards = sectionsOf();
+      const anyOpen = cards.some((c) => !c.classList.contains('collapsed'));
+      cards.forEach((c) => c.classList.toggle('collapsed', anyOpen));
+      all.textContent = anyOpen ? '展开全部' : '收起全部';
+    });
+  }
+
+  /* ------------------------------ 搜索 ------------------------------ */
+  function showSuggest(items) {
+    const box = $("#suggest");
+    state.suggestItems = items;
+    state.suggestIndex = -1;
+    if (!items.length) { box.hidden = true; return; }
+    box.innerHTML = items.map((it, i) => `
+      <div class="suggest-item" data-i="${i}">
+        <span class="nm">${esc(it.name)}</span>
+        <span class="cd">${esc(it.ticker)}</span>
+      </div>`).join('');
+    box.hidden = false;
+    box.querySelectorAll('.suggest-item').forEach((node) => {
+      node.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const it = items[Number(node.getAttribute('data-i'))];
+        box.hidden = true;
+        $("#searchInput").value = it.ticker;
+        $("#searchInput").blur();
+        runAnalysis(it.ticker, true);
+      });
+    });
+  }
+
+  let suggestTimer = null;
+  let suggestSeq = 0;
+  async function fetchSuggest(q) {
+    const seq = ++suggestSeq;
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const json = await res.json();
+      if (seq !== suggestSeq) return;
+      showSuggest(json.items || []);
+    } catch (e) { /* ignore */ }
+  }
+
+  function bindSearch() {
+    const input = $("#searchInput");
+    input.addEventListener('input', () => {
+      const v = input.value.trim();
+      clearTimeout(suggestTimer);
+      if (!v) { $("#suggest").hidden = true; return; }
+      suggestTimer = setTimeout(() => fetchSuggest(v), 260);
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const v = input.value.trim();
+        if (v) {
+          $("#suggest").hidden = true;
+          input.blur();
+          runAnalysis(v, true);
+        }
+      } else if (e.key === 'Escape') {
+        $("#suggest").hidden = true;
+      }
+    });
+    input.addEventListener('blur', () => setTimeout(() => { $("#suggest").hidden = true; }, 150));
+    $("#searchBtn").addEventListener('click', () => {
+      const v = input.value.trim();
+      if (v) {
+        $("#suggest").hidden = true;
+        $("#searchInput").blur();
+        runAnalysis(v, true);
+      }
+    });
+  }
+
+  /* ------------------------------ 状态条 ------------------------------ */
+  function refreshStatus() {
+    const m = state.market;
+    if (!m) return;
+    if (state.loading) return;
+    const mem = m.membership || {};
+    const parts = [];
+    if (m.tradeDate) parts.push(`交易日 ${m.tradeDate}`);
+    if (mem.status === 'running' && mem.progress) parts.push(`板块索引 ${mem.progress.done}/${mem.progress.total}`);
+    else if (mem.status === 'ready' && mem.date) parts.push(`板块索引 ${mem.date}`);
+    if (state.data && state.data.resolved) parts.push(`已分析 ${state.data.resolved.name}`);
+    const text = parts.join(' · ');
+    if (text && $("#statusText")) $("#statusText").textContent = text;
+  }
+
+  /* ------------------------------ 启动 ------------------------------ */
+  function init() {
+    bindSearch();
+    bindExpandAll();
+    $("#backBtn").addEventListener('click', showMarket);
+    window.addEventListener('popstate', (ev) => {
+      const q = (ev.state && ev.state.q) || new URLSearchParams(location.search).get('q');
+      if (q) {
+        $("#searchInput").value = q;
+        state.loading = false;
+        runAnalysis(q, true, { fromHistory: true });
+      } else {
+        state.loading = false;
+        showMarket();
+      }
+    });
+    const q = new URLSearchParams(location.search).get('q');
+    if (q) {
+      $("#searchInput").value = q;
+      runAnalysis(q, true, { fromHistory: true });
+    } else {
+      loadMarket();
+    }
+    setInterval(refreshStatus, 2000);
+    setInterval(() => {
+      if (!document.hidden && !$("#marketView").hidden && !state.loading) loadMarket();
+    }, 60 * 1000);
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();

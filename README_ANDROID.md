@@ -4,6 +4,10 @@
 App 是独立运行的：内置 Python（Chaquopy）+ 同花顺 REST 数据层 + 本机看板 + 系统通知，
 不需要电脑、不需要 Termux、不需要 Node CLI / DuckDB。
 
+> **v2：首页已改为「个股综合分析」**，顶部导航两个入口：`个股分析`（默认）｜`妖股雷达`。
+> 个股分析完全在手机本地计算（Python 直连同花顺 REST，与 PC 版分析口径一致）；
+> 妖股雷达即原低吸看板，路径 `/radar`。
+
 ## 结构
 
 ```
@@ -15,11 +19,26 @@ android/                          # Android 工程（Gradle + Chaquopy）
     MainActivity.kt               # WebView 全屏看板 + 首次输入 API Key
     DashboardService.kt           # 前台服务：常驻运行 Python 主循环（30s 轮询）
     Notifier.java                 # Python -> 系统通知 桥
-  app/src/main/python/            # 内嵌 Python 代码（自动从仓库根复制）
+  app/src/main/python/            # 内嵌 Python 代码（与仓库根 web/ mobile/ 同步）
     android_main.py               # 入口
     strategy.py / web/ / mobile/  # 复用 PC/手机版逻辑与看板页面
 .github/workflows/build-apk.yml   # 云构建：手动触发 → 产出 APK
 ```
+
+### web/ 目录（个股分析 + 妖股雷达）
+
+| 文件 | 作用 |
+| --- | --- |
+| `stock.html` / `stock.js` / `stock.css` | 个股分析页（`/`）：市场全景、搜索、16 章节分析、章节折叠 |
+| `stock_data.py` | 数据层：直连同花顺 REST + 进程内 TTL 缓存 + 板块成分索引落盘 |
+| `stock_analysis.py` | 分析引擎：报价/财务/估值/资金/热度/趋势/杜邦/分红/风险矩阵/同业/评分/相似股 |
+| `stock_market.py` | 市场全景：宽度、板块排行（一级/细分/概念 + 领涨股）、涨跌停池、连板梯队、热门榜 |
+| `dashboard.py` | 零依赖 HTTP 服务：`/`（个股分析）、`/radar`（妖股雷达）、`/api/state`、`/api/market*`、`/api/stock`、`/api/search` |
+| `index.html` / `index_html.py` | 妖股雷达看板（`/radar`） |
+| `stock_assets.py` | 由 `build_stock_frontend.py` 生成：APK 内文件缺失时内嵌的前端资源 |
+| `build_stock_frontend.py` | 从 PC 版 `stock-analyzer/app.js` 抽取渲染层，生成 `stock.js`/`stock.css`/`stock_assets.py` |
+
+改前端后执行：`python web/build_stock_frontend.py`，并把 `web/*` 同步到 `android/app/src/main/python/web/`。
 
 ## 使用方法（3 步）
 
@@ -36,14 +55,21 @@ android/                          # Android 工程（Gradle + Chaquopy）
 - 启动后：
 
   1. 前台服务运行 Python 主循环（默认 30 秒轮询）；
-  2. WebView 显示看板 `http://127.0.0.1:8311`（候选池 / 低开命中 / 深水 / 承接·走弱 / 情绪）；
+  2. WebView 打开 `http://127.0.0.1:8311/` → **个股分析首页**（市场全景 + 搜索框）；
+     点顶部「妖股雷达」→ `/radar` 低吸看板（候选池 / 低开命中 / 深水 / 承接·走弱 / 情绪）；
   3. 命中/承接/走弱 → 系统通知（"盘中提醒"渠道，高优先级）；
   4. 右上角 **⚙ 设置页**：API Key（可清空重填）、轮询间隔、低开主栏区间、深水区间、
      T-1 涨幅阈值、成交额阈值、新高天数、剔除 ST / 北交所开关。
 
+- **个股分析页**（手机端独立实现，口径与 PC 版一致）：
+  - 首页展示市场全景：涨跌家数与分布、成交额、涨停/跌停/炸板、连板梯队、热门板块（一级行业/细分行业/概念，含领涨股与成分下钻）、热股榜/飙升榜/龙虎榜净买/成交额榜；
+  - 搜索个股后给出 16 个章节：综合评分、深度解读、企业基本面、多期财务趋势、杜邦分解、业绩成长、主营优势、行业地位、估值、盘面资金、市场热度、近 5 日走势、技术形态、分红送转、风险矩阵、相似股票；
+  - 手机端默认只展开前 3 章，标题可点开/收起，右上角「展开全部／收起全部」；
+  - 板块成分索引（710 个板块）首次启动后台构建约 30 秒，按日落盘，之后秒开。
+
 - **设置保存即热生效**：无需重启 App/服务。配置写入 App 私有目录，
   Python 侧 ≤15 秒内检测到文件变化即重新加载（间隔/区间/阈值/开关），Key 修改下一轮请求即用新 Key。
-- 数据源：同花顺 REST（`https://fuyao.aicubes.cn`，请求头 `X-api-key`），行情/涨停池/炸板池/快照/日K。
+- 数据源：同花顺 REST（`https://fuyao.aicubes.cn`，请求头 `X-api-key`），行情/涨停池/炸板池/快照/日K/财报/估值/板块/热榜。
 - Key 存放：App 私有目录（`filesDir/key`），不写入仓库。
 
 ## 签名与产物（云构建）

@@ -11,6 +11,11 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--fg);font:14px/1.55 "Microsoft YaHei UI","Microsoft YaHei",system-ui,sans-serif;padding:18px}
   .bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px}
+  .appnav{display:flex;gap:6px;flex:none}
+  .nav-btn{font-size:12.5px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);
+           color:var(--dim);background:#101b2b;text-decoration:none;white-space:nowrap}
+  .nav-btn.on{color:#04141c;border-color:transparent;font-weight:700;
+              background:linear-gradient(135deg,#22d3ee,#61e6c9)}
   h1{font-size:20px;color:#fff;letter-spacing:1px}
   .meta{color:var(--dim);font-size:12px}
   .meta b{color:var(--accent)}
@@ -154,6 +159,10 @@
 <body>
   <div class="bar">
     <h1>🐉 妖股低吸雷达</h1>
+    <nav class="appnav">
+      <a class="nav-btn" href="/">个股分析</a>
+      <a class="nav-btn on" href="/radar">妖股雷达</a>
+    </nav>
     <span class="badge" id="phase">-</span>
     <span class="badge" id="src">-</span>
     <span class="meta">T <b id="t0">-</b>｜T-1 <b id="t1">-</b>｜T-2 <b id="t2">-</b>｜候选 <b id="pool">-</b>｜低开 <b class="hl" id="hits">-</b>｜深水 <b id="wd">-</b>｜承接 <b style="color:var(--ok)" id="wc">-</b>｜走弱 <b style="color:var(--warn)" id="wb">-</b></span>
