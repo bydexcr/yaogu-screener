@@ -473,11 +473,38 @@ def index_history(code: str, days: int = 90) -> List[dict]:
 
 
 # ------------------------------------------------------------------ 行业/概念成分索引
+def _writable_dir(prefer: Optional[Path] = None) -> Path:
+    """选一个可写的缓存目录：显式指定 → YAOGU_DATA_DIR → 项目 data_mobile → 系统临时目录。
+
+    APK 里 python/ 是只读目录，必须回退到应用私有目录或临时目录，否则索引无法落盘。
+    """
+    import tempfile
+
+    cands = []
+    if prefer:
+        cands.append(Path(prefer))
+    env = os.environ.get("YAOGU_DATA_DIR")
+    if env:
+        cands.append(Path(env))
+    cands.append(ROOT / "data_mobile")
+    cands.append(Path(tempfile.gettempdir()) / "yaogu_stock_cache")
+    for d in cands:
+        try:
+            d.mkdir(parents=True, exist_ok=True)
+            probe = d / ".write_test"
+            probe.write_text("1", encoding="utf-8")
+            probe.unlink()
+            return d
+        except Exception:
+            continue
+    return Path(tempfile.gettempdir())
+
+
 class MembershipIndex:
     """把「板块 → 成分股」建成反向索引；首次构建约 700+ 次请求（1~2 分钟），按日落盘。"""
 
     def __init__(self, cache_dir: Optional[Path] = None):
-        self.cache_dir = Path(cache_dir or os.environ.get("YAOGU_DATA_DIR") or (ROOT / "data_mobile"))
+        self.cache_dir = _writable_dir(cache_dir)
         self._forward: Dict[str, List[dict]] = {"industries": [], "concepts": []}
         self._reverse: Dict[str, Dict[str, list]] = {}
         self._name_map: Optional[Dict[str, str]] = None

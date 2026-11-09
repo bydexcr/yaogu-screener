@@ -23,12 +23,32 @@ WEB_DIR = Path(__file__).resolve().parent
 _STATE_MARK = "window.__DSH_STATE__ = null;"
 
 
+# ------------------------------------------------------------------ 模块加载
+def _ensure_paths():
+    """把 web/ 与其父目录加入 sys.path，兼容 包导入 / 同目录导入 / Chaquopy(APK) 三种情况。"""
+    import sys as _sys
+    for p in (str(WEB_DIR.parent), str(WEB_DIR)):
+        if p not in _sys.path:
+            _sys.path.insert(0, p)
+
+
+def _load_stock_module(name: str):
+    """加载 web 下的个股分析模块：先按包导入，失败再按同目录导入。"""
+    import importlib
+    _ensure_paths()
+    try:
+        return importlib.import_module(f"web.{name}")
+    except ImportError:
+        return importlib.import_module(name)
+
+
 # ------------------------------------------------------------------ 资源加载
 def _read_asset(name: str, module_attr: str, module_name: str) -> str:
     f = WEB_DIR / name
     if f.exists():
         return f.read_text(encoding="utf-8")
     try:
+        _ensure_paths()
         mod = __import__(module_name, fromlist=[module_attr])
         return getattr(mod, module_attr)
     except Exception:
@@ -65,36 +85,24 @@ def save_snapshot_html(state: dict) -> str:
 
 # ------------------------------------------------------------------ 业务接口
 def api_market() -> dict:
-    try:
-        from web import stock_market
-    except ImportError:
-        import stock_market  # type: ignore
+    stock_market = _load_stock_module("stock_market")
     return stock_market.dashboard()
 
 
 def api_stock(query: str) -> dict:
-    try:
-        from web import stock_analysis
-    except ImportError:
-        import stock_analysis  # type: ignore
+    stock_analysis = _load_stock_module("stock_analysis")
     return stock_analysis.analyze(query)
 
 
 def api_sector(code: str) -> dict:
-    try:
-        from web import stock_market
-    except ImportError:
-        import stock_market  # type: ignore
+    stock_market = _load_stock_module("stock_market")
     out = stock_market.sector_detail(code)
     out["ok"] = True
     return out
 
 
 def api_search(q: str) -> dict:
-    try:
-        from web import stock_data
-    except ImportError:
-        import stock_data  # type: ignore
+    stock_data = _load_stock_module("stock_data")
     items = stock_data.search(q, 12) if q else []
     return {"ok": True, "items": [i for i in items if i.get("assetType") == "a-share"]}
 
@@ -217,14 +225,10 @@ class Dashboard:
         self._thread.start()
         # 后台预热板块成分索引（首次约 30~90 秒，之后走落盘缓存）
         try:
-            from web.stock_data import MEMBERSHIP
-        except ImportError:
-            try:
-                from stock_data import MEMBERSHIP  # type: ignore
-            except Exception:
-                MEMBERSHIP = None
-        if MEMBERSHIP is not None:
-            threading.Thread(target=MEMBERSHIP.ensure, daemon=True).start()
+            stock_data = _load_stock_module("stock_data")
+            threading.Thread(target=stock_data.MEMBERSHIP.ensure, daemon=True).start()
+        except Exception as e:  # noqa: BLE001
+            print(f"[看板] 板块索引预热跳过: {e}")
         return self
 
     def stop(self):

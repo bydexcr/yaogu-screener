@@ -47,6 +47,11 @@ def extract_pc_parts(app_js: str):
     market = market.replace(
         'if (hot.length) {\n      $("#quickChips").innerHTML',
         'if (hot.length && $("#quickChips")) {\n      $("#quickChips").innerHTML')
+    # 手机端：失败时给出可见错误 + 重试按钮（点击事件由控制层委托处理）
+    market = market.replace(
+        "<div class=\"mk-skeleton\">市场全景加载失败：${esc(err.message)}（可直接搜索个股）</div>",
+        "<div class=\"mk-skeleton\">市场全景加载失败：${esc(err.message)}"
+        "<div style=\"margin-top:12px\"><button class=\"btn-ghost\" id=\"mkRetry\">重试</button></div></div>")
     return renders, market
 
 

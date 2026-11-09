@@ -2129,7 +2129,7 @@ JS = r"""(function () {
       if (!d.ok) throw new Error(d.error ? d.error.message : '市场数据加载失败');
       renderMarket(d);
     } catch (err) {
-      if (el('mkHero')) el('mkHero').innerHTML = `<div class="mk-skeleton">市场全景加载失败：${esc(err.message)}（可直接搜索个股）</div>`;
+      if (el('mkHero')) el('mkHero').innerHTML = `<div class="mk-skeleton">市场全景加载失败：${esc(err.message)}<div style="margin-top:12px"><button class="btn-ghost" id="mkRetry">重试</button></div></div>`;
     } finally {
       marketLoading = false;
     }
@@ -2346,6 +2346,10 @@ JS = r"""(function () {
     bindSearch();
     bindExpandAll();
     $("#backBtn").addEventListener('click', showMarket);
+    // 市场全景加载失败时注入的「重试」按钮（事件委托）
+    document.addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'mkRetry') loadMarket(true);
+    });
     window.addEventListener('popstate', (ev) => {
       const q = (ev.state && ev.state.q) || new URLSearchParams(location.search).get('q');
       if (q) {

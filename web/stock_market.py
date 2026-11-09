@@ -5,9 +5,18 @@ stock_market.py —— 首页「市场全景」：市场宽度 / 板块排行 / 
 """
 from __future__ import annotations
 
+import pathlib
+import sys
 from typing import Any, Dict, List, Optional
 
-import stock_data as sd
+# 兼容三种加载方式：包内相对导入 / web 目录在 sys.path / APK 内直接导入本文件
+try:
+    from . import stock_data as sd
+except ImportError:  # pragma: no cover - 非包方式加载
+    _HERE = pathlib.Path(__file__).resolve().parent
+    if str(_HERE) not in sys.path:
+        sys.path.insert(0, str(_HERE))
+    import stock_data as sd
 
 _n = sd._num
 _r = sd._round

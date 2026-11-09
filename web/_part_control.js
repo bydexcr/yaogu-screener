@@ -198,6 +198,10 @@
     bindSearch();
     bindExpandAll();
     $("#backBtn").addEventListener('click', showMarket);
+    // 市场全景加载失败时注入的「重试」按钮（事件委托）
+    document.addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'mkRetry') loadMarket(true);
+    });
     window.addEventListener('popstate', (ev) => {
       const q = (ev.state && ev.state.q) || new URLSearchParams(location.search).get('q');
       if (q) {
