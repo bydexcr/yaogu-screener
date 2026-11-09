@@ -1,4 +1,7 @@
-# 妖股低吸雷达 · 安卓 App（云构建版）
+# 大A小散 · 安卓 App（云构建版）
+
+> App 名称：**大A小散**（桌面图标名，`AndroidManifest.xml` 的 `android:label`）。
+> 首页为「个股分析」，顶部导航「妖股雷达」进入原低吸看板。
 
 用 GitHub Actions **云端打包 APK**，本机无需安装 Android Studio / SDK。
 App 是独立运行的：内置 Python（Chaquopy）+ 同花顺 REST 数据层 + 本机看板 + 系统通知，

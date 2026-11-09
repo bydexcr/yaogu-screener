@@ -532,15 +532,17 @@ body {
   border-bottom: 1px solid var(--line-soft);
   padding: 10px 14px 12px;
 }
+/* 右上角是安卓原生 ⚙ 设置按钮（44dp + 6dp 边距），右侧留白避免遮挡 */
 .appbar-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  padding-right: 52px;
 }
 .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .brand .logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: #0d1626; border: 1px solid var(--line); flex: none; }
-.brand-text h1 { font-size: 15px; letter-spacing: .3px; white-space: nowrap; }
+.brand-text h1 { font-size: 16px; letter-spacing: .5px; white-space: nowrap; }
 .brand-text .status-line {
   display: flex; align-items: center; gap: 5px;
   font-size: 10.5px; color: var(--text-mute); margin-top: 1px;
@@ -552,14 +554,19 @@ body {
 }
 .brand-text .dot.busy { background: var(--warn); box-shadow: 0 0 0 2px rgba(255, 176, 32, .18); }
 
-.appnav { display: flex; gap: 6px; flex: none; }
+/* 顶部二级导航：与妖股雷达页完全一致的样式与位置（整行两个等宽 Tab） */
+.appnav { display: flex; gap: 8px; margin-top: 10px; }
 .nav-btn {
-  font-size: 12.5px;
-  padding: 6px 12px;
-  border-radius: 999px;
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.2;
+  padding: 8px 0;
+  border-radius: 10px;
   border: 1px solid var(--line);
   color: var(--text-dim);
   background: #101b2b;
+  text-decoration: none;
   white-space: nowrap;
 }
 .nav-btn.on {

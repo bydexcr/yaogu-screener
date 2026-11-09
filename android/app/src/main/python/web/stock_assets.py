@@ -7,7 +7,7 @@ HTML = r"""<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0e1117">
-<title>个股分析 · 妖股雷达</title>
+<title>大A小散 · 个股分析</title>
 <link rel="stylesheet" href="/stock.css">
 </head>
 <body>
@@ -19,15 +19,15 @@ HTML = r"""<!DOCTYPE html>
         <svg viewBox="0 0 64 64" width="24" height="24"><rect width="64" height="64" rx="14" fill="#0d1626"/><path d="M12 44l10-12 8 7 12-19 10 9" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
       <div class="brand-text">
-        <h1>个股分析</h1>
+        <h1>大A小散</h1>
         <p class="status-line"><span class="dot" id="statusBadge"></span><span id="statusText">数据加载中</span></p>
       </div>
     </div>
-    <nav class="appnav">
-      <a class="nav-btn on" href="/">个股分析</a>
-      <a class="nav-btn" href="/radar">妖股雷达</a>
-    </nav>
   </div>
+  <nav class="appnav">
+    <a class="nav-btn on" href="/">个股分析</a>
+    <a class="nav-btn" href="/radar">妖股雷达</a>
+  </nav>
   <div class="search-box" id="searchBox">
     <svg class="search-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
@@ -652,15 +652,17 @@ body {
   border-bottom: 1px solid var(--line-soft);
   padding: 10px 14px 12px;
 }
+/* 右上角是安卓原生 ⚙ 设置按钮（44dp + 6dp 边距），右侧留白避免遮挡 */
 .appbar-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  padding-right: 52px;
 }
 .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .brand .logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: #0d1626; border: 1px solid var(--line); flex: none; }
-.brand-text h1 { font-size: 15px; letter-spacing: .3px; white-space: nowrap; }
+.brand-text h1 { font-size: 16px; letter-spacing: .5px; white-space: nowrap; }
 .brand-text .status-line {
   display: flex; align-items: center; gap: 5px;
   font-size: 10.5px; color: var(--text-mute); margin-top: 1px;
@@ -672,14 +674,19 @@ body {
 }
 .brand-text .dot.busy { background: var(--warn); box-shadow: 0 0 0 2px rgba(255, 176, 32, .18); }
 
-.appnav { display: flex; gap: 6px; flex: none; }
+/* 顶部二级导航：与妖股雷达页完全一致的样式与位置（整行两个等宽 Tab） */
+.appnav { display: flex; gap: 8px; margin-top: 10px; }
 .nav-btn {
-  font-size: 12.5px;
-  padding: 6px 12px;
-  border-radius: 999px;
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.2;
+  padding: 8px 0;
+  border-radius: 10px;
   border: 1px solid var(--line);
   color: var(--text-dim);
   background: #101b2b;
+  text-decoration: none;
   white-space: nowrap;
 }
 .nav-btn.on {

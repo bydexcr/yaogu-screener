@@ -3,19 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>妖股低吸雷达 · 实时看板</title>
+<title>大A小散 · 妖股雷达</title>
 <script>window.__DSH_STATE__ = null;</script>
 <style>
   :root{--bg:#0e1117;--card:#161b26;--line:#262e3f;--fg:#dbe2ef;--dim:#8b96ad;
         --hit:#ff4d6a;--ok:#2dd4a7;--warn:#ffc857;--accent:#58a6ff;}
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--fg);font:14px/1.55 "Microsoft YaHei UI","Microsoft YaHei",system-ui,sans-serif;padding:18px}
-  .bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px}
-  .appnav{display:flex;gap:6px;flex:none}
-  .nav-btn{font-size:12.5px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);
-           color:var(--dim);background:#101b2b;text-decoration:none;white-space:nowrap}
-  .nav-btn.on{color:#04141c;border-color:transparent;font-weight:700;
-              background:linear-gradient(135deg,#22d3ee,#61e6c9)}
+  .bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);
+       padding-bottom:12px;padding-right:52px}
+  /* 顶部二级导航：与「个股分析」页保持完全一致的样式与位置（整行两个等宽 Tab） */
+  .appnav{display:flex;gap:8px;margin:10px 0 0}
+  .appnav .nav-btn{flex:1;text-align:center;font-size:13px;line-height:1.2;padding:8px 0;border-radius:10px;
+       border:1px solid var(--line);color:var(--dim);background:#101b2b;text-decoration:none;white-space:nowrap}
+  .appnav .nav-btn.on{color:#04141c;border-color:transparent;font-weight:700;
+       background:linear-gradient(135deg,#22d3ee,#61e6c9)}
+  .pagetag{font-size:12.5px;color:var(--accent);background:#12203a;border:1px solid var(--line);
+       border-radius:999px;padding:2px 10px;white-space:nowrap}
   h1{font-size:20px;color:#fff;letter-spacing:1px}
   .meta{color:var(--dim);font-size:12px}
   .meta b{color:var(--accent)}
@@ -104,14 +108,14 @@
   /* ---------- 手机/窄屏适配 ---------- */
   .tbl{max-height:76vh;overflow:auto}
   @media (max-width: 900px){
-    body{padding:10px}
+    body{padding:10px 14px}
     .bar{gap:8px}
     h1{font-size:17px}
     .cols{grid-template-columns:1fr}
     .sf{overflow-x:auto}
   }
   @media (max-width: 680px){
-    body{padding:8px; overflow-x:hidden}
+    body{padding:10px 14px 18px; overflow-x:hidden}
     h1{font-size:16px}
     .meta{font-size:11px; line-height:1.55}
     .badge{font-size:11px; padding:2px 8px}
@@ -137,8 +141,9 @@
     .event .time{min-width:64px}
     footer{font-size:10.5px}
     .warnbar{font-size:11.5px}
-    /* 右上角给齿轮按钮留出空间，避免遮挡标题栏文字 */
-    .bar{padding-right:44px}
+    /* 右上角是安卓原生 ⚙ 设置按钮（44dp+6dp），统一留白避免遮挡 */
+    .bar{padding-right:52px}
+    .appnav{margin-top:8px}
   }
   /* ---------- 候选详情弹窗 ---------- */
   #cand tbody tr{cursor:pointer}
@@ -158,16 +163,17 @@
 </head>
 <body>
   <div class="bar">
-    <h1>🐉 妖股低吸雷达</h1>
-    <nav class="appnav">
-      <a class="nav-btn" href="/">个股分析</a>
-      <a class="nav-btn on" href="/radar">妖股雷达</a>
-    </nav>
+    <h1>大A小散</h1>
+    <span class="pagetag">妖股低吸雷达</span>
     <span class="badge" id="phase">-</span>
     <span class="badge" id="src">-</span>
     <span class="meta">T <b id="t0">-</b>｜T-1 <b id="t1">-</b>｜T-2 <b id="t2">-</b>｜候选 <b id="pool">-</b>｜低开 <b class="hl" id="hits">-</b>｜深水 <b id="wd">-</b>｜承接 <b style="color:var(--ok)" id="wc">-</b>｜走弱 <b style="color:var(--warn)" id="wb">-</b></span>
     <span class="meta">更新 <b id="upts">-</b>（<span id="intv">30</span>s） 轮次 <span id="cyc">-</span></span>
   </div>
+  <nav class="appnav">
+    <a class="nav-btn" href="/">个股分析</a>
+    <a class="nav-btn on" href="/radar">妖股雷达</a>
+  </nav>
   <div class="warnbar" id="warnbar" style="display:none">
     ⚠ 本地行情数据未就绪（缺 T-1 日线）：正在自动重试同步，页面保持在线，同步完成后自动恢复扫描。
   </div>
