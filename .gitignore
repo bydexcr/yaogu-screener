@@ -40,6 +40,10 @@ android/app/src/main/python/**/data_mobile/
 android/keystore.jks
 *.jks
 *.keystore
+*.b64
+keystore-password.txt
+ks.txt
+build.log
 
 # Windows/测试缓存
 desktop.ini

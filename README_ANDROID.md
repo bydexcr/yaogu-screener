@@ -47,10 +47,12 @@ android/                          # Android 工程（Gradle + Chaquopy）
 
 1. **建一个 GitHub 仓库**，把整个 `yaogu_screener` 目录（含 `android/`、`.github/`、`mobile/`、`strategy.py`、`web/`）推上去；
 2. 仓库页面 → **Actions → build-apk → Run workflow**，等约 5~10 分钟；
-3. 在运行结果页底部下载 **yaogu-debug-apk** 产物 → 传到手机安装（允许"未知来源"）。
+3. 在运行结果页底部下载 **`daxiaosan-v<版本>-apks`** 产物 → 传到手机安装（允许"未知来源"），
+   里面 release / debug 各一个包，装哪个都行。
    首次打开 App 输入同花顺 **API Key**（与电脑版 hithink-finance 相同），点"保存并启动"。
 
-> 提示：仓库可以是私有仓库；GitHub 免费账户每月有 2000 分钟 Actions 额度，足够多次构建。
+> 想以后**直接覆盖安装**不用卸载？按下面「版本号与签名」做一次 Secret 配置即可。
+> 仓库可以是私有仓库；GitHub 免费账户每月有 2000 分钟 Actions 额度，足够多次构建。
 > 若 Actions 被网络限制，也可把仓库导入任意支持 GitHub Actions 的平台，或本地装 Android Studio 打开 `android/` 目录直接 Run。
 
 ## App 行为
@@ -75,14 +77,46 @@ android/                          # Android 工程（Gradle + Chaquopy）
 - 数据源：同花顺 REST（`https://fuyao.aicubes.cn`，请求头 `X-api-key`），行情/涨停池/炸板池/快照/日K/财报/估值/板块/热榜。
 - Key 存放：App 私有目录（`filesDir/key`），不写入仓库。
 
-## 签名与产物（云构建）
+## 版本号与签名（不用每次卸载重装）
 
-- 每次构建产出 **debug + 已签名 release** 两个 APK（`yaogu-android-apks` 产物）；
-- 首次构建若仓库没有密钥，会自动生成一个签名 keystore，并额外上传 `yaogu-keystore-keep-as-secret` 产物：
-  **下载它**，把文件内容 base64 后存到仓库 Secrets（`KEYSTORE_BASE64`，可选再设 `KEYSTORE_PASSWORD`），
-  之后每次构建都复用同一签名，升级安装不会冲突；
-- 未设置 Secret 时每次构建签名随机，需卸载旧版再装新版（数据会丢，慎用）；
-- 自用可直接安装 APK；上架商店需开发者账号且涉及金融类目资质，不建议。
+手机能"直接覆盖安装"只认两条规则，现在两条都自动满足了：
+
+| 条件 | 现状 |
+|---|---|
+| `versionCode` 不能比已安装的小 | 自动取**构建时间戳（分钟）**，每次构建必然变大，不用手改 |
+| 签名证书必须完全一致 | 需要你**一次性**把 keystore 存进仓库 Secrets，之后所有构建都用它签名 |
+
+- `versionName` 形如 `2.0.137`（137 = GitHub Actions 运行号；本地构建则是 `2.0.20261109.2015`）；
+- App 里能看到版本：**设置页顶部**显示「版本 2.0.137 · 构建号 29867123」；
+- 产物命名带版本：`daxiaosan-v2.0.137-apks`（内含 `daxiaosan-v2.0.137-release.apk` 与 `-debug.apk`）；
+- 需要手工指定版本时，构建前设置环境变量 `VERSION_CODE` / `VERSION_NAME` 覆盖即可。
+
+### 一次性配置稳定签名（约 2 分钟）
+
+1. 先跑一次构建：Actions → build-apk → **Run workflow**；
+2. 在该次运行页面底部下载产物 **`yaogu-keystore-keep-as-secret`**，解压得到 `keystore.jks` 与 `keystore-password.txt`
+   （没配过密码时密码是构建时随机生成的，文件里就是它）；
+3. 把 `keystore.jks` 转成 base64（Windows PowerShell）：
+   ```powershell
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("keystore.jks")) | Set-Content ks.b64
+   ```
+4. 仓库 → Settings → Secrets and variables → Actions → **New repository secret**，加两条：
+   - `KEYSTORE_BASE64` = `ks.b64` 的全部内容（一长串，别带换行）；
+   - `KEYSTORE_PASSWORD` = `keystore-password.txt` 里的密码；
+5. 再跑一次构建，日志里出现 `签名来源：仓库 Secret（签名稳定，可覆盖安装）`、运行摘要显示 ✅ 就成功了；
+6. **最后一次**卸载旧 App，装这次的新包。之后每次新包都是「下载 → 点安装 → 覆盖」，不用再卸载，Key 和设置都保留。
+
+> 未配置 `KEYSTORE_BASE64` 时，每次构建会临时生成一把新钥匙 —— 那种包**装不到旧版之上**，只能卸载重装。
+> 如果先配了 `KEYSTORE_PASSWORD` 再构建，生成的 keystore 就用你设的密码，省得记随机串。
+
+注意事项：
+
+- keystore **不要提交进仓库**（泄漏等于别人能签发"更新包"覆盖你手机上的 App）；
+- **建议把仓库设为 private**（Settings → General → 最下方 Danger Zone → Change visibility）：
+  这样 Actions 日志和产物只有你能看，keystore 放在产物里也不担心；
+- 公开仓库里 `yaogu-keystore-keep-as-secret` 产物等于公开（含密码文件），配好 Secret 后请**立即删除该产物**；
+- 把 `keystore.jks` + 密码备份到自己的私密位置（换电脑/重装系统后没有它，就只能卸载重装一次）；
+- `debug` 与 `release` 两个包现在共用同一把钥匙，可以互相覆盖安装，随意切换。
 
 ## 已知边界
 

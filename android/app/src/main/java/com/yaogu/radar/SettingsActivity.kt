@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import org.json.JSONObject
 import java.io.File
@@ -17,6 +18,12 @@ class SettingsActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings_activity)
+
+        // 版本号：每次构建自动递增（versionName = 2.0.<CI运行号>，versionCode = 构建时间戳分钟）
+        val pi = runCatching { packageManager.getPackageInfo(packageName, 0) }.getOrNull()
+        val vName = pi?.versionName ?: "-"
+        val vCode = if (android.os.Build.VERSION.SDK_INT >= 28) (pi?.longVersionCode ?: 0L) else (pi?.versionCode?.toLong() ?: 0L)
+        findViewById<TextView>(R.id.tv_version).text = "版本 $vName · 构建号 $vCode"
 
         val prefs = getSharedPreferences("yaogu", MODE_PRIVATE)
         val cfgFile = File(filesDir, "config_mobile.json")

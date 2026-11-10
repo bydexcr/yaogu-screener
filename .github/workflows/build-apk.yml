@@ -38,32 +38,76 @@ jobs:
           java -version
           gradle --version | head -n 12
 
-      # 签名：优先使用仓库 Secret 中的 keystore；没有则生成一个新 keystore 并作为产物提供
+      # ---------------------------------------------------------------------
+      # 签名：优先用仓库 Secret 里的 keystore。
+      # 只有签名（证书）始终一致，手机上才能"覆盖安装"；否则必须卸载重装。
+      # ---------------------------------------------------------------------
       - name: Prepare signing keystore
         env:
           KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
           KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          KSPASS="${KS_PASS:-yaogu-pass}"
-          if [ -n "$KS_B64" ]; then
-            echo "$KS_B64" | base64 -d > keystore.jks
-            echo "KS_GENERATED=false" >> "$GITHUB_ENV"
-            echo "using stored keystore"
+          set -o pipefail
+          KS_B64="${KS_B64:-}"
+          KS_PASS="${KS_PASS:-}"
+          if [ -n "${KS_B64}" ]; then
+            echo "${KS_B64}" | base64 -d > keystore.jks
+            if [ -z "${KS_PASS}" ]; then
+              echo "::error::已配置 KEYSTORE_BASE64，但缺少 KEYSTORE_PASSWORD，无法签名"
+              exit 1
+            fi
+            if ! keytool -list -keystore keystore.jks -storepass "${KS_PASS}" > ks.txt 2>&1; then
+              echo "::error::keystore 读取失败，KEYSTORE_PASSWORD 可能不对"
+              sed 's/^/  /' ks.txt
+              exit 1
+            fi
+            DETECTED_TYPE="$(grep -i 'Keystore type' ks.txt | head -1 | sed 's/.*: *//' | tr -d '\r')"
+            DETECTED_ALIAS="$(grep -i 'PrivateKeyEntry' ks.txt | head -1 | sed 's/,.*//' | tr -d '\r' | sed 's/^ *//')"
+            KEYSTORE_SOURCE="仓库 Secret（签名稳定，可覆盖安装）"
+            KS_GENERATED=false
           else
+            # 没有 Secret：本次生成一把临时钥匙，并提示一次性配置方法
+            GENPASS="${KS_PASS}"
+            if [ -z "${GENPASS}" ]; then
+              GENPASS="$(head -c 64 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 28)"
+            fi
             keytool -genkeypair -keystore keystore.jks -storetype PKCS12 -alias yaogu \
               -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=Yaogu Radar, OU=Personal, O=Personal, L=NA, ST=NA, C=CN" \
-              -storepass "$KSPASS" -keypass "$KSPASS"
-            echo "KS_GENERATED=true" >> "$GITHUB_ENV"
-            echo "generated a fresh keystore (download artifact to reuse stable signature)"
+              -dname "CN=Daxiaosan, OU=Personal, O=Personal, L=NA, ST=NA, C=CN" \
+              -storepass "${GENPASS}" -keypass "${GENPASS}"
+            printf '%s\n' "${GENPASS}" > keystore-password.txt
+            KS_PASS="${GENPASS}"
+            DETECTED_TYPE="PKCS12"
+            DETECTED_ALIAS="yaogu"
+            KEYSTORE_SOURCE="临时生成（签名不稳定，需卸载旧版才能安装）"
+            KS_GENERATED=true
+            echo "::warning::未配置 KEYSTORE_BASE64：本次是临时签名，装不到旧版之上。请在本次构建产物 yaogu-keystore-keep-as-secret 里取 keystore.jks 配成 Secret（见 README_ANDROID.md「版本号与签名」）。仓库若是公开的，配好后请删除该产物，或直接把仓库设为 private。"
           fi
-          echo "KEYSTORE_FILE=$PWD/keystore.jks" >> "$GITHUB_ENV"
-          echo "KEYSTORE_PASSWORD=$KSPASS" >> "$GITHUB_ENV"
-          echo "KEY_ALIAS=yaogu" >> "$GITHUB_ENV"
-          echo "KEY_PASSWORD=$KSPASS" >> "$GITHUB_ENV"
+          {
+            echo "KEYSTORE_FILE=$PWD/keystore.jks"
+            echo "KEYSTORE_PASSWORD=${KS_PASS}"
+            echo "KEYSTORE_TYPE=${DETECTED_TYPE:-PKCS12}"
+            echo "KEY_ALIAS=${KS_ALIAS:-${DETECTED_ALIAS:-yaogu}}"
+            echo "KEY_PASSWORD=${KS_PASS}"
+            echo "KS_GENERATED=${KS_GENERATED}"
+            echo "KEYSTORE_SOURCE=${KEYSTORE_SOURCE}"
+          } >> "$GITHUB_ENV"
+          echo "签名来源：${KEYSTORE_SOURCE}"
+          echo "keystore 类型：${DETECTED_TYPE:-PKCS12}；别名：${KS_ALIAS:-${DETECTED_ALIAS:-yaogu}}"
 
       - name: Build APKs (debug + signed release)
-        run: gradle assembleDebug assembleRelease --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          gradle printVersionInfo assembleDebug assembleRelease \
+            --no-daemon --console=plain --stacktrace 2>&1 | tee build.log
+          VCODE="$(grep -m1 '^APK_VERSION_CODE=' build.log | cut -d= -f2)"
+          VNAME="$(grep -m1 '^APK_VERSION_NAME=' build.log | cut -d= -f2)"
+          {
+            echo "VERSION_CODE=${VCODE:-0}"
+            echo "VERSION_NAME=${VNAME:-unknown}"
+          } >> "$GITHUB_ENV"
+          echo "本次版本：${VNAME} (versionCode ${VCODE})"
 
       - name: Show APK output
         run: |
@@ -72,17 +116,42 @@ jobs:
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: yaogu-android-apks
+          name: daxiaosan-v${{ env.VERSION_NAME }}-apks
           path: |
-            android/app/build/outputs/apk/release/app-release.apk
-            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      # 首次构建会生成随机签名，可下载此产物保存；下次构建把它转为 Secret（KEYSTORE_BASE64）即可保持签名一致
+      # 首次构建会生成随机签名：下载此产物，把 keystore.jks 转成 base64 存进 Secret 即可永久固定签名
       - name: Upload generated keystore (first run only)
         if: env.KS_GENERATED == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: yaogu-keystore-keep-as-secret
-          path: android/keystore.jks
+          path: |
+            android/keystore.jks
+            android/keystore-password.txt
           if-no-files-found: ignore
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## 本次构建"
+            echo ""
+            echo "| 项目 | 值 |"
+            echo "| --- | --- |"
+            echo "| 版本名 | \`${VERSION_NAME:-unknown}\` |"
+            echo "| 版本号 versionCode | \`${VERSION_CODE:-unknown}\` |"
+            echo "| 签名 | ${KEYSTORE_SOURCE:-unknown} |"
+            echo ""
+            if [ "${KS_GENERATED:-}" = "true" ]; then
+              echo "> ⚠️ 本次签名是临时生成的，**无法覆盖安装**旧版。"
+              echo ">"
+              echo "> 一次性配置：下载产物 \`yaogu-keystore-keep-as-secret\` → 取其中的 \`keystore.jks\` 与 \`keystore-password.txt\` →"
+              echo "> 仓库 Settings → Secrets and variables → Actions 添加 \`KEYSTORE_BASE64\`（keystore.jks 的 base64）与 \`KEYSTORE_PASSWORD\`（密码文件里的那串）→ 重新运行本工作流。"
+              echo "> 之后每次构建签名都一样，手机上直接点安装覆盖即可。"
+            else
+              echo "> ✅ 签名来自仓库 Secret，与历史版本一致，可直接覆盖安装。"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

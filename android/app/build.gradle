@@ -4,11 +4,36 @@ plugins {
     id 'com.chaquo.python'
 }
 
-// 签名信息由 CI 注入（见 .github/workflows/build-apk.yml）；本地无则产出未签名 release
+// ---------------------------------------------------------------------------
+// 自动版本号：每次构建都不一样，且严格递增 → 新包装到手机上可以直接覆盖旧版，
+// 不需要先卸载（Android 只要求 versionCode 不变小 + 签名一致）。
+//   versionCode：分钟级时间戳（约 3 千万，离 int 上限很远，可用几千年）
+//   versionName：CI 里用运行号（2.0.137），本地构建用时间（2.0.20261109.2015）
+// 需要手动指定时，构建前设置环境变量 VERSION_CODE / VERSION_NAME 即可。
+// ---------------------------------------------------------------------------
+def envVersionCode = System.getenv("VERSION_CODE")?.trim()
+def envVersionName = System.getenv("VERSION_NAME")?.trim()
+def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER")?.trim()
+
+// versionCode = 自 1970 起的分钟数（当前约 3000 万，int 上限 21 亿，几千年才用完）
+def autoVersionCode = Math.floorDiv(System.currentTimeMillis(), 60000L).intValue()
+// 本地构建的时间戳，例如 20261109.2015
+def localStamp = java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Shanghai"))
+        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd.HHmm"))
+
+def finalVersionCode = envVersionCode ? envVersionCode.toInteger() : autoVersionCode
+def finalVersionName = envVersionName ? envVersionName : (ciRunNumber ? "2.0." + ciRunNumber : "2.0." + localStamp)
+
+// ---------------------------------------------------------------------------
+// 签名：由 CI 注入（见 .github/workflows/build-apk.yml）。
+// 只要 KEYSTORE_FILE 存在，debug 和 release 就共用同一把钥匙 —— 两个包可以互相覆盖安装。
+// 本地没有 keystore 时：debug 走系统默认 debug key，release 不签名（仅本地调试用）。
+// ---------------------------------------------------------------------------
 def ksFile = System.getenv("KEYSTORE_FILE")
 def ksPass = System.getenv("KEYSTORE_PASSWORD") ?: ""
 def ksAlias = System.getenv("KEY_ALIAS") ?: "yaogu"
 def ksKeyPass = System.getenv("KEY_PASSWORD") ?: ksPass
+def ksType = System.getenv("KEYSTORE_TYPE") ?: "PKCS12"
 
 android {
     namespace 'com.yaogu.radar'
@@ -18,8 +43,8 @@ android {
         applicationId "com.yaogu.radar"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode finalVersionCode
+        versionName finalVersionName
         ndk {
             // arm64-v8a: 主流手机；armeabi-v7a: 老机型兼容（Chaquopy Python 3.11 支持）
             abiFilters 'arm64-v8a', 'armeabi-v7a'
@@ -28,8 +53,9 @@ android {
 
     signingConfigs {
         if (ksFile) {
-            release {
+            stable {
                 storeFile file(ksFile)
+                storeType ksType
                 storePassword ksPass
                 keyAlias ksAlias
                 keyPassword ksKeyPass
@@ -38,12 +64,35 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 与 release 同一把钥匙，避免"debug 包装不上/装不上 release 包"的切换麻烦
+            if (ksFile) {
+                signingConfig signingConfigs.stable
+            }
+        }
         release {
             minifyEnabled false
             if (ksFile) {
-                signingConfig signingConfigs.release
+                signingConfig signingConfigs.stable
             }
         }
+    }
+
+    // 产物文件名带上版本，下载下来一眼能看出新旧
+    try {
+        applicationVariants.all { variant ->
+            def vName = finalVersionName
+            def vType = variant.buildType.name
+            variant.outputs.all { output ->
+                try {
+                    output.outputFileName = "daxiaosan-v${vName}-${vType}.apk".replaceAll('[^A-Za-z0-9._-]', '-')
+                } catch (Throwable ignored) {
+                    // 某些 AGP 版本不允许改文件名，忽略即可（产物仍是 app-<type>.apk）
+                }
+            }
+        }
+    } catch (Throwable ignored) {
+        // 拿不到 applicationVariants 时不影响正常打包
     }
 
     compileOptions {
@@ -58,6 +107,17 @@ android {
 chaquopy {
     defaultConfig {
         version = "3.11"
+    }
+}
+
+// 供 CI 读取本次版本信息（gradle printVersionInfo）
+tasks.register('printVersionInfo') {
+    group = 'help'
+    description = '打印本次构建的 versionCode / versionName / 签名来源'
+    doLast {
+        println "APK_VERSION_CODE=${finalVersionCode}"
+        println "APK_VERSION_NAME=${finalVersionName}"
+        println "APK_SIGNING=${ksFile ? 'stable-keystore' : 'debug-default-or-unsigned'}"
     }
 }
 
