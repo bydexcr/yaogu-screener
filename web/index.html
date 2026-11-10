@@ -2,310 +2,499 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#070a0f">
 <title>大A小散 · 妖股雷达</title>
 <script>window.__DSH_STATE__ = null;</script>
 <style>
-  :root{--bg:#0e1117;--card:#161b26;--line:#262e3f;--fg:#dbe2ef;--dim:#8b96ad;
-        --hit:#ff4d6a;--ok:#2dd4a7;--warn:#ffc857;--accent:#58a6ff;}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--fg);font:14px/1.55 "Microsoft YaHei UI","Microsoft YaHei",system-ui,sans-serif;padding:18px}
-  .bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);
-       padding-bottom:12px;padding-right:52px}
-  /* 顶部二级导航：与「个股分析」页保持完全一致的样式与位置（整行两个等宽 Tab） */
-  .appnav{display:flex;gap:8px;margin:10px 0 0}
-  .appnav .nav-btn{flex:1;text-align:center;font-size:13px;line-height:1.2;padding:8px 0;border-radius:10px;
-       border:1px solid var(--line);color:var(--dim);background:#101b2b;text-decoration:none;white-space:nowrap}
-  .appnav .nav-btn.on{color:#04141c;border-color:transparent;font-weight:700;
-       background:linear-gradient(135deg,#22d3ee,#61e6c9)}
-  .pagetag{font-size:12.5px;color:var(--accent);background:#12203a;border:1px solid var(--line);
-       border-radius:999px;padding:2px 10px;white-space:nowrap}
-  h1{font-size:20px;color:#fff;letter-spacing:1px}
-  .meta{color:var(--dim);font-size:12px}
-  .meta b{color:var(--accent)}
-  .badge{padding:2px 10px;border-radius:12px;font-size:12px;background:#223;color:var(--accent)}
-  .badge.hit{background:rgba(255,77,106,.15);color:var(--hit);border:1px solid var(--hit)}
-  .badge.live{background:rgba(45,212,167,.12);color:var(--ok);border:1px solid var(--ok)}
-  .cols{display:grid;grid-template-columns:1fr 2.35fr;gap:14px;margin-top:12px}
-  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
-  .chip{font-size:11.5px;color:var(--dim);background:#131a29;border:1px solid var(--line);
-        border-radius:12px;padding:3px 10px}
-  .chip.dim{opacity:.7}
-  .chip.hot{color:var(--warn);border-color:var(--warn)}
-  .chip.ice{color:var(--ok);border-color:var(--ok)}
-  footer{margin-top:16px;color:var(--dim);font-size:11px;line-height:1.7;border-top:1px solid var(--line);padding-top:8px}
-  @media(max-width:1180px){.cols{grid-template-columns:1fr}}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
-  h2{font-size:14px;color:#fff;margin-bottom:10px}
-  .tick{color:var(--dim);font-size:12px}
-  table{width:100%;border-collapse:collapse;font-size:12.5px}
-  th{color:var(--dim);text-align:right;font-weight:500;padding:6px 5px;border-bottom:1px solid var(--line);
-     position:sticky;top:0;background:var(--card);z-index:1}
-  th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}
-  td{padding:6px 5px;border-bottom:1px solid #1c2230;text-align:right;font-variant-numeric:tabular-nums}
-  tr.hit-row td{background:rgba(255,77,106,.10);color:#ffd9de}
-  tr.hit-row td:first-child{box-shadow:inset 3px 0 0 var(--hit)}
-  .hl{color:var(--hit);font-weight:700}
-  .up{color:#ff6b81}.down{color:#3ddc97}
-  .sc{color:var(--accent);font-weight:700}
-  .dp{color:#c084fc;font-weight:700}
-  .rr{max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px;color:var(--dim)}
-  .event{display:flex;gap:10px;padding:8px 4px;border-bottom:1px dashed #1c2230;align-items:center;flex-wrap:wrap}
-  .event .time{color:var(--dim);min-width:86px;font-size:12px}
-  .event .nm{font-weight:600}
-  .empty{color:var(--dim);text-align:center;padding:26px 0;font-size:13px}
-  .err{color:var(--warn);font-size:12px;margin-top:8px;word-break:break-all}
-  .flash{animation:fl 1.2s ease 3}
-  @keyframes fl{0%,100%{background:var(--card)}50%{background:rgba(255,77,106,.25)}}
-  .switch{font-size:12px;color:var(--dim);cursor:pointer;user-select:none;margin-left:auto}
-  .warnbar{margin-top:10px;padding:8px 12px;border-radius:8px;font-size:12.5px;color:#ffe3a3;
-           background:rgba(255,200,87,.10);border:1px solid var(--warn)}
-  /* ---- v1.4 板块资金矩阵面板 ---- */
-  .sf{margin-top:14px}
-  .sf .cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media(max-width:1180px){.sf .cols2{grid-template-columns:1fr}}
-  .sf table{font-size:12px}
-  .sf td,.sf th{padding:4px 5px}
-  .sf .nm{font-weight:600}
-  .sf .tag{display:inline-block;font-size:10.5px;padding:0 5px;border-radius:8px;
-           border:1px solid var(--line);color:var(--dim);margin-left:4px}
-  .sf .tag.up{color:var(--hit);border-color:var(--hit)}
-  .sf .tag.lhb{color:var(--warn);border-color:var(--warn)}
-  .sf .tag.org{color:var(--accent);border-color:var(--accent)}
-  .sf .res{color:var(--warn);font-size:11px}
-  .sf .sec-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
-  .sf .sec-tabs button{background:#131a29;color:var(--dim);border:1px solid var(--line);
-           border-radius:10px;padding:2px 9px;font-size:11.5px;cursor:pointer}
-  .sf .sec-tabs button.on{color:var(--accent);border-color:var(--accent)}
-  .sf .sub{color:var(--dim);font-size:11.5px;margin:6px 0 4px}
-  .sf .sfbtn{float:right;background:#131a29;color:var(--dim);border:1px solid var(--line);
-           border-radius:10px;padding:2px 12px;font-size:11.5px;cursor:pointer;font-family:inherit}
-  .sf .sfbtn:hover{color:var(--accent);border-color:var(--accent)}
-  .sf .sftabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;padding-bottom:8px;
-           border-bottom:1px solid var(--line)}
-  .sf .sftab{background:#131a29;color:var(--dim);border:1px solid var(--line);border-radius:9px;
-           padding:4px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
-  .sf .sftab.on{color:var(--accent);border-color:var(--accent);background:#1b2430}
-  .sf .sfquad{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media(max-width:1180px){.sf .sfquad{grid-template-columns:1fr}}
-  .sf .qbox{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#121822}
-  .sf .qbox h4{margin:0 0 3px;font-size:13px}
-  .sf .qbox .qsub{color:var(--dim);font-size:11px;margin-bottom:6px}
-  /* CSS 柱状图（零依赖） */
-  .sf .bars{display:flex;flex-direction:column;gap:4px;margin:6px 0 4px}
-  .sf .bar-row{display:grid;grid-template-columns:124px 1fr 72px;align-items:center;gap:8px;font-size:11.5px}
-  @media(max-width:1180px){.sf .bar-row{grid-template-columns:92px 1fr 64px}}
-  .sf .bar-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .sf .bar-track{position:relative;height:15px;background:#101620;border:1px solid var(--line);
-           border-radius:4px;overflow:hidden}
-  .sf .bar-zero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#3d4a5e;z-index:2}
-  .sf .bar-fill{position:absolute;top:3px;bottom:3px;border-radius:3px}
-  .sf .bar-fill.pos{background:linear-gradient(90deg,#7d2734,#ff5c5c)}
-  .sf .bar-fill.neg{background:linear-gradient(90deg,#1c7a46,#28c76f)}
-  .sf .bar-thr{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed var(--accent);z-index:3}
-  .sf .bar-val{text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
-  .sf .bar-val.pos{color:var(--hit)} .sf .bar-val.neg{color:var(--ok)}
-  /* ---------- 手机/窄屏适配 ---------- */
-  .tbl{max-height:76vh;overflow:auto}
-  @media (max-width: 900px){
-    body{padding:10px 14px}
-    .bar{gap:8px}
-    h1{font-size:17px}
-    .cols{grid-template-columns:1fr}
-    .sf{overflow-x:auto}
+/* ============================================================
+   大A小散 · 视觉系统 v2（雷达页）— 与个股分析页共用同一套令牌
+   ============================================================ */
+:root{
+  --bg:#070a0f; --bg-soft:#0b1017;
+  --card:#0f141c; --card-2:#141a24; --card-3:#1a2330;
+  --line:#232c3a; --line-soft:#181f29;
+  --fg:#eef3fa; --dim:#9aa7b9; --muted:#657180;
+  --hit:#ff5468; --ok:#16c784; --warn:#ffb020; --accent:#4e8cff; --accent-2:#7fb0ff;
+  --up:#ff5468; --down:#16c784;
+  --accent-weak:rgba(78,140,255,.12);
+  --radius:18px; --radius-sm:12px; --radius-xs:10px;
+  --mono:ui-monospace,"SF Mono","Roboto Mono","Droid Sans Mono",Menlo,Consolas,monospace;
+  --font:-apple-system,"SF Pro Text","PingFang SC","HarmonyOS Sans SC","MiSans","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);color:var(--fg);font:14px/1.55 var(--font);
+  -webkit-font-smoothing:antialiased;min-height:100vh;padding:0;
+}
+body::before{
+  content:"";position:fixed;inset:0 0 auto 0;height:300px;pointer-events:none;z-index:0;
+  background:radial-gradient(120% 100% at 50% 0%,rgba(78,140,255,.10) 0%,transparent 62%);
+}
+h1,h2,h3,h4{font-weight:600;letter-spacing:-.1px}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointer}
+
+/* ---------- 顶栏 ---------- */
+.bar{
+  position:sticky;top:0;z-index:60;
+  padding:12px 16px 10px;
+  background:rgba(9,12,18,.9);
+  -webkit-backdrop-filter:saturate(160%) blur(20px);backdrop-filter:saturate(160%) blur(20px);
+  border-bottom:1px solid var(--line-soft);
+}
+.bar-top{display:flex;align-items:center;gap:10px;padding-right:50px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{
+  display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:10px;
+  background:linear-gradient(160deg,#1b2b47,#0d131d);border:1px solid #23314a;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+.brand-text h1{font-size:17px;font-weight:650;line-height:1.25;letter-spacing:.2px}
+.brand-sub{font-size:10.5px;color:var(--muted);margin-top:2px;white-space:nowrap}
+.bar-badges{margin-left:auto;display:flex;gap:6px;flex:none}
+.badge{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;
+  border:1px solid var(--line);background:var(--card-2);color:var(--dim);
+  font-size:10.5px;line-height:1.5;white-space:nowrap;
+}
+.badge.live{color:var(--ok);border-color:rgba(22,199,132,.34);background:rgba(22,199,132,.1)}
+.badge.live::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px rgba(22,199,132,.16)}
+.badge.hit{color:var(--hit);border-color:rgba(255,84,104,.34);background:rgba(255,84,104,.1)}
+
+.appnav{
+  display:flex;gap:2px;margin-top:11px;padding:3px;
+  background:var(--bg-soft);border:1px solid var(--line-soft);border-radius:13px;
+}
+.nav-btn{
+  flex:1;text-align:center;padding:8px 0;border:1px solid transparent;border-radius:10px;
+  font-size:13px;line-height:1.2;color:var(--dim);background:transparent;white-space:nowrap;
+  transition:color .15s,background .15s;
+}
+.nav-btn.on{
+  color:#f4f8ff;font-weight:600;
+  background:linear-gradient(180deg,#202a39,#171f2b);
+  border-color:rgba(255,255,255,.07);
+  box-shadow:0 2px 8px -4px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* ---------- 数据条 ---------- */
+.panel-top{padding:12px 16px 0;position:relative;z-index:1}
+.stats{display:flex;flex-wrap:wrap;gap:5px 14px;align-items:baseline}
+.stat{display:flex;align-items:baseline;gap:5px}
+.stat i{font-style:normal;font-size:10.5px;color:var(--muted)}
+.stat b{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--fg)}
+.stat b.hl{color:var(--hit)}
+.stat b.ok{color:var(--ok)}
+.stat b.warn{color:var(--warn)}
+.bar-meta{margin-top:6px;font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+.bar-meta b{color:var(--dim);font-weight:500}
+
+.warnbar{
+  margin:10px 16px 0;padding:10px 12px;border-radius:var(--radius-sm);
+  border:1px solid rgba(255,176,32,.28);background:rgba(255,176,32,.08);
+  color:#e7c27e;font-size:11.5px;line-height:1.7;
+}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px 0}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;
+  border:1px solid var(--line);background:var(--card-2);color:var(--dim);
+  font-size:11px;line-height:1.5;
+}
+.chip.hot{color:#ffb3bd;border-color:rgba(255,84,104,.3);background:rgba(255,84,104,.1)}
+.chip.ice{color:#9ae6c4;border-color:rgba(22,199,132,.3);background:rgba(22,199,132,.1)}
+.chip.dim{color:var(--muted)}
+.chip b{font-family:var(--mono)}
+
+/* ---------- 布局 ---------- */
+main{position:relative;z-index:1;padding:12px 12px 8px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.card{
+  background:var(--card);border:1px solid var(--line-soft);border-radius:var(--radius);
+  padding:16px;min-width:0;
+}
+.card h2{
+  display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600;margin:0 0 2px;flex-wrap:wrap;
+}
+.card h2::before{
+  content:"";width:3px;height:14px;border-radius:2px;flex:none;
+  background:linear-gradient(180deg,var(--accent),rgba(78,140,255,.35));
+}
+.tick{font-size:11px;line-height:1.65;color:var(--muted);font-weight:400}
+.sub{
+  margin:14px 0 8px;font-size:11.5px;color:var(--dim);
+  display:flex;align-items:center;gap:6px;
+}
+.sub::before{content:"";width:3px;height:3px;border-radius:50%;background:var(--muted);flex:none}
+.subhead{
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  margin:16px 0 8px;padding-top:14px;border-top:1px solid var(--line-soft);
+  font-size:13px;font-weight:600;color:var(--fg);
+}
+.empty{
+  padding:22px 12px;text-align:center;font-size:11.5px;line-height:1.8;color:var(--muted);
+}
+.err{font-size:11px;color:var(--hit);margin-top:8px;line-height:1.6}
+
+/* ---------- 时间线 / 事件 ---------- */
+.event{
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  padding:10px 2px;border-bottom:1px solid var(--line-soft);
+  font-size:12px;
+}
+.event:last-child{border-bottom:none}
+.event .time{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:38px}
+.event .nm{font-size:13px;font-weight:650;color:var(--fg)}
+.event .nm.hl{color:var(--hit)}
+.event .nm.dp{color:var(--accent-2)}
+.event .up{color:var(--up)}
+.event .dp{color:var(--accent-2)}
+
+/* ---------- 表格 ---------- */
+.tbl{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl table{width:max-content;min-width:100%}
+.sfpanel td.nm{white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+th{
+  position:sticky;top:0;z-index:1;text-align:right;font-weight:500;font-size:10.5px;
+  color:var(--muted);padding:8px 8px;white-space:nowrap;
+  background:#10161f;border-bottom:1px solid var(--line);font-family:var(--font);
+}
+th:first-child{text-align:left}
+td{
+  padding:8px;text-align:right;white-space:nowrap;color:var(--fg);
+  border-bottom:1px solid var(--line-soft);
+}
+td:first-child{text-align:left}
+td.nm{font-family:var(--font);color:var(--dim);text-align:left;white-space:normal}
+td.sc{color:var(--accent-2);font-weight:600}
+td.rr{font-family:var(--font);color:var(--muted);font-size:11px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+tr:last-child td{border-bottom:none}
+tbody tr:active td{background:var(--card-3)}
+.up{color:var(--up)}
+.down{color:var(--down)}
+td.empty{text-align:center;color:var(--muted);font-family:var(--font)}
+
+/* 候选表：手机端转卡片 */
+@media (max-width:679px){
+  .tbl{overflow:visible}
+  table.cand{display:block}
+  table.cand thead{display:none}
+  table.cand tbody{display:grid;gap:8px}
+  table.cand tr{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;
+    column-gap:10px;row-gap:3px;align-items:center;
+    padding:12px 14px;border-radius:14px;background:var(--card-2);
+    border:1px solid var(--line-soft);
   }
-  @media (max-width: 680px){
-    body{padding:10px 14px 18px; overflow-x:hidden}
-    h1{font-size:16px}
-    .meta{font-size:11px; line-height:1.55}
-    .badge{font-size:11px; padding:2px 8px}
-    .chips{gap:6px}
-    .chip{font-size:10.5px; padding:2px 8px}
-    .card{padding:10px}
-    h2{font-size:13px}
-    .tbl{max-height:none; overflow:visible}
-    table.cand{display:block}
-    table.cand thead{display:none}
-    table.cand tbody{display:block}
-    table.cand tr{display:block; margin:0 0 10px; padding:10px 12px;
-      border:1px solid var(--line); border-radius:10px; background:#121826}
-    table.cand tr.hit-row{border-color:rgba(255,77,106,.55); background:rgba(255,77,106,.08)}
-    table.cand td{display:flex; justify-content:space-between; align-items:center;
-      gap:12px; padding:3px 0; border:0; text-align:right; font-size:12.5px}
-    table.cand td::before{content:attr(data-label); color:var(--dim); font-size:11px;
-      white-space:nowrap; flex:0 0 auto}
-    table.cand td.rr{max-width:none; white-space:normal; overflow:visible; text-overflow:clip}
-    /* 手机卡片只保留 4 项：代码/名称/评分/状态，其余点击弹窗看 */
-    table.cand td:not([data-label="时间"]):not([data-label="代码"]):not([data-label="名称"]):not([data-label="评分"]):not([data-label="状态"]){display:none}
-    .event{gap:6px}
-    .event .time{min-width:64px}
-    footer{font-size:10.5px}
-    .warnbar{font-size:11.5px}
-    /* 右上角是安卓原生 ⚙ 设置按钮（44dp+6dp），统一留白避免遮挡 */
-    .bar{padding-right:52px}
-    .appnav{margin-top:8px}
+  table.cand tr:active{border-color:#33507f}
+  table.cand tr.hit-row{border-color:rgba(255,84,104,.35);background:rgba(255,84,104,.06)}
+  table.cand td{border:none;padding:0;white-space:nowrap;word-break:keep-all}
+  table.cand td[data-label="名称"]{grid-column:1;grid-row:1;text-align:left;font:650 15px/1.3 var(--font);color:var(--fg)}
+  table.cand td[data-label="代码"]{grid-column:1;grid-row:2;text-align:left;font:11px/1.4 var(--mono);color:var(--muted);letter-spacing:.4px}
+  table.cand td[data-label="时间"]{grid-column:1;grid-row:3;text-align:left;font:11px/1.4 var(--mono);color:var(--muted)}
+  table.cand td[data-label="评分"]{
+    grid-column:2;grid-row:1;text-align:right;font:700 18px/1.2 var(--mono);color:var(--accent-2);
   }
-  /* ---------- 候选详情弹窗 ---------- */
-  #cand tbody tr{cursor:pointer}
-  .modal-mask{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex;
-    align-items:center; justify-content:center; z-index:1000; padding:16px}
-  .modal{width:min(92vw,420px); max-height:82vh; overflow:auto; background:var(--card);
-    border:1px solid var(--line); border-radius:12px; padding:12px 14px}
-  .modal-head{display:flex; align-items:center; justify-content:space-between;
-    margin-bottom:8px; font-weight:700; color:#fff; font-size:15px}
-  .modal-close{background:none; border:0; color:var(--dim); font-size:18px; cursor:pointer; padding:0 4px}
-  .m-row{display:flex; justify-content:space-between; gap:12px; padding:5px 0;
-    border-bottom:1px dashed #1c2230; font-size:12.5px}
-  .m-row .k{color:var(--dim); flex:0 0 auto}
-  .m-row .v{text-align:right; word-break:break-all}
-  .m-row:last-child{border-bottom:0}
+  table.cand td[data-label="状态"]{grid-column:2;grid-row:2;text-align:right;font-size:11.5px;min-width:max-content}
+  table.cand td[data-label="状态"],
+  table.cand td[data-label="状态"] *{white-space:nowrap}
+  table.cand td[data-label="开盘涨幅"]{grid-column:1;grid-row:3;text-align:left;font-size:11.5px}
+  table.cand td[data-label="现涨幅"]{grid-column:2;grid-row:3;text-align:right;font-size:11.5px}
+  table.cand td[data-label="开盘涨幅"]::before,
+  table.cand td[data-label="现涨幅"]::before{font-size:10px;opacity:.62;font-family:var(--font);margin-right:3px}
+  table.cand td[data-label="开盘涨幅"]::before{content:"开盘"}
+  table.cand td[data-label="现涨幅"]::before{content:"现"}
+  table.cand td[data-label="成色"],
+  table.cand td[data-label="题材"],
+  table.cand td[data-label="T-1涨幅"],
+  table.cand td[data-label="T-1额(亿)"],
+  table.cand td[data-label="量比"],
+  table.cand td[data-label="今日开盘"],
+  table.cand td[data-label="最新价"]{display:none}
+}
+
+/* ---------- 资金矩阵 ---------- */
+.sfbtn{
+  padding:4px 10px;border-radius:9px;border:1px solid var(--line);
+  background:var(--card-2);color:var(--dim);font-size:11.5px;margin-left:auto;
+}
+.sfbtn:active{color:var(--fg);border-color:#33507f}
+.sftabs{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;margin:10px 0 12px;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.sftabs::-webkit-scrollbar{display:none}
+.sftab{
+  flex:0 0 auto;padding:6px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--card-2);color:var(--dim);font-size:11.5px;white-space:nowrap;
+}
+.sftab.on{color:var(--accent-2);border-color:rgba(78,140,255,.45);background:var(--accent-weak);font-weight:600}
+.cols2{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.sfpanel table{width:100%}
+.qbox{
+  padding:12px 13px;border:1px solid var(--line-soft);border-radius:var(--radius-sm);background:var(--card-2);
+}
+.qbox h4{font-size:12.5px;margin-bottom:4px}
+.qsub{font-size:11px;line-height:1.6;color:var(--muted);margin-bottom:8px}
+
+/* 横条图 */
+.bars{display:grid;gap:7px}
+.bar-row{display:grid;grid-template-columns:88px minmax(0,1fr) 62px;gap:8px;align-items:center}
+.bar-name{font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{position:relative;height:7px;border-radius:999px;background:#1b2432;overflow:hidden}
+.bar-fill{position:absolute;top:0;height:100%;border-radius:999px}
+.bar-fill.pos{background:linear-gradient(90deg,rgba(255,84,104,.55),rgba(255,84,104,.95))}
+.bar-fill.neg{background:linear-gradient(90deg,rgba(22,199,132,.95),rgba(22,199,132,.55))}
+.bar-zero{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#2b3646}
+.bar-thr{position:absolute;top:-3px;bottom:-3px;width:1px;border-left:1px dashed rgba(255,176,32,.75)}
+.bar-val{font-family:var(--mono);font-size:11px;text-align:right}
+.bar-val.pos{color:var(--hit)}
+.bar-val.neg{color:var(--ok)}
+
+/* 标签 */
+.tag{
+  display:inline-block;padding:1px 7px;border-radius:7px;border:1px solid var(--line);
+  background:var(--card-3);color:var(--dim);font-size:10.5px;line-height:1.7;
+}
+.tag.lhb{color:var(--warn);border-color:rgba(255,176,32,.3)}
+.tag.org{color:var(--accent-2);border-color:rgba(78,140,255,.3)}
+.tag.up{color:var(--hit);border-color:rgba(255,84,104,.3)}
+.res{font-size:10.5px;color:var(--accent-2)}
+
+/* ---------- 弹窗（手机端底部抽屉） ---------- */
+.modal-mask{
+  position:fixed;inset:0;z-index:80;background:rgba(4,7,12,.72);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.modal{
+  width:100%;max-width:520px;max-height:86vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));
+  box-shadow:0 -20px 48px -24px rgba(0,0,0,.95);
+}
+.modal-head{
+  display:flex;align-items:center;gap:10px;padding-bottom:12px;margin-bottom:6px;
+  border-bottom:1px solid var(--line-soft);font-size:15px;font-weight:650;
+}
+.modal-close{
+  margin-left:auto;width:28px;height:28px;border-radius:9px;border:1px solid var(--line);
+  background:var(--card-2);color:var(--dim);font-size:13px;line-height:1;
+}
+.m-row{display:flex;align-items:baseline;gap:12px;padding:8px 2px;border-bottom:1px solid var(--line-soft);font-size:12.5px}
+.m-row:last-child{border-bottom:none}
+.m-row .k{color:var(--muted);flex:none;min-width:88px}
+.m-row .v{margin-left:auto;text-align:right;font-family:var(--mono);color:var(--fg);white-space:normal}
+
+footer{
+  padding:16px 16px calc(24px + env(safe-area-inset-bottom));
+  font-size:11px;line-height:1.85;color:var(--muted);
+  border-top:1px solid var(--line-soft);margin-top:4px;
+}
+
+/* 命中闪烁 */
+@keyframes flashBorder{
+  0%{box-shadow:0 0 0 0 rgba(255,84,104,.35)}
+  100%{box-shadow:0 0 0 8px rgba(255,84,104,0)}
+}
+.card.flash{animation:flashBorder .95s ease-out 1}
+
+/* ---------- 桌面 ---------- */
+@media (min-width:680px){
+  .appnav{max-width:380px}
+  .bar{padding:14px 24px 12px}
+  .panel-top{padding:14px 24px 0}
+  .chips{padding:12px 24px 0}
+  .warnbar{margin:12px 24px 0}
+  main{padding:16px 24px 8px;max-width:1280px;margin:0 auto}
+  .cols2{grid-template-columns:minmax(0,1fr)}
+  .sfquad{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .card{padding:20px 22px}
+  .modal{border-radius:18px;margin:auto;max-height:80vh}
+  .modal-mask{align-items:center}
+  .event{font-size:12.5px;padding:11px 2px}
+  table.cand{font-size:11.5px}
+  table.cand th,table.cand td{padding:8px 5px}
+  table.cand th{font-size:10px}
+}
+@media (min-width:1280px){
+  .cols{grid-template-columns:minmax(0,1.15fr) minmax(0,2fr);align-items:start}
+  .cols2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sfquad{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style>
 </head>
 <body>
-  <div class="bar">
-    <h1>大A小散</h1>
-    <span class="pagetag">妖股低吸雷达</span>
-    <span class="badge" id="phase">-</span>
-    <span class="badge" id="src">-</span>
-    <span class="meta">T <b id="t0">-</b>｜T-1 <b id="t1">-</b>｜T-2 <b id="t2">-</b>｜候选 <b id="pool">-</b>｜低开 <b class="hl" id="hits">-</b>｜深水 <b id="wd">-</b>｜承接 <b style="color:var(--ok)" id="wc">-</b>｜走弱 <b style="color:var(--warn)" id="wb">-</b></span>
-    <span class="meta">更新 <b id="upts">-</b>（<span id="intv">30</span>s） 轮次 <span id="cyc">-</span></span>
+  <header class="bar">
+    <div class="bar-top">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="22" height="22"><path d="M10 46l11-13 9 8 12-21 12 10" fill="none" stroke="#4e8cff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="30" r="3.4" fill="#7fb0ff"/></svg>
+        </span>
+        <div class="brand-text">
+          <h1>大A小散</h1>
+          <p class="brand-sub">妖股低吸雷达</p>
+        </div>
+      </div>
+      <div class="bar-badges">
+        <span class="badge" id="phase">-</span>
+        <span class="badge" id="src">-</span>
+      </div>
+    </div>
+    <nav class="appnav" aria-label="主导航">
+      <a class="nav-btn" href="/">个股分析</a>
+      <a class="nav-btn on" href="/radar">妖股雷达</a>
+    </nav>
+  </header>
+
+  <div class="panel-top">
+    <div class="stats">
+      <div class="stat"><i>T</i><b id="t0">-</b></div>
+      <div class="stat"><i>T-1</i><b id="t1">-</b></div>
+      <div class="stat"><i>T-2</i><b id="t2">-</b></div>
+      <div class="stat"><i>候选</i><b id="pool">-</b></div>
+      <div class="stat"><i>低开命中</i><b class="hl" id="hits">-</b></div>
+      <div class="stat"><i>深水</i><b id="wd">-</b></div>
+      <div class="stat"><i>承接</i><b class="ok" id="wc">-</b></div>
+      <div class="stat"><i>走弱</i><b class="warn" id="wb">-</b></div>
+    </div>
+    <div class="bar-meta">更新 <b id="upts">-</b> · 每 <b id="intv">30</b>s · 第 <b id="cyc">-</b> 轮</div>
   </div>
-  <nav class="appnav">
-    <a class="nav-btn" href="/">个股分析</a>
-    <a class="nav-btn on" href="/radar">妖股雷达</a>
-  </nav>
+
   <div class="warnbar" id="warnbar" style="display:none">
-    ⚠ 本地行情数据未就绪（缺 T-1 日线）：正在自动重试同步，页面保持在线，同步完成后自动恢复扫描。
+    本地行情数据未就绪（缺 T-1 日线）：正在自动重试同步，页面保持在线，同步完成后自动恢复扫描。
   </div>
+
   <div class="chips">
-    <span class="chip">① T-1涨停或&gt;8%</span><span class="chip">② T-1缩量</span>
-    <span class="chip">③ 30日新高</span><span class="chip">④ T-1成交额≥5亿</span>
-    <span class="chip">⑤ T日低开5%~8%</span><span class="chip dim">剔除 ST / 北交所</span>
+    <span class="chip">① T-1 涨停或 &gt;8%</span><span class="chip">② T-1 缩量</span>
+    <span class="chip">③ 30 日新高</span><span class="chip">④ T-1 成交额 ≥ 5 亿</span>
+    <span class="chip">⑤ T 日低开 5%~8%</span><span class="chip dim">剔除 ST / 北交所</span>
     <span class="chip" id="senti" style="display:none"></span>
   </div>
 
-  <div class="cols">
-    <div class="card" id="hitcard">
-      <h2>⚡ 低开命中时间线 <span class="tick">(T日低开5%~8%)</span></h2>
-      <div id="timeline"><div class="empty">暂无命中</div></div>
-      <div class="tick" style="margin-top:10px;color:#fff">🔄 承接/走弱动态 <span class="tick">(承接=收复开盘价；走弱=较开盘再跌3%或逼近昨收-9%)</span></div>
-      <div id="evs"></div>
-      <div class="tick" style="margin-top:10px;color:#fff">💧 深水低吸命中 <span class="tick">(T日低开7~10%，比主栏低开更深，可单独跟踪)</span></div>
-      <div id="deeps"></div>
-      <div class="err" id="errs"></div>
-    </div>
+  <main>
+    <div class="cols">
+      <div class="card" id="hitcard">
+        <h2>低开命中时间线 <span class="tick">T 日低开 5%~8%</span></h2>
+        <div id="timeline"><div class="empty">暂无命中</div></div>
 
-    <div class="card">
-      <h2 id="candTitle">📋 候选池 <span class="tick">(已通过 T-1 条件，实时显示 T 日开盘/现价；悬停题材看涨停原因)</span></h2>
-      <div class="tbl">
-      <table class="cand">
-        <thead><tr>
-          <th>代码</th><th>名称</th><th>评分</th><th>成色</th><th>题材</th>
-          <th>T-1涨幅</th><th>T-1额(亿)</th><th>量比</th>
-          <th>今日开盘</th><th>开盘涨幅</th><th>最新价</th><th>现涨幅</th><th>状态</th>
-        </tr></thead>
-        <tbody id="cand"></tbody>
-      </table>
+        <div class="subhead">承接 / 走弱动态 <span class="tick">承接 = 收复开盘价；走弱 = 较开盘再跌 3% 或逼近昨收 −9%</span></div>
+        <div id="evs"></div>
+
+        <div class="subhead">深水低吸命中 <span class="tick">T 日低开 7~10%，比主栏更深，可单独跟踪</span></div>
+        <div id="deeps"></div>
+        <div class="err" id="errs"></div>
       </div>
-    </div>
-  </div>
 
-  <div class="sf" id="sfcard" style="display:none">
-    <div class="card">
-      <h2>🌊 板块资金矩阵 <span class="tick" id="sfmeta"></span>
-        <button class="sfbtn" id="sftoggle">展开 ▾</button></h2>
-      <!-- 模式 A：精简摘要条（始终可见，一眼看清结论） -->
-      <div class="chips" id="sfchips"></div>
-
-      <div id="sfbody" style="display:none">
-        <!-- 模式 D：Tab 分页 -->
-        <div class="sftabs" id="sftabs">
-          <button class="sftab on" data-t="list">📋 名单</button>
-          <button class="sftab" data-t="chart">📊 柱状图</button>
-          <button class="sftab" data-t="quad">🎯 资金共振</button>
-          <button class="sftab" data-t="pen">🔎 成分股穿透</button>
-          <button class="sftab" data-t="emo">🌡️ 情绪题材</button>
-        </div>
-
-        <div class="sfpanel" id="sfp-list">
-          <div class="cols2">
-            <div>
-              <div class="sub">🟥 资金悄悄铺垫（放量 + 涨幅温和 + 位置不高）</div>
-              <table><thead><tr><th>板块</th><th>量比</th><th>5日%</th><th>10日%</th><th>20日%</th>
-                <th>5日均额亿</th><th>龙虎榜净额</th></tr></thead>
-                <tbody id="sfambush"></tbody></table>
-            </div>
-            <div>
-              <div class="sub">🟩 资金流出警示（放量下跌 / 高位急跌退潮 / 高位滞涨）</div>
-              <table><thead><tr><th>板块</th><th>量比</th><th>5日%</th><th>10日%</th><th>20日%</th>
-                <th>5日均额亿</th><th>龙虎榜净额</th></tr></thead>
-                <tbody id="sfoutflow"></tbody></table>
-            </div>
-          </div>
-          <div class="cols2" style="margin-top:12px">
-            <div>
-              <div class="sub">💰 龙虎榜概念资金 · 净买入 TOP（近 <span id="sflhbdays">6</span> 个交易日）</div>
-              <table><thead><tr><th>概念</th><th>净买入</th><th>机构净额</th><th>上榜</th></tr></thead>
-                <tbody id="sfinflow"></tbody></table>
-            </div>
-            <div>
-              <div class="sub">📉 龙虎榜概念资金 · 净卖出 TOP</div>
-              <table><thead><tr><th>概念</th><th>净卖出</th><th>机构净额</th><th>上榜</th></tr></thead>
-                <tbody id="sfoutflow2"></tbody></table>
-            </div>
-          </div>
-        </div>
-
-        <!-- 模式 C：资金共振四象限 -->
-        <!-- 模式 E：CSS 柱状图 -->
-        <div class="sfpanel" id="sfp-chart" style="display:none">
-          <div class="cols2">
-            <div>
-              <div class="sub">💰 龙虎榜概念资金 · 净买入（右／红）vs 净卖出（左／绿），亿元</div>
-              <div id="sfchartFlow"></div>
-            </div>
-            <div>
-              <div class="sub">📊 板块量比（近5日均额/近20日均额）· 橙色虚线 = 潜伏阈值 <span id="sfThrVal">1.08</span></div>
-              <div id="sfchartVol"></div>
-            </div>
-          </div>
-          <div class="sub" style="margin-top:12px">📉 板块 5 日涨跌幅对比（潜伏 vs 流出，%）</div>
-          <div id="sfchartMov"></div>
-        </div>
-
-        <div class="sfpanel" id="sfp-quad" style="display:none">
-          <div class="sub">🎯 龙虎榜真实资金 × 板块量价 —— 只有上过龙虎榜的板块才有量资金数据</div>
-          <div class="sfquad">
-            <div class="qbox"><h4 id="sfq1h">🟥 共振流入</h4><div class="qsub" id="sfq1s"></div>
-              <table><thead><tr><th>板块</th><th>龙虎榜净额</th><th>机构</th><th>5日%</th><th>量比</th><th>上榜</th></tr></thead>
-              <tbody id="sfq1"></tbody></table></div>
-            <div class="qbox"><h4 id="sfq2h">⏳ 资金先行</h4><div class="qsub" id="sfq2s"></div>
-              <table><thead><tr><th>板块</th><th>龙虎榜净额</th><th>机构</th><th>5日%</th><th>量比</th><th>上榜</th></tr></thead>
-              <tbody id="sfq2"></tbody></table></div>
-            <div class="qbox"><h4 id="sfq3h">⚠ 上涨派发</h4><div class="qsub" id="sfq3s"></div>
-              <table><thead><tr><th>板块</th><th>龙虎榜净额</th><th>机构</th><th>5日%</th><th>量比</th><th>上榜</th></tr></thead>
-              <tbody id="sfq3"></tbody></table></div>
-            <div class="qbox"><h4 id="sfq4h">🟩 资金撤离</h4><div class="qsub" id="sfq4s"></div>
-              <table><thead><tr><th>板块</th><th>龙虎榜净额</th><th>机构</th><th>5日%</th><th>量比</th><th>上榜</th></tr></thead>
-              <tbody id="sfq4"></tbody></table></div>
-          </div>
-          <div class="sub" id="sfqnote"></div>
-        </div>
-
-        <div class="sfpanel" id="sfp-pen" style="display:none"><div id="sfpen"></div></div>
-
-        <div class="sfpanel" id="sfp-emo" style="display:none">
-          <div class="sub">🌡️ 情绪与题材（涨停/炸板/跌停、涨停原因、封单额、连板天梯）</div>
-          <div id="sfemo"></div>
+      <div class="card">
+        <h2 id="candTitle">候选池 <span class="tick">已通过 T-1 条件，实时显示 T 日开盘 / 现价；点击卡片看全部指标</span></h2>
+        <div class="tbl">
+        <table class="cand">
+          <thead><tr>
+            <th>代码</th><th>名称</th><th>评分</th><th>成色</th><th>题材</th>
+            <th>T-1涨幅</th><th>T-1额(亿)</th><th>量比</th>
+            <th>今日开盘</th><th>开盘涨幅</th><th>最新价</th><th>现涨幅</th><th>状态</th>
+          </tr></thead>
+          <tbody id="cand"></tbody>
+        </table>
         </div>
       </div>
     </div>
-  </div>
 
-  <footer>数据源：同花顺(主) → 东财 → 腾讯 → 网易(辅)；评分=连板/缩量/封板时间/成交额加权（仅排序参考）。
+    <div class="sf" id="sfcard" style="display:none">
+      <div class="card">
+        <h2>板块资金矩阵 <span class="tick" id="sfmeta"></span>
+          <button class="sfbtn" id="sftoggle">展开 ▾</button></h2>
+        <div class="chips" id="sfchips" style="padding:0"></div>
+
+        <div id="sfbody" style="display:none">
+          <div class="sftabs" id="sftabs">
+            <button class="sftab on" data-t="list">名单</button>
+            <button class="sftab" data-t="chart">柱状图</button>
+            <button class="sftab" data-t="quad">资金共振</button>
+            <button class="sftab" data-t="pen">成分股穿透</button>
+            <button class="sftab" data-t="emo">情绪题材</button>
+          </div>
+
+          <div class="sfpanel" id="sfp-list">
+            <div class="cols2">
+              <div>
+                <div class="sub">资金悄悄铺垫（放量 + 涨幅温和 + 位置不高）</div>
+                <div class="tbl"><table><thead><tr><th>板块</th><th>量比</th><th>5日%</th><th>10日%</th><th>20日%</th>
+                  <th>5日均额亿</th><th>龙虎榜净额</th></tr></thead>
+                  <tbody id="sfambush"></tbody></table></div>
+              </div>
+              <div>
+                <div class="sub">资金流出警示（放量下跌 / 高位急跌退潮 / 高位滞涨）</div>
+                <div class="tbl"><table><thead><tr><th>板块</th><th>量比</th><th>5日%</th><th>10日%</th><th>20日%</th>
+                  <th>5日均额亿</th><th>龙虎榜净额</th></tr></thead>
+                  <tbody id="sfoutflow"></tbody></table></div>
+              </div>
+            </div>
+            <div class="cols2" style="margin-top:12px">
+              <div>
+                <div class="sub">龙虎榜概念资金 · 净买入 TOP（近 <span id="sflhbdays">6</span> 个交易日）</div>
+                <div class="tbl"><table><thead><tr><th>概念</th><th>净买入</th><th>机构净额</th><th>上榜</th></tr></thead>
+                  <tbody id="sfinflow"></tbody></table></div>
+              </div>
+              <div>
+                <div class="sub">龙虎榜概念资金 · 净卖出 TOP</div>
+                <div class="tbl"><table><thead><tr><th>概念</th><th>净卖出</th><th>机构净额</th><th>上榜</th></tr></thead>
+                  <tbody id="sfoutflow2"></tbody></table></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sfpanel" id="sfp-chart" style="display:none">
+            <div class="cols2">
+              <div>
+                <div class="sub">龙虎榜概念资金 · 净买入（右 / 红）vs 净卖出（左 / 绿），亿元</div>
+                <div id="sfchartFlow"></div>
+              </div>
+              <div>
+                <div class="sub">板块量比（近 5 日均额 / 近 20 日均额）· 橙色虚线 = 潜伏阈值 <span id="sfThrVal">1.08</span></div>
+                <div id="sfchartVol"></div>
+              </div>
+            </div>
+            <div class="sub" style="margin-top:14px">板块 5 日涨跌幅对比（潜伏 vs 流出，%）</div>
+            <div id="sfchartMov"></div>
+          </div>
+
+          <div class="sfpanel" id="sfp-quad" style="display:none">
+            <div class="sub">龙虎榜真实资金 × 板块量价 —— 只有上过龙虎榜的板块才有量资金数据</div>
+            <div class="sfquad">
+              <div class="qbox"><h4 id="sfq1h">共振流入</h4><div class="qsub" id="sfq1s"></div>
+                <div class="tbl"><table><thead><tr><th>板块</th><th>龙虎榜净额</th><th>机构</th><th>5日%</th><th>量比</th><th>上榜</th></tr></thead>
+                  <tbody id="sfq1"></tbody></table></div></div>
+              <div class="qbox"><h4 id="sfq2h">资金先行</h4><div class="qsub" id="sfq2s"></div>
+                <div class="tbl"><table><thead><tr><th>板块</th><th>龙虎榜净额</th><th>机构</th><th>5日%</th><th>量比</th><th>上榜</th></tr></thead>
+                  <tbody id="sfq2"></tbody></table></div></div>
+              <div class="qbox"><h4 id="sfq3h">上涨派发</h4><div class="qsub" id="sfq3s"></div>
+                <div class="tbl"><table><thead><tr><th>板块</th><th>龙虎榜净额</th><th>机构</th><th>5日%</th><th>量比</th><th>上榜</th></tr></thead>
+                  <tbody id="sfq3"></tbody></table></div></div>
+              <div class="qbox"><h4 id="sfq4h">资金撤离</h4><div class="qsub" id="sfq4s"></div>
+                <div class="tbl"><table><thead><tr><th>板块</th><th>龙虎榜净额</th><th>机构</th><th>5日%</th><th>量比</th><th>上榜</th></tr></thead>
+                  <tbody id="sfq4"></tbody></table></div></div>
+            </div>
+            <div class="sub" id="sfqnote"></div>
+          </div>
+
+          <div class="sfpanel" id="sfp-pen" style="display:none"><div id="sfpen"></div></div>
+
+          <div class="sfpanel" id="sfp-emo" style="display:none">
+            <div class="sub">情绪与题材（涨停 / 炸板 / 跌停、涨停原因、封单额、连板天梯）</div>
+            <div id="sfemo"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>数据源：同花顺（主）→ 东财 → 腾讯 → 网易（辅）；评分 = 连板 / 缩量 / 封板时间 / 成交额加权（仅排序参考）。
     本看板仅供技术研究与复盘，不构成投资建议；数据可能有延迟，实盘请以券商终端为准。</footer>
 
-<script>
+  <script>
 const $=s=>document.querySelector(s);
 let soundOn=true, seenHits=new Set(), flashTimer=null;
 function beep(){ if(!soundOn) return; try{
@@ -325,8 +514,8 @@ function _pct(v){ return (v===null||v===undefined)?"-":((v>=0?"+":"")+Number(v).
 function showCand(code){
   const c=CAND[code]; if(!c) return;
   const zp=c.zone||"";
-  const zoneTxt = zp==="main"?"★低开(5~8%)" : zp==="deep"?"💧深水(7~10%)" : "未命中";
-  const sigTxt = c.sig==="confirm"?"承接✓" : c.sig==="broken"?"走弱⚠" : (c.hit?"★低开":"-");
+  const zoneTxt = zp==="main"?"★低开(5~8%)" : zp==="deep"?"深水(7~10%)" : "未命中";
+  const sigTxt = c.sig==="confirm"?"承接" : c.sig==="broken"?"走弱" : (c.hit?"★低开":"-");
   const rows=[
     ["代码", esc(c.thscode)],
     ["名称", esc(c.name)],
@@ -411,10 +600,10 @@ function renderSectorFlow(sf){
   const nmList=(arr,n=4)=>arr.slice(0,n).map(m=>esc(m.name)+`(${sfNum(m.vol_ratio,2)})`).join("、")||"无";
   // 模式 A：精简摘要条 —— 一行看清「潜伏 / 流出 / 真实资金共振 / 情绪」
   $("#sfchips").innerHTML=
-    `<span class="chip hot" title="${esc((sf.ambush||[]).map(m=>m.name).join('、'))}">🟥 潜伏 ${stt.ambush??0} · ${nmList(sf.ambush||[],4)}</span>`
-   +`<span class="chip ice" title="${esc((sf.outflow||[]).map(m=>m.name).join('、'))}">🟩 流出 ${stt.outflow??0} · ${nmList(sf.outflow||[],4)}</span>`
-   +`<span class="chip ${q1.length?'hot':''}" title="龙虎榜净买入 + 板块上涨：真实资金与价格同向">🎯 共振流入 ${q1.length}${q1.length?' · '+esc(q1.slice(0,3).map(m=>m.name).join('、')):''}</span>`
-   +`<span class="chip ${q2.length?'hot':''}" title="龙虎榜净买入 + 板块未涨：钱先进、价未动，潜伏首选">⏳ 资金先行 ${q2.length}${q2.length?' · '+esc(q2.slice(0,3).map(m=>m.name).join('、')):''}</span>`
+    `<span class="chip hot" title="${esc((sf.ambush||[]).map(m=>m.name).join('、'))}">潜伏 ${stt.ambush??0} · ${nmList(sf.ambush||[],4)}</span>`
+   +`<span class="chip ice" title="${esc((sf.outflow||[]).map(m=>m.name).join('、'))}">流出 ${stt.outflow??0} · ${nmList(sf.outflow||[],4)}</span>`
+   +`<span class="chip ${q1.length?'hot':''}" title="龙虎榜净买入 + 板块上涨：真实资金与价格同向">共振流入 ${q1.length}${q1.length?' · '+esc(q1.slice(0,3).map(m=>m.name).join('、')):''}</span>`
+   +`<span class="chip ${q2.length?'hot':''}" title="龙虎榜净买入 + 板块未涨：钱先进、价未动，潜伏首选">资金先行 ${q2.length}${q2.length?' · '+esc(q2.slice(0,3).map(m=>m.name).join('、')):''}</span>`
    +`<span class="chip">涨停 <b style="color:var(--hit)">${esc(em.limit_up??"-")}</b></span>`
    +`<span class="chip">炸板 <b style="color:var(--warn)">${esc(em.limit_break??"-")}</b>${br!=null?` (${br}%)`:""}</span>`
    +`<span class="chip">跌停 <b style="color:var(--ok)">${esc(em.limit_down??"-")}</b></span>`
@@ -475,7 +664,7 @@ function renderSectorFlow(sf){
       <tr><td class="nm">涨停原因 TOP</td><td colspan="2">${(em.top_reasons||[]).slice(0,12).map(([k,v])=>`<span class="tag">${esc(k)}(${v})</span>`).join("")||'<span class="tick">无</span>'}</td></tr>
       <tr><td class="nm">封单额 TOP</td><td colspan="2">${(em.seal_top||[]).slice(0,8).map(s=>`<span class="tag lhb">${esc(s.name)} ${sfNum((s.seal_money||0)/1e8,2)}亿${s.continue?` ${esc(s.continue)}`:""}</span>`).join("")||'<span class="tick">无</span>'}</td></tr>
      </tbody></table>
-     <div class="sub">🪜 连板天梯（近 10 日各档家数 2/3/4/5/6/7+）</div>
+     <div class="sub">连板天梯（近 10 日各档家数 2/3/4/5/6/7+）</div>
      <table><thead><tr><th>日期</th><th>2板</th><th>3板</th><th>4板</th><th>5板</th><th>6板</th><th>7板+</th></tr></thead>
       <tbody>${ladderRows}</tbody></table>`;
   const amb=(sf.ambush||[]).slice(0,12), of=(sf.outflow||[]).slice(0,12);
@@ -498,7 +687,7 @@ function renderSectorFlow(sf){
         <td class="${(s.ret5??0)>=0?'up':'down'}">${sfNum(s.ret5,2,true)}</td>
         <td class="${(s.ret20??0)>=0?'up':'down'}">${sfNum(s.ret20,2,true)}</td>
         <td title="${esc(s.limit_reason||"")}">${tags||"-"}</td></tr>`;}).join("");
-    return `<div class="sub">🔎 ${esc(nm)} · 成分股资金信号（本地全市场日线 × 龙虎榜/涨停标签）</div>
+    return `<div class="sub">${esc(nm)} · 成分股资金信号（本地全市场日线 × 龙虎榜/涨停标签）</div>
       <table><thead><tr><th>名称</th><th>评分</th><th>现价</th><th>量比</th><th>5日%</th><th>20日%</th><th>标签</th></tr></thead>
       <tbody>${rows}</tbody></table>`;}).join(""):"";
 }
@@ -576,7 +765,7 @@ async function refresh(){
     const evs=(st.events||[]).filter(e=>e.type==="confirm"||e.type==="broken").slice(0,12);
     $("#evs").innerHTML=evs.length?evs.map(e=>
       `<div class="event"><span class="time">${esc(String(e.ts||"").slice(11))}</span>
-       <span style="color:${e.type==='confirm'?'var(--ok)':'var(--warn)'};font-weight:700">${e.type==='confirm'?'✅承接':'⚠走弱'}</span>
+       <span style="color:${e.type==='confirm'?'var(--ok)':'var(--warn)'};font-weight:700">${e.type==='confirm'?'承接':'走弱'}</span>
        <span class="nm">${esc(e.name)}</span><span class="tick">${esc(e.thscode)}</span>
        <span class="tick">现价 ${fmt(e.last_price,2)} (${fmt(e.last_pct,2)}%)</span></div>`).join("")
       :`<div class="empty" style="padding:8px 0">暂无（盘中出现再展示）</div>`;
@@ -599,14 +788,14 @@ async function refresh(){
     const titleEl=$("#candTitle");
     if(titleEl){
       titleEl.innerHTML = rmode
-        ? `📌 盘中命中复盘 · ${esc(rv.date||'')} <span class="tick">（共 ${rv.hits.length} 只 · 点卡片看详情）</span>`
-        : `📋 候选池 <span class="tick">(已通过 T-1 条件，实时显示 T 日开盘/现价；悬停题材看涨停原因)</span>`;
+        ? `盘中命中复盘 · ${esc(rv.date||'')} <span class="tick">（共 ${rv.hits.length} 只 · 点卡片看详情）</span>`
+        : `候选池 <span class="tick">(已通过 T-1 条件，实时显示 T 日开盘/现价；悬停题材看涨停原因)</span>`;
     }
     if(rmode){
       $("#cand").innerHTML=rv.hits.map(h=>{
         CAND[h.thscode]=h;
-        const zt = h.zone==='main' ? '★低开' : (h.zone==='deep' ? '💧深水' : '-');
-        const sx = h.sig==='confirm' ? '承接✓' : (h.sig==='broken' ? '走弱⚠' : zt);
+        const zt = h.zone==='main' ? '★低开' : (h.zone==='deep' ? '深水' : '-');
+        const sx = h.sig==='confirm' ? '承接' : (h.sig==='broken' ? '走弱' : zt);
         const cls = (h.zone==='main'||h.zone==='deep') ? 'hit-row' : '';
         return `<tr class="${cls}" data-code="${esc(h.thscode)}">
           <td data-label="时间">${esc(String(h.hit_time||'').slice(11)||'-')}</td>
@@ -628,10 +817,10 @@ async function refresh(){
         (zp==="main"?`<span class="hl">${fmt(c.open_pct,2)}%</span>`:
          zp==="deep"?`<span class="dp">${fmt(c.open_pct,2)}%</span>`:
          `<span class="${(c.open_pct??0)>0?"up":"down"}">${fmt(c.open_pct,2)}%</span>`);
-      const sigCell = c.sig==="confirm"?`<b style='color:var(--ok)'>承接✓</b>`:
-        (c.sig==="broken"?`<b style='color:var(--warn)'>走弱⚠</b>`:
+      const sigCell = c.sig==="confirm"?`<b style='color:var(--ok)'>承接</b>`:
+        (c.sig==="broken"?`<b style='color:var(--warn)'>走弱</b>`:
          (zp==="main"?`<b style='color:var(--hit)'>★低开</b>`:
-          zp==="deep"?`<b class="dp">💧深水</b>`:`-`));
+          zp==="deep"?`<b class="dp">深水</b>`:`-`));
       const lastCls=(c.last_pct??0)>=0?"up":"down";
       const colorTag=c.continue_text?esc(c.continue_text):(c.t1_limitup?"<b style='color:var(--hit)'>涨停</b>":"大涨");
       const seal=c.seal_money_yi!=null?`<span class="tick">封${fmt(c.seal_money_yi,1)}亿</span>`:"";
