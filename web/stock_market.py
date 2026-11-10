@@ -299,9 +299,14 @@ def dashboard() -> Dict[str, Any]:
     import datetime as dt
     date = sd.last_trade_date()
     warnings: List[str] = []
-    if sd.MEMBERSHIP.stats()["status"] != "ready":
+    mstat = sd.MEMBERSHIP.stats()
+    if mstat["status"] != "ready":
         sd.MEMBERSHIP.ensure_async()
         warnings.append("行业/概念成分索引构建中，板块领涨股与成分股可能暂缺。")
+    elif mstat.get("date") and date and mstat["date"] != date:
+        # 缓存是往日的：先照旧展示，同时后台补建当日索引
+        sd.MEMBERSHIP.refresh_async()
+        warnings.append("板块成分索引来自 %s，正在后台更新到今日，板块领涨股可能稍旧。" % mstat["date"])
     return {
         "ok": True,
         "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),

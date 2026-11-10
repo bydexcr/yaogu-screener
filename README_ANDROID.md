@@ -43,6 +43,23 @@ android/                          # Android 工程（Gradle + Chaquopy）
 
 改前端后执行：`python web/build_stock_frontend.py`，并把 `web/*` 同步到 `android/app/src/main/python/web/`。
 
+### web/ 有三份副本，必须保持一致（实际踩过的坑）
+
+| 位置 | 用途 | 放什么 |
+|---|---|---|
+| `web/` | **唯一源**，改代码只改这里 | 全部文件 |
+| `android/app/src/main/python/web/` | 打进 APK | 只放运行时文件：`__init__.py`、`dashboard.py`、`stock_{data,analysis,market}.py`、`stock.{html,css,js}`、`stock_assets.py`、`index.html`、`index_html.py`（不要放 `_part_*.js`、`build_*.py`、`dev_server.py` 这类开发工具） |
+| 电脑常驻版的 `yaogu_screener/web/` | PC 上 `screener.py` 实际加载的那份 | 与 `web/` 相同 |
+
+> 只同步了仓库、忘记同步电脑那份时，PC 看板还是旧代码，典型症状是
+> **「市场全景加载失败」或板块一直空白**（旧代码缺 `web/__init__.py` 与模块加载兜底）。
+> 改完代码把三份对齐后，PC 端要 `stop_screener.ps1` → `start_screener.ps1` 重启才生效。
+
+### 出问题先看 `/api/diag`
+
+`GET /api/diag` 返回环境自检：Python 版本、服务目录、已加载模块、板块索引状态与缓存目录、Key 是否可取到、后台任务日志、最近错误。
+页面加载失败时，错误提示旁边有「诊断」按钮，一点就能看到这些信息。
+
 ## 使用方法（3 步）
 
 1. **建一个 GitHub 仓库**，把整个 `yaogu_screener` 目录（含 `android/`、`.github/`、`mobile/`、`strategy.py`、`web/`）推上去；

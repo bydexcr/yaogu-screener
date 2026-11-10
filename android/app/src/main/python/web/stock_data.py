@@ -13,6 +13,7 @@ import os
 import sys
 import threading
 import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -26,6 +27,21 @@ for _p in (str(ROOT), str(ROOT / "mobile")):
 import rest_client as rc  # noqa: E402
 
 MAX_WORKERS = int(os.environ.get("STOCK_MAX_WORKERS", "6"))
+
+# 后台任务（板块索引构建等）的进展与失败记录，/api/diag 可查
+DIAG_LOG: deque = deque(maxlen=40)
+
+
+def _note(msg: str, tb: bool = False) -> None:
+    line = "[%s] %s" % (time.strftime("%H:%M:%S"), msg)
+    if tb:
+        import traceback
+        line += "\n" + traceback.format_exc()
+    DIAG_LOG.append(line)
+    try:
+        print("[stock] " + line, flush=True)
+    except Exception:
+        pass
 
 # ------------------------------------------------------------------ 缓存
 _cache: Dict[str, tuple] = {}
@@ -510,7 +526,9 @@ class MembershipIndex:
         self._name_map: Optional[Dict[str, str]] = None
         self._status = "idle"
         self._progress = {"done": 0, "total": 0}
-        self._lock = threading.Lock()
+        # 必须是可重入锁：ensure() 会在持锁状态下间接走到也会加锁的 _load_latest()，
+        # 用普通 Lock 会自锁死（表现为索引状态永远停在 idle、板块一直为空）。
+        self._lock = threading.RLock()
         self._date: Optional[str] = None
 
     # ---- 持久化
@@ -557,8 +575,11 @@ class MembershipIndex:
 
     # ---- 构建
     def build(self, max_workers: int = 6) -> Dict[str, Any]:
+        with self._lock:
+            if self._status == "running":      # 已有任务在跑，避免重复打 700+ 次请求
+                return self.stats()
+            self._status = "running"
         today = _today()
-        self._status = "running"
         catalogs: List[tuple] = []
         for tag, bucket in (("industry", "industries"), ("cn_concept", "concepts")):
             for it in index_catalog(tag):
@@ -588,27 +609,29 @@ class MembershipIndex:
         return {"industries": len(forward["industries"]), "concepts": len(forward["concepts"])}
 
     def ensure(self) -> Dict[str, Any]:
-        """同步确保索引可用：当日缓存 → 历史缓存（后台补当日）→ 现建"""
+        """同步确保索引可用：当日缓存 → 历史缓存（后台补当日）→ 现建。"""
         if self._status == "ready" and self._date == _today():
             return self.stats()
-        with self._lock:
-            if self._status == "ready" and self._date == _today():
-                return self.stats()
-            if self._status == "running":
-                return self.stats()
-            today_file = self._file(_today())
-            if today_file.exists():
-                try:
-                    payload = json.loads(today_file.read_text(encoding="utf-8"))
+        if self._status == "running":
+            return self.stats()
+        # 注意：这里不要在持锁状态下调用 _load_latest()（它内部也会加锁）
+        today_file = self._file(_today())
+        if today_file.exists():
+            try:
+                payload = json.loads(today_file.read_text(encoding="utf-8"))
+                with self._lock:
                     self._forward = {"industries": payload["industries"], "concepts": payload["concepts"]}
                     self._date = payload.get("date") or _today()
                     self._status = "ready"
                     self._rebuild_reverse()
-                    return self.stats()
-                except Exception:
-                    pass
-            if self._load_latest():
+                _note("索引已载入当日缓存 %s" % today_file.name)
                 return self.stats()
+            except Exception as e:  # noqa: BLE001
+                _note("索引当日缓存读取失败 %s: %s" % (today_file.name, e))
+        if self._load_latest():
+            _note("索引已载入历史缓存 date=%s" % self._date)
+            return self.stats()
+        _note("索引无缓存，开始现建（约 1~2 分钟，700+ 次请求）")
         self.build()
         return self.stats()
 
@@ -617,13 +640,25 @@ class MembershipIndex:
             return
         threading.Thread(target=self._safe_build, daemon=True).start()
 
+    def refresh_async(self):
+        """缓存来自往日时，后台把索引更新到当日（不阻塞请求）。"""
+        if self._status == "running":
+            return
+        if self._status == "ready" and self._date == _today():
+            return
+        threading.Thread(target=self._safe_build, daemon=True).start()
+
     def _safe_build(self):
         try:
+            _note("索引后台任务开始（status=%s date=%s）" % (self._status, self._date))
             self._load_latest()
             if self._date != _today():
+                _note("索引后台任务：重建当日索引")
                 self.build()
-        except Exception as e:  # noqa: BLE001
-            print(f"[stock] 板块索引构建失败: {e}")
+            _note("索引后台任务完成（status=%s date=%s）" % (self._status, self._date))
+        except BaseException as e:  # noqa: BLE001
+            # 必须捕获 BaseException，否则后台线程会静默死掉，界面只表现为「板块一直空白」
+            _note("索引后台任务失败：%s: %s" % (type(e).__name__, e), tb=True)
 
     # ---- 查询
     def get(self, thscode: str) -> Dict[str, list]:

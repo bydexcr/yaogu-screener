@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import threading
+from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Callable
@@ -21,6 +22,8 @@ from urllib.parse import parse_qs, urlparse
 
 WEB_DIR = Path(__file__).resolve().parent
 _STATE_MARK = "window.__DSH_STATE__ = null;"
+# 最近的服务端错误（/api/diag 可查；App 端没有控制台时也能自救）
+_ERRORS: deque = deque(maxlen=20)
 
 
 # ------------------------------------------------------------------ 模块加载
@@ -107,13 +110,84 @@ def api_search(q: str) -> dict:
     return {"ok": True, "items": [i for i in items if i.get("assetType") == "a-share"]}
 
 
+def api_diag() -> dict:
+    """环境自检：页面上「诊断」按钮调用，PC/手机出问题时不看日志也能定位。"""
+    import os
+    import platform
+    import sys
+
+    _ensure_paths()
+    out: dict = {
+        "ok": True,
+        "python": sys.version.split()[0],
+        "platform": platform.platform(),
+        "cwd": os.getcwd(),
+        "webDir": str(WEB_DIR),
+        "sysPath": sys.path[:8],
+        "threads": threading.active_count(),
+    }
+    mods = {}
+    for name in ("rest_client", "stock_data", "web.stock_data",
+                 "stock_market", "web.stock_market", "stock_analysis", "web.stock_analysis"):
+        m = sys.modules.get(name)
+        if m is not None:
+            mods[name] = {"file": getattr(m, "__file__", None), "id": id(m)}
+    out["modules"] = mods
+
+    groups = {}
+    for name in ("stock_data", "web.stock_data"):
+        m = sys.modules.get(name)
+        if m is not None and hasattr(m, "MEMBERSHIP"):
+            mi = m.MEMBERSHIP
+            try:
+                files = sorted(p.name for p in mi.cache_dir.glob("stock_membership_*.json"))
+            except Exception:  # noqa: BLE001
+                files = []
+            groups[name] = {"stats": mi.stats(), "cacheDir": str(mi.cache_dir), "files": files}
+    out["membership"] = groups
+
+    env = {}
+    for k, v in os.environ.items():
+        if k.startswith(("YAOGU_", "HITHINK_", "STOCK_")):
+            env[k] = ("<已设置 长度%d>" % len(v)) if ("KEY" in k or "TOKEN" in k) else v
+    out["env"] = env
+    try:
+        rc = _load_stock_module("rest_client")
+        k = rc.api_key()
+        env["apiKey"] = "<可取到 长度%d>" % len(k)
+    except BaseException as e:  # noqa: BLE001
+        env["apiKey"] = "%s: %s" % (type(e).__name__, e)
+    try:
+        sdm = _load_stock_module("stock_data")
+        out["stockDiagLog"] = list(getattr(sdm, "DIAG_LOG", []))
+    except BaseException as e:  # noqa: BLE001
+        out["stockDiagLog"] = ["读取失败: %s: %s" % (type(e).__name__, e)]
+    out["lastErrors"] = list(_ERRORS)
+    return out
+
+
 class _Handler(BaseHTTPRequestHandler):
     get_state: Callable[[], str] = lambda: "{}"
     index_html = ""
     token: str = ""            # 非空时要求 ?token=xxx（局域网访问保护）
 
     def log_message(self, *a):
+        # 正常请求日志噪声太大，不打印
         pass
+
+    def log_error(self, fmt, *args):
+        """把异常信息留给 stderr（PC 端落到 run_*.log.err，App 端进 logcat），便于排查。"""
+        try:
+            import sys as _sys
+            import traceback
+            if not _sys.stderr:
+                return
+            _sys.stderr.write("[看板] " + (fmt % args) + "\n")
+            if _sys.exc_info()[0] is not None:
+                traceback.print_exc(file=_sys.stderr)
+            _sys.stderr.flush()
+        except Exception:
+            pass
 
     def _authed(self) -> bool:
         if not self.token:
@@ -144,6 +218,9 @@ class _Handler(BaseHTTPRequestHandler):
 
         if path.startswith("/api/state"):
             self._send(200, self.get_state().encode("utf-8"), "application/json; charset=utf-8")
+            return
+        if path.startswith("/api/diag"):
+            self._json(self._safe(api_diag))
             return
         if path.startswith("/api/market/sector"):
             code = (qs.get("code", [""])[0] or "").strip()
@@ -188,8 +265,13 @@ class _Handler(BaseHTTPRequestHandler):
         try:
             return fn(*args)
         except LookupError as e:
+            _ERRORS.append({"at": __import__("time").strftime("%H:%M:%S"), "error": str(e)})
             return {"ok": False, "error": str(e)}
-        except Exception as e:  # noqa: BLE001
+        except BaseException as e:  # noqa: BLE001
+            # 必须是 BaseException：SystemExit 之类若不拦住，请求线程会静默退出，
+            # 前端只能看到「空响应」，错误原因完全丢失。
+            _ERRORS.append({"at": __import__("time").strftime("%H:%M:%S"),
+                            "error": f"{type(e).__name__}: {e}"})
             return {"ok": False, "error": f"{type(e).__name__}: {e}"}
 
     def do_OPTIONS(self):  # noqa: N802

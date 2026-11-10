@@ -24,23 +24,65 @@ class ApiError(RuntimeError):
         self.code = code
 
 
+class ApiKeyMissing(RuntimeError):
+    """缺少 API Key。
+
+    注意：这里必须是可被 `except Exception` 捕获的普通异常，不能是 SystemExit ——
+    否则看板的请求线程会静默退出，浏览器只看到「空响应」，排查成本极高。
+    """
+
+
+def _read_text(path: str) -> str:
+    try:
+        if path and os.path.exists(path):
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
+                return f.read().strip()
+    except OSError:
+        pass
+    return ""
+
+
+def _key_from_env_file(path: str) -> str:
+    """从 hithink-finance CLI 的 credentials.env 里取 Key（PC 端复用已保存的凭据）。"""
+    txt = _read_text(path)
+    if not txt:
+        return ""
+    for line in txt.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, _, val = line.partition("=")
+        if name.strip() in ("HITHINK_FINANCE_API_KEY", "HITHINK_API_KEY", "API_KEY"):
+            val = val.strip().strip('"').strip("'")
+            if val:
+                return val
+    return ""
+
+
 def api_key() -> str:
     # 安卓 App 模式：优先读 App 私有目录的 key 文件（设置页可随时改，下一轮请求即生效）
-    kf = (os.environ.get("YAOGU_KEY_FILE") or "").strip()
-    if kf and os.path.exists(kf):
-        with open(kf, "r", encoding="utf-8") as f:
-            k = f.read().strip()
-            if k:
-                return k
+    k = _read_text((os.environ.get("YAOGU_KEY_FILE") or "").strip())
+    if k:
+        return k
     k = (os.environ.get("HITHINK_FINANCE_API_KEY") or "").strip()
     if k:
         return k
-    p = os.path.expanduser("~/.config/yaogu/key")
-    if os.path.exists(p):
-        with open(p, "r", encoding="utf-8") as f:
-            return f.read().strip()
-    raise SystemExit("缺少 API Key：请先设置环境变量 HITHINK_FINANCE_API_KEY，"
-                     "或把 Key 写入 ~/.config/yaogu/key")
+    k = _read_text(os.path.expanduser("~/.config/yaogu/key"))
+    if k:
+        return k
+    # PC 端兜底：复用 hithink-finance CLI 已保存的凭据，电脑版看板免配置
+    home = os.path.expanduser("~")
+    cands = []
+    if os.environ.get("APPDATA"):
+        cands.append(os.path.join(os.environ["APPDATA"], "hithink-finance", "credentials.env"))
+    cands += [os.path.join(home, ".config", "hithink-finance", "credentials.env"),
+              os.path.join(home, ".hithink-finance", "credentials.env")]
+    for env_file in cands:
+        k = _key_from_env_file(env_file)
+        if k:
+            return k
+    raise ApiKeyMissing("缺少 API Key：请先设置环境变量 HITHINK_FINANCE_API_KEY，"
+                        "或把 Key 写入 ~/.config/yaogu/key（App 内在设置页填写）")
 
 
 def _get(path: str, params: Optional[dict] = None, retries: int = 3, timeout: int = 20) -> dict:

@@ -67,7 +67,7 @@
     try {
       const res = await fetch(`/api/stock?q=${encodeURIComponent(query)}`);
       const json = await res.json();
-      if (!json.ok) throw new Error(json.error || '分析失败');
+      if (!json.ok) throw new Error(errText(json, '分析失败'));
       if (state.query !== query) return;
       state.data = json;
       state.loading = false;

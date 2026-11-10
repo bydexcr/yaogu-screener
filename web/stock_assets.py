@@ -1045,6 +1045,14 @@ JS = r"""(function () {
   const $ = (s) => document.querySelector(s);
   const el = (id) => document.getElementById(id);
 
+  // 后端错误既可能是字符串（Python 版），也可能是 { message }（Node 版），统一取出可读文本
+  function errText(payload, fallback) {
+    const e = payload && payload.error;
+    if (!e) return fallback;
+    if (typeof e === 'string') return e;
+    return e.message || e.detail || fallback;
+  }
+
   const state = {
     data: null,
     market: null,
@@ -2170,7 +2178,7 @@ JS = r"""(function () {
     try {
       const res = await fetch(`/api/market/sector?code=${encodeURIComponent(code)}`);
       const d = await res.json();
-      if (!d.ok) throw new Error(d.error ? d.error.message : '加载失败');
+      if (!d.ok) throw new Error(errText(d, '加载失败'));
       box.innerHTML = `
         <div class="mk-detail-head">
           <h4>${esc(d.name || code)}</h4>
@@ -2328,10 +2336,10 @@ JS = r"""(function () {
       const params = new URLSearchParams({ kind: state.sectorKind, sortBy: state.sectorSort });
       const res = await fetch(`/api/market?${params.toString()}`);
       const d = await res.json();
-      if (!d.ok) throw new Error(d.error ? d.error.message : '市场数据加载失败');
+      if (!d.ok) throw new Error(errText(d, '市场数据加载失败'));
       renderMarket(d);
     } catch (err) {
-      if (el('mkHero')) el('mkHero').innerHTML = `<div class="mk-skeleton">市场全景加载失败：${esc(err.message)}<div style="margin-top:12px"><button class="btn-ghost" id="mkRetry">重试</button></div></div>`;
+      if (el('mkHero')) el('mkHero').innerHTML = `<div class="mk-skeleton">市场全景加载失败：${esc(err.message)}<div style="margin-top:12px"><button class="btn-ghost" id="mkRetry">重试</button> <button class="btn-ghost" id="mkDiag">诊断</button></div><pre id="mkDiagOut" hidden style="margin-top:10px;white-space:pre-wrap;font-size:11px;line-height:1.6;opacity:.85"></pre></div>`;
     } finally {
       marketLoading = false;
     }
@@ -2417,7 +2425,7 @@ JS = r"""(function () {
     try {
       const res = await fetch(`/api/stock?q=${encodeURIComponent(query)}`);
       const json = await res.json();
-      if (!json.ok) throw new Error(json.error || '分析失败');
+      if (!json.ok) throw new Error(errText(json, '分析失败'));
       if (state.query !== query) return;
       state.data = json;
       state.loading = false;
@@ -2544,13 +2552,43 @@ JS = r"""(function () {
   }
 
   /* ------------------------------ 启动 ------------------------------ */
+  // 加载失败时点「诊断」：把服务端自检信息摊开，免得只看到一句「加载失败」
+  async function showDiag() {
+    const box = el('mkDiagOut');
+    if (!box) return;
+    box.hidden = false;
+    box.textContent = '正在读取诊断信息…';
+    try {
+      const res = await fetch('/api/diag');
+      const d = await res.json();
+      const mem = d.membership || {};
+      const lines = [];
+      lines.push(`Python ${d.python || '?'} · ${d.platform || ''}`);
+      lines.push(`服务目录：${d.webDir || '?'}`);
+      Object.keys(mem).forEach((k) => {
+        const s = (mem[k] && mem[k].stats) || {};
+        lines.push(`板块索引[${k}]：${s.status} · 日期 ${s.date || '-'} · 行业 ${s.industries || 0} / 概念 ${s.concepts || 0}`);
+        lines.push(`  缓存目录：${mem[k].cacheDir || '-'}（文件 ${(mem[k].files || []).length} 个）`);
+      });
+      const envs = Object.keys(d.env || {}).map((k) => `${k}=${d.env[k]}`);
+      if (envs.length) lines.push('环境：' + envs.join(' · '));
+      if ((d.stockDiagLog || []).length) lines.push('后台任务：', ...d.stockDiagLog.slice(-6));
+      if ((d.lastErrors || []).length) lines.push('最近错误：' + JSON.stringify(d.lastErrors.slice(-5)));
+      box.textContent = lines.join('\n');
+    } catch (err) {
+      box.textContent = '诊断接口也失败了：' + err.message;
+    }
+  }
+
   function init() {
     bindSearch();
     bindExpandAll();
     $("#backBtn").addEventListener('click', showMarket);
-    // 市场全景加载失败时注入的「重试」按钮（事件委托）
+    // 市场全景加载失败时注入的「重试」/「诊断」按钮（事件委托）
     document.addEventListener('click', (e) => {
-      if (e.target && e.target.id === 'mkRetry') loadMarket(true);
+      const id = e.target && e.target.id;
+      if (id === 'mkRetry') loadMarket(true);
+      if (id === 'mkDiag') showDiag();
     });
     window.addEventListener('popstate', (ev) => {
       const q = (ev.state && ev.state.q) || new URLSearchParams(location.search).get('q');
