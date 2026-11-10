@@ -2,172 +2,358 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0e1117">
+    android:background="@color/bg"
+    android:fillViewport="true"
+    android:scrollbars="none">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="18dp"
+        android:paddingTop="22dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="28dp">
+
+        <!-- 标题 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="设置"
+            android:textColor="@color/text"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.01" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="同花顺 API Key"
-            android:textColor="#dbe2ef" />
+            android:layout_marginTop="4dp"
+            android:text="改完直接热生效，下一轮轮询自动生效，无需重启服务"
+            android:textColor="@color/text_mute"
+            android:textSize="11sp" />
 
-        <EditText
-            android:id="@+id/et_key"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="sk-..."
-            android:inputType="text"
-            android:textColor="#dbe2ef"
-            android:textColorHint="#8b96ad" />
-
-        <Button
-            android:id="@+id/btn_clear_key"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="清空 Key" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="轮询间隔（秒，≥5）"
-            android:textColor="#dbe2ef" />
-
-        <EditText
-            android:id="@+id/et_interval"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:textColor="#dbe2ef" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="低开主栏区间（下 / 上，单位 %）"
-            android:textColor="#dbe2ef" />
-
+        <!-- 卡片：API Key -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="账号"
+                android:textColor="@color/text"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="同花顺 API KEY"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
 
             <EditText
-                android:id="@+id/et_main_lo"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:inputType="numberSigned|numberDecimal"
-                android:textColor="#dbe2ef" />
+                android:id="@+id/et_key"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_field"
+                android:hint="sk-..."
+                android:importantForAutofill="no"
+                android:inputType="textNoSuggestions"
+                android:maxLines="1"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textColor="@color/text"
+                android:textColorHint="@color/text_mute"
+                android:textSize="13sp" />
 
-            <EditText
-                android:id="@+id/et_main_hi"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:inputType="numberSigned|numberDecimal"
-                android:textColor="#dbe2ef" />
+                android:layout_marginTop="10dp"
+                android:gravity="end"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_clear_key"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:background="@drawable/bg_btn_ghost"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:stateListAnimator="@null"
+                    android:text="清空 Key"
+                    android:textColor="@color/text_dim"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="深水副栏区间（下 / 上，单位 %）"
-            android:textColor="#dbe2ef" />
-
+        <!-- 卡片：扫描参数 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="扫描参数"
+                android:textColor="@color/text"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="轮询间隔（秒，≥5）"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
 
             <EditText
-                android:id="@+id/et_deep_lo"
-                android:layout_width="0dp"
+                android:id="@+id/et_interval"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_field"
+                android:inputType="number"
+                android:maxLines="1"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textColor="@color/text"
+                android:textColorHint="@color/text_mute"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:inputType="numberSigned|numberDecimal"
-                android:textColor="#dbe2ef" />
+                android:layout_marginTop="12dp"
+                android:text="低开主栏区间（% · 下限 / 上限）"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/et_main_lo"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_field"
+                    android:inputType="numberSigned|numberDecimal"
+                    android:maxLines="1"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="@color/text"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:text="~"
+                    android:textColor="@color/text_mute"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/et_main_hi"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_field"
+                    android:inputType="numberSigned|numberDecimal"
+                    android:maxLines="1"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="@color/text"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="深水副栏区间（% · 下限 / 上限）"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/et_deep_lo"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_field"
+                    android:inputType="numberSigned|numberDecimal"
+                    android:maxLines="1"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="@color/text"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:text="~"
+                    android:textColor="@color/text_mute"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/et_deep_hi"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_field"
+                    android:inputType="numberSigned|numberDecimal"
+                    android:maxLines="1"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="@color/text"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="T-1 涨幅阈值（%）"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
 
             <EditText
-                android:id="@+id/et_deep_hi"
-                android:layout_width="0dp"
+                android:id="@+id/et_min_gain"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_field"
+                android:inputType="numberDecimal"
+                android:maxLines="1"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textColor="@color/text"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:inputType="numberSigned|numberDecimal"
-                android:textColor="#dbe2ef" />
+                android:layout_marginTop="12dp"
+                android:text="T-1 成交额阈值（亿元）"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
+
+            <EditText
+                android:id="@+id/et_min_amount"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_field"
+                android:inputType="numberDecimal"
+                android:maxLines="1"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textColor="@color/text"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="30 日新高天数"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
+
+            <EditText
+                android:id="@+id/et_ndays"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_field"
+                android:inputType="number"
+                android:maxLines="1"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textColor="@color/text"
+                android:textSize="13sp" />
         </LinearLayout>
 
-        <TextView
+        <!-- 卡片：过滤与提醒 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="T-1 涨幅阈值（%）"
-            android:textColor="#dbe2ef" />
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <EditText
-            android:id="@+id/et_min_gain"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal"
-            android:textColor="#dbe2ef" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="过滤与提醒"
+                android:textColor="@color/text"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="T-1 成交额阈值（亿元）"
-            android:textColor="#dbe2ef" />
+            <CheckBox
+                android:id="@+id/cb_st"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:buttonTint="@color/accent"
+                android:text="剔除 ST"
+                android:textColor="@color/text"
+                android:textSize="13sp" />
 
-        <EditText
-            android:id="@+id/et_min_amount"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal"
-            android:textColor="#dbe2ef" />
+            <CheckBox
+                android:id="@+id/cb_bj"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:buttonTint="@color/accent"
+                android:text="剔除北交所"
+                android:textColor="@color/text"
+                android:textSize="13sp" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="30 日新高天数"
-            android:textColor="#dbe2ef" />
+            <Switch
+                android:id="@+id/sw_sound"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="声音提醒（命中 / 承接 / 走弱）"
+                android:textColor="@color/text"
+                android:textSize="13sp"
+                android:thumbTint="@color/accent_2"
+                android:trackTint="#334A6E" />
+        </LinearLayout>
 
-        <EditText
-            android:id="@+id/et_ndays"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:textColor="#dbe2ef" />
-
-        <CheckBox
-            android:id="@+id/cb_st"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="剔除 ST"
-            android:textColor="#dbe2ef" />
-
-        <CheckBox
-            android:id="@+id/cb_bj"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="剔除北交所"
-            android:textColor="#dbe2ef" />
-
-        <Switch
-            android:id="@+id/sw_sound"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="声音提醒（命中/承接/走弱）"
-            android:textColor="#dbe2ef" />
-
+        <!-- 操作按钮 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -175,26 +361,37 @@
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/btn_save"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="保存并热生效" />
-
-            <Button
                 android:id="@+id/btn_cancel"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="取消" />
+                android:background="@drawable/bg_btn_ghost"
+                android:stateListAnimator="@null"
+                android:text="取消"
+                android:textColor="@color/text_dim"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btn_save"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1.4"
+                android:background="@drawable/bg_btn_primary"
+                android:stateListAnimator="@null"
+                android:text="保存并热生效"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
         </LinearLayout>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="提示：修改区间/间隔无需重启服务，保存后下一轮轮询自动生效；Key 修改后下一轮请求即用新 Key。"
-            android:textColor="#8b96ad"
-            android:textSize="12sp" />
+            android:layout_marginTop="14dp"
+            android:lineSpacingExtra="4dp"
+            android:text="修改区间 / 间隔无需重启服务，保存后下一轮轮询自动生效；Key 修改后下一轮请求即用新 Key。"
+            android:textColor="@color/text_mute"
+            android:textSize="11sp" />
     </LinearLayout>
 </ScrollView>
