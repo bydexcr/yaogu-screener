@@ -1,0 +1,130 @@
+/* ============================================================
+   桌面端版式层（手机端布局一行不改）
+   900px+  ：顶部单行三段导航、宽容器、表格/卡片密度提高
+   1150px+ ：市场全景与分析结果改两栏
+   1600px+ ：市场全景三栏
+   ============================================================ */
+@media (min-width: 900px) {
+
+  /* ---------------- 顶部：一行三段（品牌 | 导航 | 搜索） ---------------- */
+  .appbar {
+    display: grid;
+    grid-template-columns: auto auto minmax(280px, 480px);
+    align-items: center;
+    justify-content: start;
+    gap: 24px;
+    padding: 12px 26px;
+  }
+  .appbar-top { padding-right: 0; }
+  .brand .logo { width: 34px; height: 34px; border-radius: 10px; }
+  .brand-text h1 { font-size: 17px; }
+  .brand-text .status-line { max-width: none; font-size: 11px; }
+  .appnav { margin-top: 0; gap: 6px; }
+  .nav-btn { flex: none; padding: 7px 20px; border-radius: 8px; font-size: 13px; }
+  .nav-btn:active { transform: none; }
+  .nav-btn:hover { border-color: #2a4a72; color: var(--text); }
+  .search-box { margin-top: 0; position: relative; width: 100%; justify-self: end; }
+  #searchInput { font-size: 14px; padding: 6px 0; }
+  .suggest { left: 0; right: 0; top: calc(100% + 8px); }
+  .suggest-item:active { background: none; }
+  .suggest-item:hover { background: #16233a; }
+
+  /* ---------------- 主体容器 ---------------- */
+  main { max-width: 1400px; margin: 0 auto; padding: 18px 26px 56px; }
+
+  /* ---------------- 卡片与文字密度 ---------------- */
+  .card { padding: 16px 18px 18px; }
+  .card > h2 { font-size: 15px; }
+  .card .sub { font-size: 12px; }
+  table { font-size: 12.5px; }
+  thead th, tbody td { padding: 8px 11px; }
+  tbody tr:hover { background: #121d2e; }
+  .fact { padding: 11px 13px; }
+  .facts { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 10px; }
+
+  .quote-card { padding: 18px 22px 16px; }
+  .qc-name { font-size: 23px; }
+  .qc-price .p { font-size: 34px; }
+  .qc-stats { grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); }
+  .qc-stat .v { font-size: 13.5px; }
+
+  .back-bar { margin-bottom: 0; }
+  .btn-ghost { flex: none; padding: 8px 18px; }
+  .btn-ghost:hover { border-color: #2a4a72; color: var(--text); }
+
+  /* 两栏区块（评分/解读、估值/资金）在平板上也能并排 */
+  .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 0; }
+  .grid-2 > .card { margin-bottom: 0; }
+
+  /* ---------------- 市场全景：内部两栏（首屏信息不挤成一条） ---------------- */
+  .mk-hero { margin-bottom: 12px; padding: 18px 20px; }
+  .mk-hero-top { margin-bottom: 14px; }
+  .mk-title { font-size: 15px; }
+  .mk-date { font-size: 11.5px; }
+  .mk-refresh { font-size: 12px; padding: 6px 12px; }
+  .mk-hero-body { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 22px; }
+  .mk-breadth .bk-num { font-size: 26px; }
+  .mk-dist { height: 122px; }
+  .mk-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mk-kpi { padding: 10px 12px; }
+  .mk-kpi .v { font-size: 15px; }
+  .mk-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .mk-stack { gap: 16px; }
+  .mk-hot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .mk-sector { padding: 11px 12px; }
+  .mk-sector:hover, .mk-item:hover { background: #16233a; }
+  .mk-foot { font-size: 11.5px; line-height: 1.8; }
+
+  /* ---------------- 加载 / 错误 ---------------- */
+  .loading { padding: 64px 20px; }
+  .error-box { padding: 80px 24px; }
+}
+
+/* ============================================================
+   1150px+：市场全景 + 分析结果 两栏
+   ============================================================ */
+@media (min-width: 1150px) {
+
+  #marketView {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  #marketView > .mk-hero,
+  #marketView > .mk-hot-grid,
+  #marketView > .mk-foot { grid-column: 1 / -1; }
+  #marketView > .card { margin-bottom: 0; }
+  .mk-hero { margin-bottom: 0; }
+  .mk-hot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  #result {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  #result > .card { margin-bottom: 0; }
+  /* 需要整行宽度的模块：宽表格 / 多图 / 矩阵 */
+  #result > #backBar,
+  #result > #quoteCard,
+  #result > #keyFacts,
+  #result > #sec-trends,
+  #result > #sec-fundamentals,
+  #result > #sec-recent5,
+  #result > #sec-peers,
+  #result > #sec-risk,
+  #result > .grid-2,
+  #result > #footer { grid-column: 1 / -1; }
+}
+
+/* ============================================================
+   1600px+：再加一栏，超宽屏塞满
+   ============================================================ */
+@media (min-width: 1600px) {
+  main { max-width: 1640px; }
+  #marketView { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #marketView > .mk-hero,
+  #marketView > .mk-hot-grid,
+  #marketView > .mk-foot { grid-column: 1 / -1; }
+}

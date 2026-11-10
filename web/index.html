@@ -180,7 +180,9 @@ td.empty{text-align:center;color:var(--muted);font-family:var(--font)}
 
 /* 候选表：手机端转卡片 */
 @media (max-width:679px){
-  .tbl{overflow:visible}
+  /* 只有候选表转卡片、不需要横向滚动；其它宽表（板块资金等）仍要 .tbl 的横向滚动，
+     否则会把整页撑宽（实测 390px 下页面宽 495px，可以左右滑动） */
+  .tbl{overflow-x:auto}
   table.cand{display:block}
   table.cand thead{display:none}
   table.cand tbody{display:grid;gap:8px}

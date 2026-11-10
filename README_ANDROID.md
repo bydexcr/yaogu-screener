@@ -43,6 +43,20 @@ android/                          # Android 工程（Gradle + Chaquopy）
 
 改前端后执行：`python web/build_stock_frontend.py`，并把 `web/*` 同步到 `android/app/src/main/python/web/`。
 
+### 桌面端 / 手机端是两套版式
+
+`web/stock.css` 末尾由 `_part_desktop.css` 追加桌面层（构建时自动拼接），按宽度切换：
+
+| 宽度 | 版式 |
+|---|---|
+| `< 900px` | 手机端：单栏、大按钮、顶部两行（标题 + 两个导航 Tab）、底部安全区留白 —— App 的 WebView 就是这个 |
+| `≥ 900px` | 顶部变**单行三段**（品牌 / 导航 Tab / 搜索框），容器最宽 1400px，表格与卡片密度提高 |
+| `≥ 1150px` | 市场全景与个股分析结果改**两栏**，宽表/多图模块（业绩趋势、近 5 日、同业对比、风险矩阵）自动跨两列 |
+| `≥ 1600px` | 市场全景**三栏**，容器最宽 1640px |
+
+妖股雷达页（`index.html`）自带 `680 / 1280` 断点，宽屏本来就是两栏，未再叠桌面层。
+另修了一个窄屏 bug：`@media (max-width:679px)` 里原先 `.tbl{overflow:visible}` 会让板块资金等宽表把**整页撑宽**（实测 390px 页面宽 495px、可左右滑），现已改回 `.tbl{overflow-x:auto}` 只在表格内滚动。
+
 ### web/ 有三份副本，必须保持一致（实际踩过的坑）
 
 | 位置 | 用途 | 放什么 |
