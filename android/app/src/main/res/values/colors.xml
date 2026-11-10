@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#0E1117</color>
+    <!-- 启动图标底色 -->
+    <color name="ic_launcher_background">#070A0F</color>
+
+    <!-- 设计令牌（与 Web 端 stock.css / index.html 同一套） -->
+    <color name="bg">#070A0F</color>
+    <color name="bg_soft">#0B1017</color>
+    <color name="panel">#0F141C</color>
+    <color name="panel_2">#141A24</color>
+    <color name="panel_3">#1A2330</color>
+    <color name="line">#232C3A</color>
+    <color name="line_soft">#181F29</color>
+    <color name="text">#EEF3FA</color>
+    <color name="text_dim">#9AA7B9</color>
+    <color name="text_mute">#657180</color>
+    <color name="accent">#4E8CFF</color>
+    <color name="accent_2">#7FB0FF</color>
+    <color name="up">#FF5468</color>
+    <color name="down">#16C784</color>
+    <color name="warn">#FFB020</color>
 </resources>

@@ -9,7 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.widget.Button
+import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import android.webkit.WebView
@@ -28,7 +28,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         web = findViewById(R.id.webview)
-        web.setBackgroundColor(Color.parseColor("#0e1117"))
+        web.setBackgroundColor(Color.parseColor("#070a0f"))
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
         web.webViewClient = object : WebViewClient() {
@@ -40,7 +40,8 @@ class MainActivity : Activity() {
                 scheduleReload()
             }
         }
-        findViewById<Button>(R.id.btn_settings).setOnClickListener {
+        // 悬浮设置按钮（ImageButton）：进入设置页
+        findViewById<View>(R.id.btn_settings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         if (Build.VERSION.SDK_INT >= 33) {

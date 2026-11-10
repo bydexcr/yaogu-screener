@@ -11,7 +11,7 @@
         android:label="大A小散"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:theme="@android:style/Theme.Material.NoActionBar"
+        android:theme="@style/Theme.Yaogu"
         android:usesCleartextTraffic="true"
         android:allowBackup="false">
 

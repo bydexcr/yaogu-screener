@@ -8,10 +8,12 @@ build_stock_frontend.py —— 生成手机端「个股分析」前端
   3. 合并 PC 版 styles.css + 手机端覆盖层（_part_mobile.css）为 web/stock.css
   4. 生成 APK 用的内嵌资源模块 web/stock_assets.py（文件缺失时 dashboard.py 回退使用）
 
-用法：python web/build_stock_frontend.py
+用法：python web/build_stock_frontend.py [--no-pc]
+      --no-pc  保留现有（已重写为 v2 设计系统）的 stock.css / stock.js，只重算 stock_assets.py
 依赖：仓库内 ../stock-analyzer（PC 版个股分析工具）存在；不存在时直接用已生成的 stock.js/stock.css
 """
 import re
+import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -64,7 +66,8 @@ def main():
     control = read(HERE / "_part_control.js")
 
     js_target = HERE / "stock.js"
-    if (PC / "app.js").exists():
+    skip_pc = "--no-pc" in sys.argv
+    if (PC / "app.js").exists() and not skip_pc:
         renders, market = extract_pc_parts(read(PC / "app.js"))
         js = "\n".join([head.rstrip(), "", renders.rstrip(), "", market.rstrip(), "", control.lstrip()])
         js_target.write_text(js, encoding="utf-8")
@@ -74,7 +77,7 @@ def main():
     else:
         js = js_target.read_text(encoding="utf-8")
         css = read(HERE / "stock.css")
-        print("[build] 未找到 PC 版源码，保留现有 stock.js / stock.css")
+        print("[build] 保留现有 stock.js / stock.css" + ("（--no-pc）" if skip_pc else "（未找到 PC 版源码）"))
 
     html = read(HERE / "stock.html")
     assets = "\n".join([
