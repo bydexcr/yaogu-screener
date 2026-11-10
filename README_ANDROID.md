@@ -93,6 +93,10 @@ android/                          # Android 工程（Gradle + Chaquopy）
 
 ### 一次性配置稳定签名（约 2 分钟）
 
+> ✅ **本仓库已配置完成**（2026-11-10）：`KEYSTORE_BASE64` / `KEYSTORE_PASSWORD` 两个 Secret 已就位，
+> 构建日志会显示「签名来源：仓库 Secret（签名稳定，可覆盖安装）」，已无 keystore 产物残留在 Actions 里。
+> keystore 备份在本地私密位置（不在仓库内）。下面步骤仅在新仓库/迁移时参考。
+
 1. 先跑一次构建：Actions → build-apk → **Run workflow**；
 2. 在该次运行页面底部下载产物 **`yaogu-keystore-keep-as-secret`**，解压得到 `keystore.jks` 与 `keystore-password.txt`
    （没配过密码时密码是构建时随机生成的，文件里就是它）；
@@ -103,8 +107,9 @@ android/                          # Android 工程（Gradle + Chaquopy）
 4. 仓库 → Settings → Secrets and variables → Actions → **New repository secret**，加两条：
    - `KEYSTORE_BASE64` = `ks.b64` 的全部内容（一长串，别带换行）；
    - `KEYSTORE_PASSWORD` = `keystore-password.txt` 里的密码；
-5. 再跑一次构建，日志里出现 `签名来源：仓库 Secret（签名稳定，可覆盖安装）`、运行摘要显示 ✅ 就成功了；
-6. **最后一次**卸载旧 App，装这次的新包。之后每次新包都是「下载 → 点安装 → 覆盖」，不用再卸载，Key 和设置都保留。
+5. 把 `keystore.jks` + 密码另存到自己的私密位置，然后**删除该次运行里的 keystore 产物**；
+6. 再跑一次构建，日志里出现 `签名来源：仓库 Secret（签名稳定，可覆盖安装）`、运行摘要显示 ✅ 就成功了；
+7. **最后一次**卸载旧 App，装这次的新包。之后每次新包都是「下载 → 点安装 → 覆盖」，不用再卸载，Key 和设置都保留。
 
 > 未配置 `KEYSTORE_BASE64` 时，每次构建会临时生成一把新钥匙 —— 那种包**装不到旧版之上**，只能卸载重装。
 > 如果先配了 `KEYSTORE_PASSWORD` 再构建，生成的 keystore 就用你设的密码，省得记随机串。
@@ -114,7 +119,8 @@ android/                          # Android 工程（Gradle + Chaquopy）
 - keystore **不要提交进仓库**（泄漏等于别人能签发"更新包"覆盖你手机上的 App）；
 - **建议把仓库设为 private**（Settings → General → 最下方 Danger Zone → Change visibility）：
   这样 Actions 日志和产物只有你能看，keystore 放在产物里也不担心；
-- 公开仓库里 `yaogu-keystore-keep-as-secret` 产物等于公开（含密码文件），配好 Secret 后请**立即删除该产物**；
+- 公开仓库里 `yaogu-keystore-keep-as-secret` 产物等于公开（含密码文件），配好 Secret 后请**立即删除该产物**
+  （本仓库在配置完成后已把历史 keystore 产物全部清掉，现只剩 APK 产物）；
 - 把 `keystore.jks` + 密码备份到自己的私密位置（换电脑/重装系统后没有它，就只能卸载重装一次）；
 - `debug` 与 `release` 两个包现在共用同一把钥匙，可以互相覆盖安装，随意切换。
 
