@@ -47,15 +47,17 @@ HTML = r"""<!DOCTYPE html>
   <section id="marketView">
     <div class="mk-hero" id="mkHero"><div class="mk-skeleton">正在加载市场全景…</div></div>
 
-    <section class="card" id="mkSectors"></section>
+    <section class="card mk-full" id="mkSectors"></section>
 
-    <section class="card" id="mkLimits"></section>
+    <div class="mk-cards" id="mkCards">
+      <section class="card" id="mkLimits"></section>
 
-    <section class="card" id="mkUpPool"></section>
+      <section class="card" id="mkUpPool"></section>
 
-    <section class="card" id="mkDownPool"></section>
+      <section class="card" id="mkDownPool"></section>
 
-    <section class="card" id="mkBreakPool"></section>
+      <section class="card" id="mkBreakPool"></section>
+    </div>
 
     <div class="mk-hot-grid" id="mkHot"></div>
 
@@ -1138,7 +1140,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   .mk-kpi .v { font-size: 15px; }
   .mk-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   .mk-stack { gap: 16px; }
-  .mk-hot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .mk-hot-grid { gap: 16px; }
   .mk-sector { padding: 11px 12px; }
   .mk-sector:hover, .mk-item:hover { background: #e6eefb; }
   .mk-foot { font-size: 11.5px; line-height: 1.8; }
@@ -1153,18 +1155,37 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
    ============================================================ */
 @media (min-width: 1150px) {
 
-  #marketView {
+  /* 市场全景排版：
+     - 热门板块占整行（内容最多，单独一行不会被别的卡片拉高）；
+     - 其余 4 张（连板梯队 / 涨停 / 跌停 / 炸板）2×2 等高网格：每行都填满，同行等高，
+       列表内部限高滚动，避免「内容少的卡片被拉出大块留白」；
+     - 热榜 4 张同样 2 列（≥1600 时 4 列一行），不会出现「3+1」尴尬空位。 */
+  #marketView { display: block; }
+  .mk-full { margin-bottom: 16px; }
+  .mk-cards {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
-    align-items: start;
+    align-items: stretch;
   }
-  #marketView > .mk-hero,
-  #marketView > .mk-hot-grid,
-  #marketView > .mk-foot { grid-column: 1 / -1; }
-  #marketView > .card { margin-bottom: 0; }
-  .mk-hero { margin-bottom: 0; }
-  .mk-hot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mk-cards > .card {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+  }
+  /* 名单类卡片限高，内容再多也不把同行卡片拉成一条缝 */
+  .mk-cards .mk-list,
+  .mk-cards .mk-tiers {
+    max-height: 264px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .mk-hot-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .mk-hero { margin-bottom: 16px; }
 
   #result {
     display: grid;
@@ -1192,10 +1213,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
    ============================================================ */
 @media (min-width: 1600px) {
   main { max-width: 1640px; }
-  #marketView { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  #marketView > .mk-hero,
-  #marketView > .mk-hot-grid,
-  #marketView > .mk-foot { grid-column: 1 / -1; }
+  .mk-hot-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 /* ============================================================
    章节序号层：个股分析页 16 个章节按文档顺序自动编号
