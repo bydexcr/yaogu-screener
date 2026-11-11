@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """由 web/build_theme_assets.py 生成：APK 内嵌的主题切换资源（勿手改）"""
 
-THEME_JS = r"""/* 主题切换（浅色 / 深色）：按钮固定在右下角，选择记在 localStorage */
+THEME_JS = r"""/* 主题切换（浅色 / 深色）：入口在「设置」面板里（桌面端顶栏 ⚙；手机端走原生设置页） */
 (function () {
   'use strict';
   var KEY = 'yaogu.theme';
@@ -21,25 +21,26 @@ THEME_JS = r"""/* 主题切换（浅色 / 深色）：按钮固定在右下角�
       l.disabled = false;
       l.media = dark ? 'all' : 'not all';
     });
-    var btn = document.getElementById('themeToggle');
-    if (btn) {
-      btn.textContent = dark ? '☀' : '☾';
-      btn.setAttribute('aria-label', dark ? '切换到浅色' : '切换到深色');
-      btn.title = dark ? '切换到浅色' : '切换到深色';
+    // 设置面板里的分段按钮同步高亮
+    var seg = document.getElementById('themeSeg');
+    if (seg) {
+      Array.prototype.forEach.call(seg.querySelectorAll('button[data-theme]'), function (b) {
+        b.classList.toggle('on', b.getAttribute('data-theme') === (dark ? DARK : LIGHT));
+      });
     }
-  }
-
-  function set(theme) {
-    try { localStorage.setItem(KEY, theme); } catch (e) { /* 隐私模式忽略 */ }
-    apply(theme);
-    // 图表配色由 CSS 变量驱动，切换后主动让页面重绘一次（个股分析页）
-    try {
-      if (window.__rerenderCharts) window.__rerenderCharts();
-    } catch (e) { /* 忽略 */ }
   }
 
   function stored() {
     try { return localStorage.getItem(KEY) || LIGHT; } catch (e) { return LIGHT; }
+  }
+
+  function set(theme) {
+    if (theme !== DARK && theme !== LIGHT) return;
+    try { localStorage.setItem(KEY, theme); } catch (e) { /* 隐私模式忽略 */ }
+    apply(theme);
+    try {
+      if (window.__rerenderCharts) window.__rerenderCharts();
+    } catch (e) { /* 忽略 */ }
   }
 
   // 支持 ?theme=dark / ?theme=light 直接指定（便于分享链接与排查）
@@ -54,26 +55,45 @@ THEME_JS = r"""/* 主题切换（浅色 / 深色）：按钮固定在右下角�
     return null;
   }
 
-  // 暴露给其它脚本
   window.__theme = { set: set, get: stored, isDark: function () { return stored() === DARK; } };
 
-  function init() {
-    if (!document.body) {
-      document.addEventListener('DOMContentLoaded', init);
-      return;
+  // ---------------- 设置面板 ----------------
+  function openSheet(open) {
+    var mask = document.getElementById('settingsMask');
+    if (!mask) return;
+    mask.hidden = !open;
+  }
+
+  function initSheet() {
+    var btn = document.getElementById('settingsBtn');
+    var mask = document.getElementById('settingsMask');
+    var close = document.getElementById('settingsClose');
+    var seg = document.getElementById('themeSeg');
+
+    if (btn) btn.addEventListener('click', function () { openSheet(true); });
+    if (close) close.addEventListener('click', function () { openSheet(false); });
+    if (mask) {
+      mask.addEventListener('click', function (e) {
+        if (e.target === mask) openSheet(false);
+      });
     }
-    var btn = document.getElementById('themeToggle');
-    if (!btn) {
-      btn = document.createElement('button');
-      btn.id = 'themeToggle';
-      btn.type = 'button';
-      btn.className = 'theme-toggle';
-      document.body.appendChild(btn);
+    if (seg) {
+      Array.prototype.forEach.call(seg.querySelectorAll('button[data-theme]'), function (b) {
+        b.addEventListener('click', function () { set(b.getAttribute('data-theme')); });
+      });
     }
-    btn.addEventListener('click', function () {
-      set(stored() === DARK ? LIGHT : DARK);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') openSheet(false);
     });
-    apply(stored());
+  }
+
+  function init() {
+    apply(fromQuery() || stored());
+    initSheet();
+    // 便于截图/排障：?sheet=1 直接打开设置面板
+    try {
+      if (new URLSearchParams(location.search).get('sheet') === '1') openSheet(true);
+    } catch (e) { /* 忽略 */ }
   }
 
   // 尽早切一次，避免深色用户看到浅色闪屏
@@ -1021,7 +1041,7 @@ tr.self-row td { background: rgba(78, 140, 255, .08) !important; }
   /* ---------------- 顶部：一行三段（品牌 | 导航 | 搜索） ---------------- */
   .appbar {
     display: grid;
-    grid-template-columns: 260px auto minmax(280px, 480px);
+    grid-template-columns: 260px auto minmax(280px, 1fr) auto;
     align-items: center;
     justify-content: start;
     gap: 24px;
@@ -1036,7 +1056,7 @@ tr.self-row td { background: rgba(78, 140, 255, .08) !important; }
   .nav-btn { flex: none; padding: 7px 20px; border-radius: 8px; font-size: 13px; }
   .nav-btn:active { transform: none; }
   .nav-btn:hover { border-color: #2a4a72; color: var(--text); }
-  .search-box { margin-top: 0; position: relative; width: 100%; justify-self: end; }
+  .search-box { margin-top: 0; position: relative; width: 100%; max-width: 560px; justify-self: end; }
   #searchInput { font-size: 14px; padding: 6px 0; }
   .suggest { left: 0; right: 0; top: calc(100% + 8px); }
   .suggest-item:active { background: none; }
@@ -1163,28 +1183,92 @@ tr.self-row td { background: rgba(78, 140, 255, .08) !important; }
   vertical-align: 2px;
 }
 
-/* ---------------- 主题切换按钮（右下角悬浮） ---------------- */
-.theme-toggle {
+/* ---------------- 设置入口（顶栏 ⚙）与设置面板 ---------------- */
+.icon-btn {
+  display: none;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+.settings-mask {
   position: fixed;
-  right: 14px;
-  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  z-index: 90;
-  width: 42px;
-  height: 42px;
+  inset: 0;
+  z-index: 200;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--text-dim);
-  font-size: 17px;
-  line-height: 1;
-  box-shadow: 0 12px 26px -16px rgba(9, 12, 18, .6);
-  cursor: pointer;
-  transition: color .15s, border-color .15s, transform .15s, background .15s;
+  padding: 24px;
+  background: rgba(9, 12, 18, .38);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
-.theme-toggle:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
-.theme-toggle:active { transform: scale(.94); }
+.settings-mask[hidden] { display: none; }
+.settings-sheet {
+  width: min(420px, 100%);
+  padding: 18px 18px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 30px 70px -40px rgba(9, 12, 18, .6);
+}
+.settings-sheet h3 { margin: 0 0 4px; font-size: 15px; }
+.settings-sheet .sub { margin: 0 0 12px; font-size: 11.5px; color: var(--text-mute); }
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--line-soft);
+}
+.settings-row .lbl { font-size: 13px; color: var(--text); }
+.settings-row .hint { margin-top: 2px; font-size: 11px; color: var(--text-mute); }
+.seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line-soft);
+}
+.seg button {
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: color .15s, background .15s, border-color .15s;
+}
+.seg button.on {
+  color: #04141c;
+  font-weight: 650;
+  background: linear-gradient(180deg, rgba(78, 140, 255, .14), rgba(78, 140, 255, .05));
+  border-color: rgba(78, 140, 255, .34);
+}
+.settings-foot { display: flex; justify-content: flex-end; margin-top: 14px; }
+@media (min-width: 900px) {
+  .icon-btn { display: grid; }
+}
+
+/* ===== 深色主题兜底：亮底深字，避免「深字压深底」看不清 ===== */
+.nav-btn.on,
+.seg button.on {
+  color: #04141c !important;
+  background: linear-gradient(135deg, #22d3ee, #61e6c9) !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 10px -6px rgba(34, 211, 238, .55) !important;
+}
 """
 
 RADAR_DARK = r"""/* 由 _probe/make_dark_theme.py 生成：深色主题（浅色 stock.css / 雷达内联样式的反向映射） */
@@ -1503,7 +1587,7 @@ footer{
 @media (min-width:900px){
   /* 顶部三段网格：品牌(260px) | 导航 Tab | 状态徽标 —— 与个股分析 / 复盘页完全一致 */
   .bar{
-    display:grid;grid-template-columns:260px auto minmax(0,1fr);
+    display:grid;grid-template-columns:260px auto minmax(0,1fr) auto;
     align-items:center;gap:24px;padding:12px 26px;min-height:76px;
   }
   .bar-top{display:contents}
@@ -1513,6 +1597,7 @@ footer{
     margin-top:0;gap:6px;padding:3px;max-width:none;
   }
   .bar-badges{grid-column:3;grid-row:1;justify-self:end;margin-left:0}
+  .icon-btn{grid-column:4;grid-row:1;justify-self:end}
   .nav-btn{flex:none;padding:7px 20px;border-radius:10px;font-size:13px}
 }
 @media (min-width:1280px){
@@ -1521,8 +1606,30 @@ footer{
   .sfquad{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
-/* ---------- 主题切换按钮 ---------- */
-.theme-toggle{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:90;width:42px;height:42px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--dim);font-size:17px;line-height:1;cursor:pointer;box-shadow:0 12px 26px -16px rgba(9, 12, 18, .6);transition:color .15s,border-color .15s,transform .15s}
-.theme-toggle:hover{color:var(--accent);border-color:var(--accent);transform:translateY(-1px)}
-.theme-toggle:active{transform:scale(.94)}
+
+/* ---------- 设置入口与设置面板 ---------- */
+.icon-btn{display:none;width:38px;height:38px;place-items:center;border-radius:10px;border:1px solid var(--line);background:var(--card-2);color:var(--dim);font-size:16px;line-height:1;cursor:pointer;transition:color .15s,border-color .15s}
+.icon-btn:hover{color:var(--accent);border-color:var(--accent)}
+.settings-mask{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px;background:rgba(9, 12, 18, .38);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.settings-mask[hidden]{display:none}
+.settings-sheet{width:min(420px,100%);padding:18px 18px 16px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 30px 70px -40px rgba(9, 12, 18, .6)}
+.settings-sheet h3{margin:0 0 4px;font-size:15px}
+.settings-sheet .sub{margin:0 0 12px;font-size:11.5px;color:var(--muted)}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0 4px;border-top:1px solid var(--line-soft)}
+.settings-row .lbl{font-size:13px;color:var(--fg)}
+.settings-row .hint{margin-top:2px;font-size:11px;color:var(--muted)}
+.seg{display:inline-flex;gap:4px;padding:3px;border-radius:10px;background:var(--bg-soft);border:1px solid var(--line-soft)}
+.seg button{padding:6px 14px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--dim);font-size:12.5px;cursor:pointer;transition:color .15s,background .15s}
+.seg button.on{color:#04141c;font-weight:650;background:linear-gradient(180deg,rgba(78, 140, 255, .14),rgba(78, 140, 255, .05));border-color:rgba(78, 140, 255, .34)}
+.settings-foot{display:flex;justify-content:flex-end;margin-top:14px}
+@media (min-width:900px){.icon-btn{display:grid}}
+
+/* ===== 深色主题兜底：亮底深字，避免「深字压深底」看不清 ===== */
+.nav-btn.on,
+.seg button.on {
+  color: #04141c !important;
+  background: linear-gradient(135deg, #22d3ee, #61e6c9) !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 10px -6px rgba(34, 211, 238, .55) !important;
+}
 """

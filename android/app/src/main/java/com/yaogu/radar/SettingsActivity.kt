@@ -44,6 +44,8 @@ class SettingsActivity : Activity() {
         val cbSt = findViewById<CheckBox>(R.id.cb_st)
         val cbBj = findViewById<CheckBox>(R.id.cb_bj)
         val swSound = findViewById<android.widget.Switch>(R.id.sw_sound)
+        val rbLight = findViewById<android.widget.RadioButton>(R.id.rb_theme_light)
+        val rbDark = findViewById<android.widget.RadioButton>(R.id.rb_theme_dark)
 
         val mainR = strat.optJSONArray("t_open_pct_range")
         val deepR = strat.optJSONArray("deep_open_pct_range")
@@ -59,6 +61,9 @@ class SettingsActivity : Activity() {
         cbSt.isChecked = cfg.optBoolean("exclude_st", true)
         cbBj.isChecked = cfg.optBoolean("exclude_bj", true)
         swSound.isChecked = (cfg.optJSONObject("notify")?.optBoolean("sound", true) ?: true)
+        val darkTheme = prefs.getString("theme", "light") == "dark"
+        rbDark.isChecked = darkTheme
+        rbLight.isChecked = !darkTheme
 
         findViewById<Button>(R.id.btn_clear_key).setOnClickListener { etKey.setText("") }
         findViewById<Button>(R.id.btn_cancel).setOnClickListener { finish() }
@@ -107,6 +112,7 @@ class SettingsActivity : Activity() {
                     File(filesDir, "key").writeText(key)
                 }
                 prefsEdit.putBoolean("sound_on", swSound.isChecked)
+                prefsEdit.putString("theme", if (rbDark.isChecked) "dark" else "light")
                 prefsEdit.putBoolean("reload_web", true).apply()
                 Toast.makeText(this, "已保存，下一轮轮询热生效", Toast.LENGTH_SHORT).show()
                 finish()

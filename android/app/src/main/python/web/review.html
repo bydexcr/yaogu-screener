@@ -36,6 +36,7 @@
     <button id="searchBtn" class="btn-primary" type="button">分析</button>
     <div class="suggest" id="suggest" hidden></div>
   </div>
+  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置">⚙</button>
 </header>
 
 <main id="main">
@@ -67,6 +68,25 @@
 </main>
 
 <script src="/review.js"></script>
+
+<div class="settings-mask" id="settingsMask" hidden>
+  <div class="settings-sheet" role="dialog" aria-label="设置">
+    <h3>设置</h3>
+    <p class="sub">偏好保存在本机浏览器，三个页面共用。</p>
+    <div class="settings-row">
+      <div>
+        <div class="lbl">界面主题</div>
+        <div class="hint">深色适合盯盘，浅色适合白天</div>
+      </div>
+      <div class="seg" id="themeSeg">
+        <button type="button" data-theme="light">浅色</button>
+        <button type="button" data-theme="dark">深色</button>
+      </div>
+    </div>
+    <div class="settings-foot"><button class="btn-ghost" id="settingsClose" type="button">关闭</button></div>
+  </div>
+</div>
+
 <script src="/theme.js"></script>
 </body>
 </html>

@@ -28,10 +28,16 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         web = findViewById(R.id.webview)
-        web.setBackgroundColor(Color.parseColor("#070a0f"))
+        val darkAtStart = getSharedPreferences("yaogu", MODE_PRIVATE).getString("theme", "light") == "dark"
+        web.setBackgroundColor(Color.parseColor(if (darkAtStart) "#070a0f" else "#f3f6fb"))
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
         web.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                applyThemeToWeb()
+            }
+
             override fun onReceivedError(
                 view: WebView?,
                 request: android.webkit.WebResourceRequest?,
@@ -50,8 +56,15 @@ class MainActivity : Activity() {
         ensureKeyThenStart()
     }
 
+    /** 把设置里的「界面主题」同步进 WebView（页面内以 localStorage 记住，三页共用） */
+    private fun applyThemeToWeb() {
+        val theme = getSharedPreferences("yaogu", MODE_PRIVATE).getString("theme", "light") ?: "light"
+        web.evaluateJavascript("window.__theme && window.__theme.set('$theme')", null)
+    }
+
     override fun onResume() {
         super.onResume()
+        applyThemeToWeb()
         if (getSharedPreferences("yaogu", MODE_PRIVATE).getBoolean("reload_web", false)) {
             getSharedPreferences("yaogu", MODE_PRIVATE).edit().putBoolean("reload_web", false).apply()
             handler.postDelayed({ web.loadUrl("http://127.0.0.1:8311/") }, 500)

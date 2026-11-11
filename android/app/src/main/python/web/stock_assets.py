@@ -38,6 +38,7 @@ HTML = r"""<!DOCTYPE html>
     <button id="searchBtn" class="btn-primary" type="button">分析</button>
     <div class="suggest" id="suggest" hidden></div>
   </div>
+  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置">⚙</button>
 </header>
 
 <main id="main">
@@ -117,6 +118,25 @@ HTML = r"""<!DOCTYPE html>
 </main>
 
 <script src="/stock.js"></script>
+
+<div class="settings-mask" id="settingsMask" hidden>
+  <div class="settings-sheet" role="dialog" aria-label="设置">
+    <h3>设置</h3>
+    <p class="sub">偏好保存在本机浏览器，三个页面共用。</p>
+    <div class="settings-row">
+      <div>
+        <div class="lbl">界面主题</div>
+        <div class="hint">深色适合盯盘，浅色适合白天</div>
+      </div>
+      <div class="seg" id="themeSeg">
+        <button type="button" data-theme="light">浅色</button>
+        <button type="button" data-theme="dark">深色</button>
+      </div>
+    </div>
+    <div class="settings-foot"><button class="btn-ghost" id="settingsClose" type="button">关闭</button></div>
+  </div>
+</div>
+
 <script src="/theme.js"></script>
 </body>
 </html>
@@ -1056,7 +1076,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   /* ---------------- 顶部：一行三段（品牌 | 导航 | 搜索） ---------------- */
   .appbar {
     display: grid;
-    grid-template-columns: 260px auto minmax(280px, 480px);
+    grid-template-columns: 260px auto minmax(280px, 1fr) auto;
     align-items: center;
     justify-content: start;
     gap: 24px;
@@ -1071,7 +1091,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   .nav-btn { flex: none; padding: 7px 20px; border-radius: 8px; font-size: 13px; }
   .nav-btn:active { transform: none; }
   .nav-btn:hover { border-color: #9dbfe8; color: var(--text); }
-  .search-box { margin-top: 0; position: relative; width: 100%; justify-self: end; }
+  .search-box { margin-top: 0; position: relative; width: 100%; max-width: 560px; justify-self: end; }
   #searchInput { font-size: 14px; padding: 6px 0; }
   .suggest { left: 0; right: 0; top: calc(100% + 8px); }
   .suggest-item:active { background: none; }
@@ -1198,28 +1218,83 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   vertical-align: 2px;
 }
 
-/* ---------------- 主题切换按钮（右下角悬浮） ---------------- */
-.theme-toggle {
+/* ---------------- 设置入口（顶栏 ⚙）与设置面板 ---------------- */
+.icon-btn {
+  display: none;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+.settings-mask {
   position: fixed;
-  right: 14px;
-  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  z-index: 90;
-  width: 42px;
-  height: 42px;
+  inset: 0;
+  z-index: 200;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--text-dim);
-  font-size: 17px;
-  line-height: 1;
-  box-shadow: 0 12px 26px -16px rgba(15, 32, 51, .6);
-  cursor: pointer;
-  transition: color .15s, border-color .15s, transform .15s, background .15s;
+  padding: 24px;
+  background: rgba(15, 32, 51, .38);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
-.theme-toggle:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
-.theme-toggle:active { transform: scale(.94); }
+.settings-mask[hidden] { display: none; }
+.settings-sheet {
+  width: min(420px, 100%);
+  padding: 18px 18px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 30px 70px -40px rgba(15, 32, 51, .6);
+}
+.settings-sheet h3 { margin: 0 0 4px; font-size: 15px; }
+.settings-sheet .sub { margin: 0 0 12px; font-size: 11.5px; color: var(--text-mute); }
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--line-soft);
+}
+.settings-row .lbl { font-size: 13px; color: var(--text); }
+.settings-row .hint { margin-top: 2px; font-size: 11px; color: var(--text-mute); }
+.seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line-soft);
+}
+.seg button {
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: color .15s, background .15s, border-color .15s;
+}
+.seg button.on {
+  color: #1d4ed8;
+  font-weight: 650;
+  background: linear-gradient(180deg, rgba(37, 99, 235, .14), rgba(37, 99, 235, .05));
+  border-color: rgba(37, 99, 235, .34);
+}
+.settings-foot { display: flex; justify-content: flex-end; margin-top: 14px; }
+@media (min-width: 900px) {
+  .icon-btn { display: grid; }
+}
 """
 
 JS = r"""(function () {

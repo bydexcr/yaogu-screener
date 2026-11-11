@@ -363,6 +363,69 @@
                 android:trackTint="#334A6E" />
         </LinearLayout>
 
+
+        <!-- 卡片：界面主题 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="界面"
+                android:textColor="@color/text"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="界面主题"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
+
+            <RadioGroup
+                android:id="@+id/rg_theme"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/rb_theme_light"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:buttonTint="@color/accent"
+                    android:text="浅色"
+                    android:textColor="@color/text"
+                    android:textSize="13sp" />
+
+                <RadioButton
+                    android:id="@+id/rb_theme_dark"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:buttonTint="@color/accent"
+                    android:text="深色"
+                    android:textColor="@color/text"
+                    android:textSize="13sp" />
+            </RadioGroup>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="切换后立即生效，偏好存在本机，三个页面（个股分析 / 妖股雷达 / 复盘）共用。"
+                android:textColor="@color/text_mute"
+                android:textSize="11sp" />
+        </LinearLayout>
+
         <!-- 操作按钮 -->
         <LinearLayout
             android:layout_width="match_parent"

@@ -1,4 +1,4 @@
-/* 主题切换（浅色 / 深色）：按钮固定在右下角，选择记在 localStorage */
+/* 主题切换（浅色 / 深色）：入口在「设置」面板里（桌面端顶栏 ⚙；手机端走原生设置页） */
 (function () {
   'use strict';
   var KEY = 'yaogu.theme';
@@ -18,25 +18,26 @@
       l.disabled = false;
       l.media = dark ? 'all' : 'not all';
     });
-    var btn = document.getElementById('themeToggle');
-    if (btn) {
-      btn.textContent = dark ? '☀' : '☾';
-      btn.setAttribute('aria-label', dark ? '切换到浅色' : '切换到深色');
-      btn.title = dark ? '切换到浅色' : '切换到深色';
+    // 设置面板里的分段按钮同步高亮
+    var seg = document.getElementById('themeSeg');
+    if (seg) {
+      Array.prototype.forEach.call(seg.querySelectorAll('button[data-theme]'), function (b) {
+        b.classList.toggle('on', b.getAttribute('data-theme') === (dark ? DARK : LIGHT));
+      });
     }
-  }
-
-  function set(theme) {
-    try { localStorage.setItem(KEY, theme); } catch (e) { /* 隐私模式忽略 */ }
-    apply(theme);
-    // 图表配色由 CSS 变量驱动，切换后主动让页面重绘一次（个股分析页）
-    try {
-      if (window.__rerenderCharts) window.__rerenderCharts();
-    } catch (e) { /* 忽略 */ }
   }
 
   function stored() {
     try { return localStorage.getItem(KEY) || LIGHT; } catch (e) { return LIGHT; }
+  }
+
+  function set(theme) {
+    if (theme !== DARK && theme !== LIGHT) return;
+    try { localStorage.setItem(KEY, theme); } catch (e) { /* 隐私模式忽略 */ }
+    apply(theme);
+    try {
+      if (window.__rerenderCharts) window.__rerenderCharts();
+    } catch (e) { /* 忽略 */ }
   }
 
   // 支持 ?theme=dark / ?theme=light 直接指定（便于分享链接与排查）
@@ -51,26 +52,45 @@
     return null;
   }
 
-  // 暴露给其它脚本
   window.__theme = { set: set, get: stored, isDark: function () { return stored() === DARK; } };
 
-  function init() {
-    if (!document.body) {
-      document.addEventListener('DOMContentLoaded', init);
-      return;
+  // ---------------- 设置面板 ----------------
+  function openSheet(open) {
+    var mask = document.getElementById('settingsMask');
+    if (!mask) return;
+    mask.hidden = !open;
+  }
+
+  function initSheet() {
+    var btn = document.getElementById('settingsBtn');
+    var mask = document.getElementById('settingsMask');
+    var close = document.getElementById('settingsClose');
+    var seg = document.getElementById('themeSeg');
+
+    if (btn) btn.addEventListener('click', function () { openSheet(true); });
+    if (close) close.addEventListener('click', function () { openSheet(false); });
+    if (mask) {
+      mask.addEventListener('click', function (e) {
+        if (e.target === mask) openSheet(false);
+      });
     }
-    var btn = document.getElementById('themeToggle');
-    if (!btn) {
-      btn = document.createElement('button');
-      btn.id = 'themeToggle';
-      btn.type = 'button';
-      btn.className = 'theme-toggle';
-      document.body.appendChild(btn);
+    if (seg) {
+      Array.prototype.forEach.call(seg.querySelectorAll('button[data-theme]'), function (b) {
+        b.addEventListener('click', function () { set(b.getAttribute('data-theme')); });
+      });
     }
-    btn.addEventListener('click', function () {
-      set(stored() === DARK ? LIGHT : DARK);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') openSheet(false);
     });
-    apply(stored());
+  }
+
+  function init() {
+    apply(fromQuery() || stored());
+    initSheet();
+    // 便于截图/排障：?sheet=1 直接打开设置面板
+    try {
+      if (new URLSearchParams(location.search).get('sheet') === '1') openSheet(true);
+    } catch (e) { /* 忽略 */ }
   }
 
   // 尽早切一次，避免深色用户看到浅色闪屏
