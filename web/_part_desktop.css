@@ -22,12 +22,12 @@
   .appnav { margin-top: 0; gap: 6px; }
   .nav-btn { flex: none; padding: 7px 20px; border-radius: 8px; font-size: 13px; }
   .nav-btn:active { transform: none; }
-  .nav-btn:hover { border-color: #2a4a72; color: var(--text); }
+  .nav-btn:hover { border-color: #9dbfe8; color: var(--text); }
   .search-box { margin-top: 0; position: relative; width: 100%; justify-self: end; }
   #searchInput { font-size: 14px; padding: 6px 0; }
   .suggest { left: 0; right: 0; top: calc(100% + 8px); }
   .suggest-item:active { background: none; }
-  .suggest-item:hover { background: #16233a; }
+  .suggest-item:hover { background: #e6eefb; }
 
   /* ---------------- 主体容器 ---------------- */
   main { max-width: 1400px; margin: 0 auto; padding: 18px 26px 56px; }
@@ -38,7 +38,7 @@
   .card .sub { font-size: 12px; }
   table { font-size: 12.5px; }
   thead th, tbody td { padding: 8px 11px; }
-  tbody tr:hover { background: #121d2e; }
+  tbody tr:hover { background: #eef3fa; }
   .fact { padding: 11px 13px; }
   .facts { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 10px; }
 
@@ -50,7 +50,7 @@
 
   .back-bar { margin-bottom: 0; }
   .btn-ghost { flex: none; padding: 8px 18px; }
-  .btn-ghost:hover { border-color: #2a4a72; color: var(--text); }
+  .btn-ghost:hover { border-color: #9dbfe8; color: var(--text); }
 
   /* 两栏区块（评分/解读、估值/资金）在平板上也能并排 */
   .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 0; }
@@ -72,7 +72,7 @@
   .mk-stack { gap: 16px; }
   .mk-hot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   .mk-sector { padding: 11px 12px; }
-  .mk-sector:hover, .mk-item:hover { background: #16233a; }
+  .mk-sector:hover, .mk-item:hover { background: #e6eefb; }
   .mk-foot { font-size: 11.5px; line-height: 1.8; }
 
   /* ---------------- 加载 / 错误 ---------------- */
@@ -104,7 +104,9 @@
     gap: 16px;
     align-items: start;
   }
-  #result > .card { margin-bottom: 0; }
+  #result { align-items: stretch; }
+  #result > .card,
+  #result > .grid-2 > .card { margin-bottom: 0; height: 100%; display: flex; flex-direction: column; }
   /* 需要整行宽度的模块：宽表格 / 多图 / 矩阵 */
   #result > #backBar,
   #result > #quoteCard,

@@ -93,7 +93,7 @@
     for (let i = 0; i <= 3; i += 1) {
       const p = bottom + ((top - bottom) * i) / 3;
       const y = yOf(p);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="#1f2836" stroke-width="1"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="#e3e9f2" stroke-width="1"/>`;
       grid += `<text x="${padL + innerW + 6}" y="${(y + 3).toFixed(1)}">${p.toFixed(2)}</text>`;
     }
 
@@ -102,7 +102,7 @@
     let maPts = [];
     candles.forEach((c, i) => {
       const x = padL + i * step + step / 2;
-      const color = c.close >= c.open ? '#ff5468' : '#16c784';
+      const color = c.close >= c.open ? '#e11d33' : '#0d9b6c';
       const yO = yOf(c.open);
       const yC = yOf(c.close);
       const yH = yOf(c.high);
@@ -127,14 +127,14 @@
     });
 
     const last = candles[candles.length - 1];
-    const lastColor = last.close >= last.open ? '#ff5468' : '#16c784';
+    const lastColor = last.close >= last.open ? '#e11d33' : '#0d9b6c';
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="K线图">
       ${grid}
-      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="#1f2836"/>` : ''}
+      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="#e3e9f2"/>` : ''}
       ${volBody}
       ${body}
-      ${maPts.length > 2 ? `<polyline points="${maPts.join(' ')}" fill="none" stroke="#7fb0ff" stroke-width="1.4" opacity="0.9"/>` : ''}
+      ${maPts.length > 2 ? `<polyline points="${maPts.join(' ')}" fill="none" stroke="#3b82f6" stroke-width="1.4" opacity="0.9"/>` : ''}
       <line x1="${padL}" y1="${yOf(last.close).toFixed(1)}" x2="${padL + innerW}" y2="${yOf(last.close).toFixed(1)}" stroke="${lastColor}" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.6"/>
       ${dates}
     </svg>`;
@@ -155,7 +155,7 @@
     let grid = '';
     [1, 10, 100, 1000].filter((v) => v <= scaleMax).forEach((r) => {
       const y = yOf(r);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#1f2836"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e3e9f2"/>`;
       grid += `<text x="${padL - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end">#${r}</text>`;
     });
 
@@ -170,7 +170,7 @@
     let dots = '';
     pts.forEach((p, i) => {
       if (i % dotStep === 0 || i === pts.length - 1) {
-        dots += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="#4e8cff"/>`;
+        dots += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="#2563eb"/>`;
         dots += `<text x="${p.x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${String(p.date).slice(5)}</text>`;
       }
     });
@@ -178,8 +178,8 @@
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="热度排名趋势">
       ${grid}
-      <polygon points="${area}" fill="rgba(34,211,238,0.10)"/>
-      <polyline points="${line}" fill="none" stroke="#4e8cff" stroke-width="1.8"/>
+      <polygon points="${area}" fill="rgba(37, 99, 235, 0.10)"/>
+      <polyline points="${line}" fill="none" stroke="#2563eb" stroke-width="1.8"/>
       ${dots}
       <text x="${padL}" y="10">排名越靠上越热门 · 最佳 #${best.rank}</text>
     </svg>`;
@@ -205,7 +205,7 @@
       const y = 14 + ((maxV - (q.profit || 0)) / span) * (H - 46);
       const h = Math.abs(zeroY - y);
       const up = (q.profitYoY || 0) >= 0;
-      const color = up ? '#ff5468' : '#16c784';
+      const color = up ? '#e11d33' : '#0d9b6c';
       bars += `<rect x="${(x - bw / 2).toFixed(1)}" y="${Math.min(y, zeroY).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" fill="${color}" opacity="0.78" rx="1.5"/>`;
       if (i % 2 === 0 || quarters.length <= 8) {
         bars += `<text x="${x.toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(String(q.label).replace('Q', 'Q'))}</text>`;
@@ -213,7 +213,7 @@
     });
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="单季归母净利润">
-      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="#232e3e"/>
+      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="#dbe3ef"/>
       ${bars}
     </svg>`;
   }
@@ -282,11 +282,11 @@
     for (let i = 0; i <= 3; i += 1) {
       const v = min + (span * i) / 3;
       const y = yOf(v);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#1f2836"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e3e9f2"/>`;
       grid += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(yDigits)}${ySuffix}</text>`;
     }
     if (isNum(refLine)) {
-      grid += `<line x1="${padL}" y1="${yOf(refLine).toFixed(1)}" x2="${W - padR}" y2="${yOf(refLine).toFixed(1)}" stroke="#5a6b80" stroke-dasharray="4 4"/>`;
+      grid += `<line x1="${padL}" y1="${yOf(refLine).toFixed(1)}" x2="${W - padR}" y2="${yOf(refLine).toFixed(1)}" stroke="#8b98ab" stroke-dasharray="4 4"/>`;
     }
 
     let paths = '';
@@ -309,7 +309,7 @@
     });
 
     return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.title || '趋势图')}">${grid}${paths}${dots}${labels}</svg>
-      <div class="mini-legend">${series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join('')}${isNum(refLine) ? `<span><i style="background:#5a6b80"></i>参考线 ${refLine}${ySuffix}</span>` : ''}</div>`;
+      <div class="mini-legend">${series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join('')}${isNum(refLine) ? `<span><i style="background:#8b98ab"></i>参考线 ${refLine}${ySuffix}</span>` : ''}</div>`;
   }
 
   function barChart(opts) {
@@ -333,20 +333,20 @@
     for (let i = 0; i <= 3; i += 1) {
       const v = min + (span * i) / 3;
       const y = yOf(v);
-      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#1f2836"/>`;
+      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e3e9f2"/>`;
       out += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(digits)}${ySuffix}</text>`;
     }
     if (isNum(refLine)) {
-      out += `<line x1="${padL}" y1="${yOf(refLine).toFixed(1)}" x2="${W - padR}" y2="${yOf(refLine).toFixed(1)}" stroke="#7fb0ff" stroke-dasharray="4 4"/>`;
+      out += `<line x1="${padL}" y1="${yOf(refLine).toFixed(1)}" x2="${W - padR}" y2="${yOf(refLine).toFixed(1)}" stroke="#3b82f6" stroke-dasharray="4 4"/>`;
     }
     rows.forEach((b, i) => {
       const x = padL + i * step + step / 2;
       const y = yOf(b.value);
       const zeroY = yOf(0);
-      const color = b.color || (b.value >= (isNum(refLine) ? refLine : 0) ? '#16c784' : '#ff5468');
+      const color = b.color || (b.value >= (isNum(refLine) ? refLine : 0) ? '#0d9b6c' : '#e11d33');
       out += `<rect x="${(x - bw / 2).toFixed(1)}" y="${Math.min(y, zeroY).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1, Math.abs(zeroY - y)).toFixed(1)}" fill="${color}" opacity="0.85" rx="1.5"/>`;
       if (rows.length <= 12 || i % 2 === 0) {
-        out += `<text x="${x.toFixed(1)}" y="${(Math.min(y, zeroY) - 4).toFixed(1)}" text-anchor="middle" fill="#9aa7b9">${b.value.toFixed(digits)}</text>`;
+        out += `<text x="${x.toFixed(1)}" y="${(Math.min(y, zeroY) - 4).toFixed(1)}" text-anchor="middle" fill="#52637a">${b.value.toFixed(digits)}</text>`;
         out += `<text x="${x.toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(b.label)}</text>`;
       }
     });
@@ -380,13 +380,13 @@
       const lo = min + (span * i) / bins;
       const hi = min + (span * (i + 1)) / bins;
       const isSelf = isNum(marker) && marker >= lo && marker <= hi;
-      out += `<rect x="${(x + 1).toFixed(1)}" y="${(H - padB - h).toFixed(1)}" width="${(step - 2).toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" fill="${isSelf ? '#4e8cff' : '#26313f'}" rx="1.5"/>`;
+      out += `<rect x="${(x + 1).toFixed(1)}" y="${(H - padB - h).toFixed(1)}" width="${(step - 2).toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" fill="${isSelf ? '#2563eb' : '#cfd9e8'}" rx="1.5"/>`;
       if (i % 2 === 0) out += `<text x="${(x + step / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle">${lo.toFixed(1)}</text>`;
     });
     if (isNum(marker)) {
       const x = padL + ((Math.min(marker, cap) - min) / span) * (W - padL - padR);
-      out += `<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${H - padB}" stroke="#ffb020" stroke-dasharray="4 3"/>`;
-      out += `<text x="${(x + 4).toFixed(1)}" y="${padT + 8}" fill="#ffb020">本股 ${marker}</text>`;
+      out += `<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${H - padB}" stroke="#c77700" stroke-dasharray="4 3"/>`;
+      out += `<text x="${(x + 4).toFixed(1)}" y="${padT + 8}" fill="#c77700">本股 ${marker}</text>`;
     }
     return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${out}</svg>`;
   }
@@ -400,11 +400,11 @@
       <div class="score-top">
         <div class="score-ring">
           <svg viewBox="0 0 110 110" width="118" height="118">
-            <circle cx="55" cy="55" r="46" fill="none" stroke="#1f2836" stroke-width="9"/>
+            <circle cx="55" cy="55" r="46" fill="none" stroke="#e3e9f2" stroke-width="9"/>
             <circle cx="55" cy="55" r="46" fill="none" stroke="url(#sg)" stroke-width="9" stroke-linecap="round"
               stroke-dasharray="${dash.toFixed(1)} ${(circ - dash).toFixed(1)}" transform="rotate(-90 55 55)"/>
             <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#4e8cff"/><stop offset="100%" stop-color="#7fb0ff"/>
+              <stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#3b82f6"/>
             </linearGradient></defs>
           </svg>
           <div class="num"><span class="val">${isNum(s.overall) ? s.overall : '—'}</span><small>/100</small></div>
@@ -509,9 +509,9 @@
           </tbody>
         </table>
       </div>
-      <h3 style="font-size:13px;color:#e6edf8;margin:0 0 8px">近 12 个单季归母净利润（亿元）</h3>
+      <h3 style="font-size:13px;color:#143049;margin:0 0 8px">近 12 个单季归母净利润（亿元）</h3>
       ${profitBars(p.quarterly)}
-      <div class="legend"><span><i style="background:#ff5468"></i>同比正增长</span><span><i style="background:#16c784"></i>同比下滑</span></div>
+      <div class="legend"><span><i style="background:#e11d33"></i>同比正增长</span><span><i style="background:#0d9b6c"></i>同比下滑</span></div>
       <div class="table-wrap" style="margin-top:16px">
         <table>
           <thead><tr><th>单季</th><th>单季营收</th><th>营收同比</th><th>单季归母净利</th><th>净利同比</th><th>毛利率</th></tr></thead>
@@ -568,9 +568,9 @@
     el('sec-trends').innerHTML = `${cardTitle('多期财务趋势', '近 8 个财年的利润率 / ROE 演化，叠加 6 个年度报告期的财务指标（同花顺指标口径）')}
       ${points.length >= 2 ? `<div class="chart-box"><h3 class="chart-title">利润率与 ROE 趋势（%）</h3>${lineChart({
         series: [
-          { key: 'grossMargin', label: '毛利率', color: '#4e8cff' },
-          { key: 'netMargin', label: '净利率', color: '#7fb0ff' },
-          { key: 'roe', label: 'ROE（平均净资产）', color: '#ffb020' },
+          { key: 'grossMargin', label: '毛利率', color: '#2563eb' },
+          { key: 'netMargin', label: '净利率', color: '#3b82f6' },
+          { key: 'roe', label: 'ROE（平均净资产）', color: '#c77700' },
         ],
         points,
         ySuffix: '%',
@@ -579,10 +579,10 @@
       ${ocfBars.length >= 2 ? `<div class="chart-box"><h3 class="chart-title">经营现金流 / 净利润（倍，蓝线为 1 倍参考）</h3>${barChart({ bars: ocfBars, refLine: 1, digits: 2, height: 170 })}</div>` : ''}
       ${points.length >= 3 ? `<div class="chart-box"><h3 class="chart-title">期间费用率趋势（% of 营收）</h3>${lineChart({
         series: [
-          { key: 'salesFeeRatio', label: '销售费用率', color: '#ff8a65' },
-          { key: 'manageFeeRatio', label: '管理费用率', color: '#9ccc65' },
-          { key: 'rdRatio', label: '研发费用率', color: '#64b5f6' },
-          { key: 'taxRate', label: '实际税率', color: '#b39ddb' },
+          { key: 'salesFeeRatio', label: '销售费用率', color: '#c94b28' },
+          { key: 'manageFeeRatio', label: '管理费用率', color: '#5c8f1f' },
+          { key: 'rdRatio', label: '研发费用率', color: '#1f78c8' },
+          { key: 'taxRate', label: '实际税率', color: '#6f5aa8' },
         ],
         points: years.map((y) => ({
           label: String(y.year),
@@ -656,9 +656,9 @@
       </div>
       ${series.length >= 2 ? `<div class="chart-box"><h3 class="chart-title">ROE 及其驱动因子（近似口径，%）</h3>${lineChart({
         series: [
-          { key: 'roe', label: 'ROE', color: '#ffb020' },
-          { key: 'netMargin', label: '净利率', color: '#4e8cff' },
-          { key: 'turnover', label: '总资产周转率(次)', color: '#7fb0ff' },
+          { key: 'roe', label: 'ROE', color: '#c77700' },
+          { key: 'netMargin', label: '净利率', color: '#2563eb' },
+          { key: 'turnover', label: '总资产周转率(次)', color: '#3b82f6' },
         ],
         points: series.map((s) => ({ label: String(s.year), values: { roe: s.roe, netMargin: s.netMargin, turnover: isNum(s.assetTurnover) ? s.assetTurnover * 50 : null } })),
         ySuffix: '',
@@ -823,7 +823,7 @@
         ${kpi('机构净买入', dt.count ? money(dt.orgNetSum) : '—', dt.count ? `游资 ${money(dt.hotMoneyNetSum)}` : '')}
       </div>
       ${(ts.limitEvents || []).length ? `
-      <h3 style="font-size:13px;color:#e6edf8;margin:18px 0 8px">近 120 日涨跌停 / 触板记录</h3>
+      <h3 style="font-size:13px;color:#143049;margin:18px 0 8px">近 120 日涨跌停 / 触板记录</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>日期</th><th>类型</th><th>当日涨跌幅</th></tr></thead>
@@ -833,7 +833,7 @@
         </table>
       </div>` : ''}
       ${dt.count ? `
-      <h3 style="font-size:13px;color:#e6edf8;margin:18px 0 8px">龙虎榜明细</h3>
+      <h3 style="font-size:13px;color:#143049;margin:18px 0 8px">龙虎榜明细</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>交易日</th><th>区间</th><th>净买入</th><th>净买占比</th><th>机构净额</th><th>游资净额</th><th>上榜原因</th></tr></thead>
@@ -871,7 +871,7 @@
         ${kpi('涨幅分位', isNum(p.changePercentile) ? `${p.changePercentile}%` : '—', '今日全市场')}
         ${kpi('热度综合分', n(p.heatScore, 1), '0-100')}
       </div>
-      ${lr.reason ? `<div class="badge-note" style="border-color:rgba(255,176,32,.35);color:#e7c27e">涨停/异动原因（同花顺涨停池）：${esc(lr.reason)}${lr.date ? ` · 数据日 ${esc(lr.date)}` : ''}</div>` : ''}
+      ${lr.reason ? `<div class="badge-note" style="border-color:rgba(199, 119, 0, .35);color:#8a6300">涨停/异动原因（同花顺涨停池）：${esc(lr.reason)}${lr.date ? ` · 数据日 ${esc(lr.date)}` : ''}</div>` : ''}
       ${rankChart(p.trend)}`;
   }
 
@@ -933,7 +933,7 @@
         ${kpi('板块 5 日', pct(sec.focus && sec.focus.ret5), esc((sec.focus && sec.focus.name) || '—'))}
       </div>
       ${(sec.industries || []).length ? `<div style="margin-top:16px">
-        <h3 style="font-size:13px;color:#e6edf8;margin:0 0 8px">所属行业板块当日表现</h3>
+        <h3 style="font-size:13px;color:#143049;margin:0 0 8px">所属行业板块当日表现</h3>
         <div class="tag-cloud">${sec.industries.map((i) => `<span class="tag">${esc(i.name)} <b class="${cls(i.changePct)}" style="font-family:var(--mono)">${pct(i.changePct)}</b></span>`).join('')}</div>
       </div>` : ''}`;
   }
@@ -1046,7 +1046,7 @@
         <div class="mk-dist">
           ${b.buckets.map((x) => {
     const h = Math.max(2, (x.count / maxBucket) * 78);
-    const color = x.label.includes('-') ? '#16c784' : (x.label.includes('0~') || x.label.includes('3~') ? '#3e6fa8' : '#ff5468');
+    const color = x.label.includes('-') ? '#0d9b6c' : (x.label.includes('0~') || x.label.includes('3~') ? '#b7cbe8' : '#e11d33');
     return `<div class="col" title="${esc(x.label)}：${x.count} 只">
               <div class="cnt">${x.count}</div>
               <div class="bar" style="height:${h}px;background:${color};opacity:${x.count ? 0.9 : 0.25}"></div>

@@ -88,13 +88,13 @@ CSS = r"""/* ============================================================
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background:
-    radial-gradient(120% 140% at 100% 0%, rgba(78, 140, 255, .10) 0%, transparent 58%),
+    radial-gradient(120% 140% at 100% 0%, rgba(37, 99, 235, .10) 0%, transparent 58%),
     var(--panel);
 }
 .rv-topbar-main { min-width: 0; }
 .rv-sys {
   font-size: 10.5px; letter-spacing: 1.6px; color: var(--accent-2);
-  border: 1px solid rgba(78, 140, 255, .35); background: var(--accent-weak);
+  border: 1px solid rgba(37, 99, 235, .35); background: var(--accent-weak);
   border-radius: 999px; padding: 2px 9px;
 }
 .rv-title { font-size: 19px; margin: 8px 0 0; letter-spacing: .4px; }
@@ -104,11 +104,11 @@ CSS = r"""/* ============================================================
   border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px;
 }
 .rv-tag.ghost { color: var(--text-mute); background: transparent; }
-.rv-tag.heat.hot { color: #200; background: linear-gradient(135deg, #ff8a5c, #ff5468); border-color: transparent; }
-.rv-tag.heat.warm { color: #241a00; background: linear-gradient(135deg, #ffd166, #ffb020); border-color: transparent; }
+.rv-tag.heat.hot { color: #200; background: linear-gradient(135deg, #c94b28, #e11d33); border-color: transparent; }
+.rv-tag.heat.warm { color: #241a00; background: linear-gradient(135deg, #f0b429, #c77700); border-color: transparent; }
 .rv-tag.heat.mid { color: var(--text); }
-.rv-tag.heat.cool { color: #eafff8; background: linear-gradient(135deg, #1a8f72, #16c784); border-color: transparent; }
-.rv-tag.heat.cold { color: #eafff8; background: linear-gradient(135deg, #0f7a6c, #0f9a7a); border-color: transparent; }
+.rv-tag.heat.cool { color: #ffffff; background: linear-gradient(135deg, #0d8f68, #0d9b6c); border-color: transparent; }
+.rv-tag.heat.cold { color: #ffffff; background: linear-gradient(135deg, #0a6b5f, #0a8a6e); border-color: transparent; }
 .rv-topbar-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 .rv-select {
   appearance: none; color: var(--text); background: var(--panel-2);
@@ -139,7 +139,7 @@ CSS = r"""/* ============================================================
 .rv-empty { padding: 10px 2px; font-size: 12px; color: var(--text-mute); }
 .rv-warn {
   padding: 9px 11px; border-radius: 10px; font-size: 12px; line-height: 1.65;
-  color: var(--warn); background: rgba(255, 176, 32, .1); border: 1px solid rgba(255, 176, 32, .3);
+  color: var(--warn); background: rgba(199, 119, 0, .1); border: 1px solid rgba(199, 119, 0, .3);
 }
 .rv-caliber, .rv-legend { margin: 9px 0 0; font-size: 10.5px; line-height: 1.7; color: var(--text-mute); }
 .rv-col-title {
@@ -156,8 +156,8 @@ CSS = r"""/* ============================================================
 .rv-verdict {
   margin: 0 0 10px; font-size: 14.5px; line-height: 1.75; color: var(--text); font-weight: 600;
   padding: 11px 13px; border-radius: 12px;
-  background: linear-gradient(135deg, rgba(78, 140, 255, .12), rgba(78, 140, 255, .02));
-  border: 1px solid rgba(78, 140, 255, .22);
+  background: linear-gradient(135deg, rgba(37, 99, 235, .12), rgba(37, 99, 235, .02));
+  border: 1px solid rgba(37, 99, 235, .22);
 }
 .rv-points { margin: 0; padding-left: 18px; }
 .rv-points li { font-size: 12.5px; line-height: 1.85; color: var(--text-dim); }
@@ -260,7 +260,7 @@ CSS = r"""/* ============================================================
 .rv-next { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .rv-list { margin: 0; padding-left: 18px; }
 .rv-list li { font-size: 12.5px; line-height: 1.85; color: var(--text-dim); }
-.rv-list.warn li { color: #ffb9c0; }
+.rv-list.warn li { color: #b32434; }
 
 /* ---------------- 12 股票池 ---------------- */
 .rv-pool { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
@@ -283,9 +283,9 @@ CSS = r"""/* ============================================================
 .rv-risk-level .lb { font-size: 10.5px; color: var(--text-mute); }
 .rv-risk-level .vl { font-size: 15px; font-weight: 700; }
 .rv-risk-level .sc { font-size: 10.5px; color: var(--text-mute); font-family: var(--mono); }
-.rv-risk-level.lv-低, .rv-risk-level.lv-中低 { border-color: rgba(22, 199, 132, .4); color: var(--down); }
-.rv-risk-level.lv-中 { border-color: rgba(255, 176, 32, .4); color: var(--warn); }
-.rv-risk-level.lv-中高, .rv-risk-level.lv-高 { border-color: rgba(255, 84, 104, .45); color: var(--up); }
+.rv-risk-level.lv-低, .rv-risk-level.lv-中低 { border-color: rgba(13, 155, 108, .4); color: var(--down); }
+.rv-risk-level.lv-中 { border-color: rgba(199, 119, 0, .4); color: var(--warn); }
+.rv-risk-level.lv-中高, .rv-risk-level.lv-高 { border-color: rgba(225, 29, 51, .45); color: var(--up); }
 .rv-risk-text { flex: 1 1 240px; margin: 0; font-size: 12.5px; line-height: 1.8; color: var(--text-dim); }
 
 /* ---------------- 4.6 梯队 ---------------- */
@@ -293,7 +293,7 @@ CSS = r"""/* ============================================================
 .rv-tier { display: grid; grid-template-columns: 74px minmax(0, 1fr) 34px; gap: 8px; align-items: center; }
 .rv-tier .tl { font-size: 11.5px; color: var(--text-dim); }
 .rv-tier .tk { height: 15px; background: var(--panel-3); border-radius: 4px; overflow: hidden; }
-.rv-tier .tk i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, rgba(255, 84, 104, .5), var(--up)); }
+.rv-tier .tk i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, rgba(225, 29, 51, .5), var(--up)); }
 .rv-tier .tc { font-size: 11.5px; color: var(--text-mute); text-align: right; font-family: var(--mono); }
 
 .rv-foot { margin: 14px 2px 0; font-size: 11px; line-height: 1.8; color: var(--text-mute); }
