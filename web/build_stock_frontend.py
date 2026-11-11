@@ -71,7 +71,8 @@ def main():
         renders, market = extract_pc_parts(read(PC / "app.js"))
         js = "\n".join([head.rstrip(), "", renders.rstrip(), "", market.rstrip(), "", control.lstrip()])
         js_target.write_text(js, encoding="utf-8")
-        css = read(PC / "styles.css") + "\n" + read(HERE / "_part_mobile.css") + "\n" + read(HERE / "_part_desktop.css")
+        css = (read(PC / "styles.css") + "\n" + read(HERE / "_part_mobile.css")
+               + "\n" + read(HERE / "_part_desktop.css") + "\n" + read(HERE / "_part_sections.css"))
         (HERE / "stock.css").write_text(css, encoding="utf-8")
         print(f"[build] 从 PC 版抽取渲染层：renders {renders.count(chr(10))} 行 / market {market.count(chr(10))} 行")
     else:

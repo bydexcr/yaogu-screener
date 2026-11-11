@@ -77,6 +77,23 @@ def _load_stock_js() -> str:
     return _read_asset("stock.js", "JS", "web.stock_assets")
 
 
+def _load_review_html() -> str:
+    html = _read_asset("review.html", "HTML", "web.review_assets")
+    return html or "<h1>review.html 缺失</h1>"
+
+
+def _load_review_css() -> str:
+    return _read_asset("review.css", "CSS", "web.review_assets")
+
+
+def _load_review_js() -> str:
+    return _read_asset("review.js", "JS", "web.review_assets")
+
+
+def _load_review_module():
+    return _load_stock_module("stock_review")
+
+
 def save_snapshot_html(state: dict) -> str:
     """把引擎状态内嵌为自包含 HTML（双击即可查看，无需服务器）。"""
     html = _load_index_html()
@@ -108,6 +125,17 @@ def api_search(q: str) -> dict:
     stock_data = _load_stock_module("stock_data")
     items = stock_data.search(q, 12) if q else []
     return {"ok": True, "items": [i for i in items if i.get("assetType") == "a-share"]}
+
+
+def api_review(date: str = "", force: bool = False) -> dict:
+    """当日盘面复盘（默认最新交易日，可查已存档日期；force=True 重新生成）。"""
+    rv = _load_review_module()
+    return rv.review(date or None, force=force)
+
+
+def api_review_dates() -> dict:
+    rv = _load_review_module()
+    return {"ok": True, "dates": rv.saved_dates()}
 
 
 def api_diag() -> dict:
@@ -222,6 +250,13 @@ class _Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/diag"):
             self._json(self._safe(api_diag))
             return
+        if path.startswith("/api/review/dates"):
+            self._json(self._safe(api_review_dates))
+            return
+        if path.startswith("/api/review"):
+            force = (qs.get("force", [""])[0] or "") in ("1", "true", "yes")
+            self._json(self._safe(api_review, (qs.get("date", [""])[0] or "").strip(), force))
+            return
         if path.startswith("/api/market/sector"):
             code = (qs.get("code", [""])[0] or "").strip()
             if not code:
@@ -248,6 +283,12 @@ class _Handler(BaseHTTPRequestHandler):
         if path in ("/stock.js",):
             self._send(200, _load_stock_js().encode("utf-8"), "text/javascript; charset=utf-8")
             return
+        if path in ("/review.css",):
+            self._send(200, _load_review_css().encode("utf-8"), "text/css; charset=utf-8")
+            return
+        if path in ("/review.js",):
+            self._send(200, _load_review_js().encode("utf-8"), "text/javascript; charset=utf-8")
+            return
         if path in ("/", "/index.html", "/stock"):
             if path == "/radar":
                 self._send(200, self.index_html.encode("utf-8"), "text/html; charset=utf-8")
@@ -256,6 +297,9 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path == "/radar":
             self._send(200, self.index_html.encode("utf-8"), "text/html; charset=utf-8")
+            return
+        if path in ("/review", "/review.html"):
+            self._send(200, _load_review_html().encode("utf-8"), "text/html; charset=utf-8")
             return
         self.send_response(404)
         self.end_headers()

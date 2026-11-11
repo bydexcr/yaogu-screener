@@ -28,6 +28,7 @@ HTML = r"""<!DOCTYPE html>
   <nav class="appnav" aria-label="主导航">
     <a class="nav-btn on" href="/">个股分析</a>
     <a class="nav-btn" href="/radar">妖股雷达</a>
+    <a class="nav-btn" href="/review">复盘</a>
   </nav>
   <div class="search-box" id="searchBox">
     <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -1166,6 +1167,26 @@ tr.self-row td { background: rgba(78, 140, 255, .08) !important; }
   #marketView > .mk-hero,
   #marketView > .mk-hot-grid,
   #marketView > .mk-foot { grid-column: 1 / -1; }
+}
+/* ============================================================
+   章节序号层：个股分析页 16 个章节按文档顺序自动编号
+   （与复盘页的「1 / 2 / 2.5 …」编号视觉保持一致）
+   ============================================================ */
+#result {
+  counter-reset: sec;
+}
+
+#result > .card,
+#result > .grid-2 > .card {
+  counter-increment: sec;
+}
+
+#result .card > h2::before {
+  content: counter(sec) ".";
+  color: var(--accent-2);
+  font: 700 11px/1 var(--mono);
+  margin-right: 6px;
+  vertical-align: 2px;
 }
 """
 

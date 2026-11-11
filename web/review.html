@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#070a0f">
+<title>大A小散 · 复盘</title>
+<link rel="stylesheet" href="/stock.css">
+<link rel="stylesheet" href="/review.css">
+</head>
+<body>
+
+<header class="appbar">
+  <div class="appbar-top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="22" height="22"><path d="M10 46l11-13 9 8 12-21 12 10" fill="none" stroke="#4e8cff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="30" r="3.4" fill="#7fb0ff"/></svg>
+      </span>
+      <div class="brand-text">
+        <h1>大A小散</h1>
+        <p class="status-line"><span class="dot" id="statusBadge"></span><span id="statusText">复盘加载中</span></p>
+      </div>
+    </div>
+  </div>
+  <nav class="appnav" aria-label="主导航">
+    <a class="nav-btn" href="/">个股分析</a>
+    <a class="nav-btn" href="/radar">妖股雷达</a>
+    <a class="nav-btn on" href="/review">复盘</a>
+  </nav>
+  <div class="search-box" id="searchBox">
+    <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
+           placeholder="股票名称或代码，如 贵州茅台 / 600519" aria-label="股票搜索">
+    <button id="searchBtn" class="btn-primary" type="button">分析</button>
+    <div class="suggest" id="suggest" hidden></div>
+  </div>
+</header>
+
+<main id="main">
+  <section id="reviewView">
+
+    <div class="rv-topbar">
+      <div class="rv-topbar-main">
+        <span class="rv-sys" id="rvSys">AI 复盘系统</span>
+        <h2 class="rv-title" id="rvTitle">— 正式收复盘</h2>
+        <div class="rv-tags">
+          <span class="rv-tag" id="rvRegime">—</span>
+          <span class="rv-tag heat" id="rvHeat">—</span>
+          <span class="rv-tag" id="rvRisk">风险 —</span>
+          <span class="rv-tag ghost" id="rvArchived" hidden>历史存档</span>
+        </div>
+      </div>
+      <div class="rv-topbar-actions">
+        <select id="rvDateSelect" class="rv-select" aria-label="选择复盘日期"></select>
+        <button id="rvRefresh" class="btn-ghost" type="button">刷新</button>
+      </div>
+    </div>
+
+    <div class="rv-flow" id="rvFlow">
+      <div class="rv-skeleton">正在生成复盘…</div>
+    </div>
+
+    <p class="rv-foot" id="rvFoot"></p>
+  </section>
+</main>
+
+<script src="/review.js"></script>
+</body>
+</html>

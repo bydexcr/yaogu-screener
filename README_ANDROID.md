@@ -28,7 +28,7 @@ android/                          # Android 工程（Gradle + Chaquopy）
 .github/workflows/build-apk.yml   # 云构建：手动触发 → 产出 APK
 ```
 
-### web/ 目录（个股分析 + 妖股雷达）
+### web/ 目录（个股分析 + 妖股雷达 + 复盘）
 
 | 文件 | 作用 |
 | --- | --- |
@@ -36,12 +36,21 @@ android/                          # Android 工程（Gradle + Chaquopy）
 | `stock_data.py` | 数据层：直连同花顺 REST + 进程内 TTL 缓存 + 板块成分索引落盘 |
 | `stock_analysis.py` | 分析引擎：报价/财务/估值/资金/热度/趋势/杜邦/分红/风险矩阵/同业/评分/相似股 |
 | `stock_market.py` | 市场全景：宽度、板块排行（一级/细分/概念 + 领涨股）、涨跌停池、连板梯队、热门榜 |
-| `dashboard.py` | 零依赖 HTTP 服务：`/`（个股分析）、`/radar`（妖股雷达）、`/api/state`、`/api/market*`、`/api/stock`、`/api/search` |
+| `stock_review.py` | **复盘引擎**：一句话总收口 / 盘型环境 / 资金流证据 / 主线轮动 / 高度单元 / 四分层 / 次日观察与证伪 / 股票池更新 / 风险边界，按日存档 `review_<date>.json` |
+| `review.html` / `review.css` / `review.js` | **复盘页**（`/review`），章节编号 1 / 2 / 2.5 / 4 / 4.5 / 4.6 / 6 / 10 / 12 / 13 |
+| `dashboard.py` | 零依赖 HTTP 服务：`/`（个股分析）、`/radar`（妖股雷达）、`/review`（复盘）、`/api/state`、`/api/market*`、`/api/stock`、`/api/search`、`/api/review*`、`/api/diag` |
 | `index.html` / `index_html.py` | 妖股雷达看板（`/radar`） |
-| `stock_assets.py` | 由 `build_stock_frontend.py` 生成：APK 内文件缺失时内嵌的前端资源 |
-| `build_stock_frontend.py` | 从 PC 版 `stock-analyzer/app.js` 抽取渲染层，生成 `stock.js`/`stock.css`/`stock_assets.py` |
+| `stock_assets.py` / `review_assets.py` | 由构建脚本生成：APK 内文件缺失时内嵌的前端资源 |
+| `build_stock_frontend.py` / `build_review_assets.py` / `build_index_html.py` | 分别重建上面三份内嵌资源 |
 
-改前端后执行：`python web/build_stock_frontend.py`，并把 `web/*` 同步到 `android/app/src/main/python/web/`。
+复盘接口：`GET /api/review[?date=YYYY-MM-DD][&force=1]`、`GET /api/review/dates`。
+口径说明：同花顺 REST **没有**官方「主力资金/大单资金」指标，复盘页「资金流证据」用**龙虎榜净额**，
+页面上已标注，不冒充主力资金。
+
+个股分析页的 16 个章节由 `_part_sections.css` 用 CSS 计数器自动编号（1. 2. 3. …），与复盘页编号视觉统一。
+
+改前端后执行：`python web/build_stock_frontend.py`（+ `build_review_assets.py` / `build_index_html.py`），
+并把 `web/*` 同步到 `android/app/src/main/python/web/`。
 
 ### 桌面端 / 手机端是两套版式
 

@@ -1,0 +1,20 @@
+/* ============================================================
+   章节序号层：个股分析页 16 个章节按文档顺序自动编号
+   （与复盘页的「1 / 2 / 2.5 …」编号视觉保持一致）
+   ============================================================ */
+#result {
+  counter-reset: sec;
+}
+
+#result > .card,
+#result > .grid-2 > .card {
+  counter-increment: sec;
+}
+
+#result .card > h2::before {
+  content: counter(sec) ".";
+  color: var(--accent-2);
+  font: 700 11px/1 var(--mono);
+  margin-right: 6px;
+  vertical-align: 2px;
+}
