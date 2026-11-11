@@ -12,6 +12,17 @@
     return e.message || e.detail || fallback;
   }
 
+
+  // 图表配色跟随主题：颜色取自 CSS 变量（stock.css / stock-dark.css 各定义一套）
+  const cv = (name, fb) => {
+    try {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fb;
+    } catch (e) {
+      return fb;
+    }
+  };
+
   const state = {
     data: null,
     market: null,
@@ -93,7 +104,7 @@
     for (let i = 0; i <= 3; i += 1) {
       const p = bottom + ((top - bottom) * i) / 3;
       const y = yOf(p);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="#e3e9f2" stroke-width="1"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}" stroke-width="1"/>`;
       grid += `<text x="${padL + innerW + 6}" y="${(y + 3).toFixed(1)}">${p.toFixed(2)}</text>`;
     }
 
@@ -131,7 +142,7 @@
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="K线图">
       ${grid}
-      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="#e3e9f2"/>` : ''}
+      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>` : ''}
       ${volBody}
       ${body}
       ${maPts.length > 2 ? `<polyline points="${maPts.join(' ')}" fill="none" stroke="#3b82f6" stroke-width="1.4" opacity="0.9"/>` : ''}
@@ -155,7 +166,7 @@
     let grid = '';
     [1, 10, 100, 1000].filter((v) => v <= scaleMax).forEach((r) => {
       const y = yOf(r);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e3e9f2"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
       grid += `<text x="${padL - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end">#${r}</text>`;
     });
 
@@ -213,7 +224,7 @@
     });
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="单季归母净利润">
-      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="#dbe3ef"/>
+      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="${cv('--chart-zero', '#dbe3ef')}"/>
       ${bars}
     </svg>`;
   }
@@ -282,7 +293,7 @@
     for (let i = 0; i <= 3; i += 1) {
       const v = min + (span * i) / 3;
       const y = yOf(v);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e3e9f2"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
       grid += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(yDigits)}${ySuffix}</text>`;
     }
     if (isNum(refLine)) {
@@ -333,7 +344,7 @@
     for (let i = 0; i <= 3; i += 1) {
       const v = min + (span * i) / 3;
       const y = yOf(v);
-      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e3e9f2"/>`;
+      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
       out += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(digits)}${ySuffix}</text>`;
     }
     if (isNum(refLine)) {
@@ -400,7 +411,7 @@
       <div class="score-top">
         <div class="score-ring">
           <svg viewBox="0 0 110 110" width="118" height="118">
-            <circle cx="55" cy="55" r="46" fill="none" stroke="#e3e9f2" stroke-width="9"/>
+            <circle cx="55" cy="55" r="46" fill="none" stroke="${cv('--chart-grid', '#e3e9f2')}" stroke-width="9"/>
             <circle cx="55" cy="55" r="46" fill="none" stroke="url(#sg)" stroke-width="9" stroke-linecap="round"
               stroke-dasharray="${dash.toFixed(1)} ${(circ - dash).toFixed(1)}" transform="rotate(-90 55 55)"/>
             <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
@@ -1538,6 +1549,14 @@
       box.textContent = '诊断接口也失败了：' + err.message;
     }
   }
+
+
+  /* 主题切换后重绘图表（theme.js 调用） */
+  window.__rerenderCharts = () => {
+    try {
+      if (state.data) render(state.data);
+    } catch (e) { /* 忽略 */ }
+  };
 
   function init() {
     bindSearch();

@@ -72,13 +72,13 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointe
 .nav-btn{
   flex:1;text-align:center;padding:8px 0;border:1px solid transparent;border-radius:10px;
   font-size:13px;line-height:1.2;color:var(--dim);background:transparent;white-space:nowrap;
-  transition:color .15s,background .15s;
+  transition:color .15s,background .15s,border-color .15s;
 }
 .nav-btn.on{
-  color:#12233a;font-weight:600;
-  background:linear-gradient(180deg,#dfe6f1,#eef3fb);
-  border-color:rgba(15, 32, 51, .07);
-  box-shadow:0 2px 8px -4px rgba(15, 32, 51, .14),inset 0 1px 0 rgba(15, 32, 51, .05);
+  color:#1d4ed8;font-weight:650;
+  background:linear-gradient(180deg,rgba(37, 99, 235, .14),rgba(37, 99, 235, .05));
+  border-color:rgba(37, 99, 235, .34);
+  box-shadow:0 2px 10px -6px rgba(37, 99, 235, .5),inset 0 1px 0 rgba(255, 255, 255, .7);
 }
 
 /* ---------- 数据条 ---------- */
@@ -304,7 +304,6 @@ footer{
 
 /* ---------- 桌面 ---------- */
 @media (min-width:680px){
-  .appnav{max-width:380px}
   .bar{padding:14px 24px 12px}
   .panel-top{padding:14px 24px 0}
   .chips{padding:12px 24px 0}
@@ -320,12 +319,33 @@ footer{
   table.cand th,table.cand td{padding:8px 5px}
   table.cand th{font-size:10px}
 }
+@media (min-width:900px){
+  /* 顶部三段网格：品牌(260px) | 导航 Tab | 状态徽标 —— 与个股分析 / 复盘页完全一致 */
+  .bar{
+    display:grid;grid-template-columns:260px auto minmax(0,1fr);
+    align-items:center;gap:24px;padding:12px 26px;min-height:76px;
+  }
+  .bar-top{display:contents}
+  .brand{grid-column:1;grid-row:1;min-width:0}
+  .appnav{
+    grid-column:2;grid-row:1;justify-self:start;
+    margin-top:0;gap:6px;padding:3px;max-width:none;
+  }
+  .bar-badges{grid-column:3;grid-row:1;justify-self:end;margin-left:0}
+  .nav-btn{flex:none;padding:7px 20px;border-radius:10px;font-size:13px}
+}
 @media (min-width:1280px){
   .cols{grid-template-columns:minmax(0,1.15fr) minmax(0,2fr);align-items:start}
   .cols2{grid-template-columns:repeat(2,minmax(0,1fr))}
   .sfquad{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* ---------- 主题切换按钮 ---------- */
+.theme-toggle{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:90;width:42px;height:42px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--dim);font-size:17px;line-height:1;cursor:pointer;box-shadow:0 12px 26px -16px rgba(15, 32, 51, .6);transition:color .15s,border-color .15s,transform .15s}
+.theme-toggle:hover{color:var(--accent);border-color:var(--accent);transform:translateY(-1px)}
+.theme-toggle:active{transform:scale(.94)}
 </style>
+<link rel="stylesheet" href="/radar-dark.css" data-theme-dark media="not all">
 </head>
 <body>
   <header class="bar">
@@ -866,5 +886,6 @@ else { refresh(); setInterval(refresh, 3000); }
       <div id="mBody"></div>
     </div>
   </div>
+<script src="/theme.js"></script>
 </body>
 </html>

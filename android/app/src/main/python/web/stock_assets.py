@@ -10,6 +10,7 @@ HTML = r"""<!DOCTYPE html>
 <meta name="theme-color" content="#070a0f">
 <title>大A小散 · 个股分析</title>
 <link rel="stylesheet" href="/stock.css">
+<link rel="stylesheet" href="/stock-dark.css" data-theme-dark media="not all">
 </head>
 <body>
 
@@ -116,6 +117,7 @@ HTML = r"""<!DOCTYPE html>
 </main>
 
 <script src="/stock.js"></script>
+<script src="/theme.js"></script>
 </body>
 </html>
 """
@@ -162,6 +164,11 @@ CSS = r"""/* ============================================================
   --radius-sm: 12px;
   --radius-xs: 10px;
   --shadow: 0 18px 40px -28px rgba(15, 32, 51, .16);
+  /* 图表配色（跟随浅色/深色主题） */
+  --chart-grid: #e3e9f2;
+  --chart-zero: #dbe3ef;
+  --chart-axis: #8b98ab;
+  --chart-ink: #143049;
   --mono: ui-monospace, "SF Mono", "Roboto Mono", "Droid Sans Mono", Menlo, Consolas, monospace;
   --font: -apple-system, "SF Pro Text", "PingFang SC", "HarmonyOS Sans SC", "MiSans",
           "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -1049,13 +1056,14 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   /* ---------------- 顶部：一行三段（品牌 | 导航 | 搜索） ---------------- */
   .appbar {
     display: grid;
-    grid-template-columns: auto auto minmax(280px, 480px);
+    grid-template-columns: 260px auto minmax(280px, 480px);
     align-items: center;
     justify-content: start;
     gap: 24px;
     padding: 12px 26px;
+    min-height: 76px;      /* 与妖股雷达页 .bar 同高，保证导航垂直位置一致 */
   }
-  .appbar-top { padding-right: 0; }
+  .appbar-top { padding-right: 0; justify-self: start; min-width: 0; }
   .brand .logo { width: 34px; height: 34px; border-radius: 10px; }
   .brand-text h1 { font-size: 17px; }
   .brand-text .status-line { max-width: none; font-size: 11px; }
@@ -1189,6 +1197,29 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   margin-right: 6px;
   vertical-align: 2px;
 }
+
+/* ---------------- 主题切换按钮（右下角悬浮） ---------------- */
+.theme-toggle {
+  position: fixed;
+  right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  z-index: 90;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text-dim);
+  font-size: 17px;
+  line-height: 1;
+  box-shadow: 0 12px 26px -16px rgba(15, 32, 51, .6);
+  cursor: pointer;
+  transition: color .15s, border-color .15s, transform .15s, background .15s;
+}
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
+.theme-toggle:active { transform: scale(.94); }
 """
 
 JS = r"""(function () {
@@ -1204,6 +1235,17 @@ JS = r"""(function () {
     if (typeof e === 'string') return e;
     return e.message || e.detail || fallback;
   }
+
+
+  // 图表配色跟随主题：颜色取自 CSS 变量（stock.css / stock-dark.css 各定义一套）
+  const cv = (name, fb) => {
+    try {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fb;
+    } catch (e) {
+      return fb;
+    }
+  };
 
   const state = {
     data: null,
@@ -1286,7 +1328,7 @@ JS = r"""(function () {
     for (let i = 0; i <= 3; i += 1) {
       const p = bottom + ((top - bottom) * i) / 3;
       const y = yOf(p);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="#e3e9f2" stroke-width="1"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}" stroke-width="1"/>`;
       grid += `<text x="${padL + innerW + 6}" y="${(y + 3).toFixed(1)}">${p.toFixed(2)}</text>`;
     }
 
@@ -1324,7 +1366,7 @@ JS = r"""(function () {
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="K线图">
       ${grid}
-      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="#e3e9f2"/>` : ''}
+      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>` : ''}
       ${volBody}
       ${body}
       ${maPts.length > 2 ? `<polyline points="${maPts.join(' ')}" fill="none" stroke="#3b82f6" stroke-width="1.4" opacity="0.9"/>` : ''}
@@ -1348,7 +1390,7 @@ JS = r"""(function () {
     let grid = '';
     [1, 10, 100, 1000].filter((v) => v <= scaleMax).forEach((r) => {
       const y = yOf(r);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e3e9f2"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
       grid += `<text x="${padL - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end">#${r}</text>`;
     });
 
@@ -1406,7 +1448,7 @@ JS = r"""(function () {
     });
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="单季归母净利润">
-      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="#dbe3ef"/>
+      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="${cv('--chart-zero', '#dbe3ef')}"/>
       ${bars}
     </svg>`;
   }
@@ -1475,7 +1517,7 @@ JS = r"""(function () {
     for (let i = 0; i <= 3; i += 1) {
       const v = min + (span * i) / 3;
       const y = yOf(v);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e3e9f2"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
       grid += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(yDigits)}${ySuffix}</text>`;
     }
     if (isNum(refLine)) {
@@ -1526,7 +1568,7 @@ JS = r"""(function () {
     for (let i = 0; i <= 3; i += 1) {
       const v = min + (span * i) / 3;
       const y = yOf(v);
-      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e3e9f2"/>`;
+      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
       out += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(digits)}${ySuffix}</text>`;
     }
     if (isNum(refLine)) {
@@ -1593,7 +1635,7 @@ JS = r"""(function () {
       <div class="score-top">
         <div class="score-ring">
           <svg viewBox="0 0 110 110" width="118" height="118">
-            <circle cx="55" cy="55" r="46" fill="none" stroke="#e3e9f2" stroke-width="9"/>
+            <circle cx="55" cy="55" r="46" fill="none" stroke="${cv('--chart-grid', '#e3e9f2')}" stroke-width="9"/>
             <circle cx="55" cy="55" r="46" fill="none" stroke="url(#sg)" stroke-width="9" stroke-linecap="round"
               stroke-dasharray="${dash.toFixed(1)} ${(circ - dash).toFixed(1)}" transform="rotate(-90 55 55)"/>
             <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
@@ -2731,6 +2773,14 @@ JS = r"""(function () {
       box.textContent = '诊断接口也失败了：' + err.message;
     }
   }
+
+
+  /* 主题切换后重绘图表（theme.js 调用） */
+  window.__rerenderCharts = () => {
+    try {
+      if (state.data) render(state.data);
+    } catch (e) { /* 忽略 */ }
+  };
 
   function init() {
     bindSearch();

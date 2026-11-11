@@ -85,6 +85,26 @@ android/                          # Android 工程（Gradle + Chaquopy）
 - 个股分析结果区 `#result` 由 `align-items:start` 改为 **`stretch` + 卡片 `height:100%`（flex 列）**，
   同一行卡片等高，短内容的模块不再在行尾留白。
 
+### 浅色 / 深色切换
+
+右下角悬浮按钮（`☾ / ☀`）切换主题，选择写入 `localStorage['yaogu.theme']`，三页共用；也支持 `?theme=dark` / `?theme=light` 直接指定。
+
+| 文件 | 作用 |
+|---|---|
+| `theme.js` | 按钮注入 + 记忆 + 切换（`link[data-theme-dark]` 用 `media="not all" → all` 预加载切换，无闪烁） |
+| `stock-dark.css` | 深色主题：由 `stock.css` 反向映射生成（个股分析 + 复盘页共用） |
+| `radar-dark.css` | 深色主题：由 `index.html` 内联样式反向映射生成（妖股雷达页） |
+| `theme_assets.py` | 上述三者打进 APK 的内嵌副本（`build_theme_assets.py` 生成） |
+| 图表配色 | `stock.css` 定义 `--chart-grid/--chart-zero/--chart-axis/--chart-ink`，`stock.js` 用 `cv()` 读取，切主题后由 `window.__rerenderCharts()` 重绘 |
+
+生成/重建顺序：改完 `stock.css` 或雷达内联样式后 → 跑 `make_dark_theme.py`（反向映射）→ `build_theme_assets.py` → `build_stock_frontend.py` / `build_index_html.py`。
+
+### 顶部导航三页对齐
+
+三页顶部在 `≥900px` 都是同一套三段网格 `260px | 导航 | 右侧`，并统一 `min-height:76px`、`padding:12px 26px`、`gap:24px`；
+妖股雷达页用 `.bar-top{display:contents}` 让 brand / badges 直接落在网格列里，导航固定在**第 1 行第 2 列**。
+实测三页导航按钮矩形完全一致：`x = 314 / 413 / 512`，`y = 22`，高 `31px`，容器 `x=310,y=19,高38`。
+
 ### web/ 有三份副本，必须保持一致（实际踩过的坑）
 
 | 位置 | 用途 | 放什么 |

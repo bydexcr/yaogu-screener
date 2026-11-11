@@ -40,6 +40,11 @@
   --radius-sm: 12px;
   --radius-xs: 10px;
   --shadow: 0 18px 40px -28px rgba(15, 32, 51, .16);
+  /* 图表配色（跟随浅色/深色主题） */
+  --chart-grid: #e3e9f2;
+  --chart-zero: #dbe3ef;
+  --chart-axis: #8b98ab;
+  --chart-ink: #143049;
   --mono: ui-monospace, "SF Mono", "Roboto Mono", "Droid Sans Mono", Menlo, Consolas, monospace;
   --font: -apple-system, "SF Pro Text", "PingFang SC", "HarmonyOS Sans SC", "MiSans",
           "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -927,13 +932,14 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   /* ---------------- 顶部：一行三段（品牌 | 导航 | 搜索） ---------------- */
   .appbar {
     display: grid;
-    grid-template-columns: auto auto minmax(280px, 480px);
+    grid-template-columns: 260px auto minmax(280px, 480px);
     align-items: center;
     justify-content: start;
     gap: 24px;
     padding: 12px 26px;
+    min-height: 76px;      /* 与妖股雷达页 .bar 同高，保证导航垂直位置一致 */
   }
-  .appbar-top { padding-right: 0; }
+  .appbar-top { padding-right: 0; justify-self: start; min-width: 0; }
   .brand .logo { width: 34px; height: 34px; border-radius: 10px; }
   .brand-text h1 { font-size: 17px; }
   .brand-text .status-line { max-width: none; font-size: 11px; }
@@ -1067,3 +1073,26 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   margin-right: 6px;
   vertical-align: 2px;
 }
+
+/* ---------------- 主题切换按钮（右下角悬浮） ---------------- */
+.theme-toggle {
+  position: fixed;
+  right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  z-index: 90;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text-dim);
+  font-size: 17px;
+  line-height: 1;
+  box-shadow: 0 12px 26px -16px rgba(15, 32, 51, .6);
+  cursor: pointer;
+  transition: color .15s, border-color .15s, transform .15s, background .15s;
+}
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
+.theme-toggle:active { transform: scale(.94); }

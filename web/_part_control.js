@@ -194,6 +194,14 @@
   }
 
   /* ------------------------------ 启动 ------------------------------ */
+
+  /* 主题切换后重绘图表（theme.js 调用） */
+  window.__rerenderCharts = () => {
+    try {
+      if (state.data) render(state.data);
+    } catch (e) { /* 忽略 */ }
+  };
+
   function init() {
     bindSearch();
     bindExpandAll();

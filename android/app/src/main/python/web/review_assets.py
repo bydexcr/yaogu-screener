@@ -11,6 +11,7 @@ HTML = r"""<!DOCTYPE html>
 <title>大A小散 · 复盘</title>
 <link rel="stylesheet" href="/stock.css">
 <link rel="stylesheet" href="/review.css">
+<link rel="stylesheet" href="/stock-dark.css" data-theme-dark media="not all">
 </head>
 <body>
 
@@ -69,6 +70,7 @@ HTML = r"""<!DOCTYPE html>
 </main>
 
 <script src="/review.js"></script>
+<script src="/theme.js"></script>
 </body>
 </html>
 """

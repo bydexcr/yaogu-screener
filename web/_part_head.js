@@ -12,6 +12,17 @@
     return e.message || e.detail || fallback;
   }
 
+
+  // 图表配色跟随主题：颜色取自 CSS 变量（stock.css / stock-dark.css 各定义一套）
+  const cv = (name, fb) => {
+    try {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fb;
+    } catch (e) {
+      return fb;
+    }
+  };
+
   const state = {
     data: null,
     market: null,

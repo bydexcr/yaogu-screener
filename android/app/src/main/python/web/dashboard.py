@@ -90,6 +90,19 @@ def _load_review_js() -> str:
     return _read_asset("review.js", "JS", "web.review_assets")
 
 
+# ---------------- 主题（浅色/深色）资源 ----------------
+def _load_theme_js() -> str:
+    return _read_asset("theme.js", "THEME_JS", "web.theme_assets")
+
+
+def _load_stock_dark() -> str:
+    return _read_asset("stock-dark.css", "STOCK_DARK", "web.theme_assets")
+
+
+def _load_radar_dark() -> str:
+    return _read_asset("radar-dark.css", "RADAR_DARK", "web.theme_assets")
+
+
 def _load_review_module():
     return _load_stock_module("stock_review")
 
@@ -288,6 +301,15 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path in ("/review.js",):
             self._send(200, _load_review_js().encode("utf-8"), "text/javascript; charset=utf-8")
+            return
+        if path in ("/theme.js",):
+            self._send(200, _load_theme_js().encode("utf-8"), "text/javascript; charset=utf-8")
+            return
+        if path in ("/stock-dark.css",):
+            self._send(200, _load_stock_dark().encode("utf-8"), "text/css; charset=utf-8")
+            return
+        if path in ("/radar-dark.css",):
+            self._send(200, _load_radar_dark().encode("utf-8"), "text/css; charset=utf-8")
             return
         if path in ("/", "/index.html", "/stock"):
             if path == "/radar":
