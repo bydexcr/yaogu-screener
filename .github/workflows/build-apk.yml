@@ -82,7 +82,7 @@ jobs:
             DETECTED_ALIAS="yaogu"
             KEYSTORE_SOURCE="临时生成（签名不稳定，需卸载旧版才能安装）"
             KS_GENERATED=true
-            echo "::warning::未配置 KEYSTORE_BASE64：本次是临时签名，装不到旧版之上。请在本次构建产物 yaogu-keystore-keep-as-secret 里取 keystore.jks 配成 Secret（见 README_ANDROID.md「版本号与签名」）。仓库若是公开的，配好后请删除该产物，或直接把仓库设为 private。"
+            echo "::warning::未配置 KEYSTORE_BASE64：本次是临时签名，装不到旧版之上。请在本次构建产物 yaogu-keystore-keep-as-secret 里取 keystore.jks 配成 Secret（见 README_APP.md「版本号与签名」）。仓库若是公开的，配好后请删除该产物，或直接把仓库设为 private。"
           fi
           {
             echo "KEYSTORE_FILE=$PWD/keystore.jks"
