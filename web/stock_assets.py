@@ -17,9 +17,6 @@ HTML = r"""<!DOCTYPE html>
 <header class="appbar">
   <div class="appbar-top">
     <div class="brand">
-      <span class="logo" aria-hidden="true">
-        <svg viewBox="0 0 64 64" width="22" height="22"><path d="M10 46l11-13 9 8 12-21 12 10" fill="none" stroke="#4e8cff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="30" r="3.4" fill="#7fb0ff"/></svg>
-      </span>
       <div class="brand-text">
         <h1>大A小散</h1>
         <p class="status-line"><span class="dot" id="statusBadge"></span><span id="statusText">数据加载中</span></p>
@@ -34,11 +31,11 @@ HTML = r"""<!DOCTYPE html>
   <div class="search-box" id="searchBox">
     <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
-           placeholder="股票名称或代码，如 贵州茅台 / 600519" aria-label="股票搜索">
+           placeholder="名称或代码" aria-label="股票搜索">
     <button id="searchBtn" class="btn-primary" type="button">分析</button>
     <div class="suggest" id="suggest" hidden></div>
   </div>
-  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置">⚙</button>
+  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.1 14.6a1.5 1.5 0 0 0 .3 1.7l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.5 1.5 0 0 0-1.7-.3 1.5 1.5 0 0 0-.9 1.4v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.7.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.5 1.5 0 0 0 .3-1.7 1.5 1.5 0 0 0-1.4-.9H3a1.9 1.9 0 1 1 0-3.8h.1a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.7l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.5 1.5 0 0 0 1.7.3h.1a1.5 1.5 0 0 0 .9-1.4V3a1.9 1.9 0 1 1 3.8 0v.1a1.5 1.5 0 0 0 .9 1.4 1.5 1.5 0 0 0 1.7-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.5 1.5 0 0 0-.3 1.7v.1a1.5 1.5 0 0 0 1.4.9h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.5 1.5 0 0 0-1.4.9z"/></svg></button>
 </header>
 
 <main id="main">
@@ -131,8 +128,8 @@ HTML = r"""<!DOCTYPE html>
         <div class="hint">深色适合盯盘，浅色适合白天</div>
       </div>
       <div class="seg" id="themeSeg">
-        <button type="button" data-theme="light">浅色</button>
-        <button type="button" data-theme="dark">深色</button>
+        <button type="button" data-theme="light"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.1 5.1l1.4 1.4M17.5 17.5l1.4 1.4M18.9 5.1l-1.4 1.4M6.5 17.5l-1.4 1.4"/></svg>浅色</button>
+        <button type="button" data-theme="dark"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13.4A8.2 8.2 0 1 1 10.6 3.5a6.6 6.6 0 0 0 9.9 9.9z"/></svg>深色</button>
       </div>
     </div>
     <div class="settings-foot"><button class="btn-ghost" id="settingsClose" type="button">关闭</button></div>
@@ -153,25 +150,31 @@ CSS = r"""/* ============================================================
 /* ---------------- 1. 设计令牌 ---------------- */
 :root {
   /* 表面层级：底 → 卡片 → 嵌套块 → 交互态 */
-  --bg: #f3f6fb;
-  --bg-soft: #eaf0f9;
+  /* 微暖纸色：不用冷蓝灰（那是最典型的"AI SaaS 背景"） */
+  --bg: #f7f5f1;
+  --bg-soft: #efece6;
   --panel: #ffffff;
-  --panel-2: #f7f9fd;
-  --panel-3: #e9eff8;
+  --panel-2: #f4f1eb;
+  --panel-3: #e9e5dc;
 
-  /* 描边：全部为低对比发丝线 */
-  --line: #dbe3ef;
-  --line-soft: #e8eef7;
+  /* 描边：低对比发丝线（分区带靠它切段） */
+  --line: #ddd8cf;
+  --line-soft: #e9e4db;
 
-  /* 文本：三级灰阶 */
-  --text: #12233a;
-  --text-dim: #52637a;
-  --text-mute: #7d8ca1;
+  /* 文本：三级灰阶，偏墨色 */
+  --text: #14181d;
+  --text-dim: #4c545e;
+  --text-mute: #828b96;
 
-  /* 主色：单一蓝，仅用于强调与交互 */
-  --accent: #2563eb;
-  --accent-2: #3b82f6;
-  --accent-weak: rgba(37, 99, 235, .12);
+  /* 主色：只用于"可点击 / 已选中"，不承担信息强调 */
+  --accent: #1e4fbf;
+  --accent-2: #2f6fd0;
+  --accent-weak: rgba(30, 79, 191, .10);
+
+  /* 数字三档：一个 hero + 一组 key + 正文 */
+  --num-hero: 34px;
+  --num-key: 20px;
+  --num-body: 13px;
 
   /* 语义色：红涨绿跌（A 股习惯） */
   --up: #e11d33;
@@ -181,16 +184,16 @@ CSS = r"""/* ============================================================
   --warn: #c77700;
 
   /* 圆角 / 阴影 / 字体 */
-  --radius-lg: 18px;
-  --radius: 18px;
-  --radius-sm: 12px;
-  --radius-xs: 10px;
+  --radius-lg: 12px;
+  --radius: 10px;
+  --radius-sm: 8px;
+  --radius-xs: 6px;
   --shadow: 0 18px 40px -28px rgba(15, 32, 51, .16);
   /* 图表配色（跟随浅色/深色主题） */
-  --chart-grid: #e3e9f2;
-  --chart-zero: #dbe3ef;
-  --chart-axis: #8b98ab;
-  --chart-ink: #143049;
+  --chart-grid: #e6e1d8;
+  --chart-zero: #ddd8cf;
+  --chart-axis: #828b96;
+  --chart-ink: #2a3138;
   --mono: ui-monospace, "SF Mono", "Roboto Mono", "Droid Sans Mono", Menlo, Consolas, monospace;
   --font: -apple-system, "SF Pro Text", "PingFang SC", "HarmonyOS Sans SC", "MiSans",
           "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -216,13 +219,8 @@ html, body {
 
 /* 顶部极淡的光晕，只做层次，不抢内容 */
 body::before {
-  content: "";
-  position: fixed;
-  inset: 0 0 auto 0;
-  height: 320px;
-  background: radial-gradient(120% 100% at 50% 0%, rgba(37, 99, 235, .10) 0%, transparent 62%);
-  pointer-events: none;
-  z-index: 0;
+  /* 去 AI 味：顶部蓝色光晕是纯装饰，删掉 */
+  display: none;
 }
 
 html { scroll-behavior: smooth; --topbar-h: 108px; }
@@ -263,7 +261,7 @@ input { -webkit-tap-highlight-color: transparent; }
   height: 32px;
   border-radius: 10px;
   flex: none;
-  background: linear-gradient(160deg, #ccdcf5, #eef3fb);
+  background: var(--fg);
   border: 1px solid #ccd9ee;
   box-shadow: inset 0 1px 0 rgba(15, 32, 51, .06);
 }
@@ -330,11 +328,13 @@ input { -webkit-tap-highlight-color: transparent; }
 }
 
 .nav-btn.on {
-  color: #1d4ed8;
+  /* 去 AI 味：胶囊渐变 + 内发光 → 白底 + 底部强调线（像标签页，不像徽章） */
+  color: var(--text);
   font-weight: 650;
-  background: linear-gradient(180deg, rgba(37, 99, 235, .14), rgba(37, 99, 235, .05));
-  border-color: rgba(37, 99, 235, .34);
-  box-shadow: 0 2px 10px -6px rgba(37, 99, 235, .5), inset 0 1px 0 rgba(255, 255, 255, .7);
+  background: var(--panel);
+  border-color: var(--line);
+  border-bottom: 2px solid var(--accent);
+  box-shadow: none;
 }
 
 .nav-btn:active { transform: scale(.98); }
@@ -473,32 +473,42 @@ main {
   padding: 12px 12px calc(40px + env(safe-area-inset-bottom));
 }
 
+/* 分区带：透明底 + 顶部发丝线，取代"每个模块一个白盒子" */
 .card {
-  background: var(--panel);
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 12px;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 18px 0 22px;
+  margin-bottom: 0;
   scroll-margin-top: 0;
+}
+
+/* 只保留三个"英雄级"容器：行情卡 / 市场全景头 / 评分卡 */
+.quote-card,
+.mk-hero,
+#sec-score,
+#quoteCard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 
 .card > h2 {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 15px;
-  font-weight: 600;
-  margin: 0 0 2px;
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: .06em;
+  color: #414a56;
+  margin: 0 0 4px;
 }
 
 /* 章节标识：3px 主色竖条 */
 .card > h2::before {
-  content: "";
-  width: 3px;
-  height: 14px;
-  border-radius: 2px;
-  flex: none;
-  background: linear-gradient(180deg, var(--accent), rgba(37, 99, 235, .35));
+  /* 去 AI 味：标题前的装饰竖条删掉，层级改由字重/字距撑 */
+  display: none;
 }
 
 .card .sub {
@@ -551,7 +561,7 @@ main {
   height: 32px;
   border-radius: 50%;
   flex: none;
-  border: 2.5px solid #dbe3ef;
+  border: 2.5px solid var(--line);
   border-top-color: var(--accent);
   animation: spin .85s linear infinite;
 }
@@ -566,7 +576,7 @@ main {
 .sk-block {
   height: 110px;
   border-radius: var(--radius);
-  background: linear-gradient(100deg, #f4f7fc 30%, #eef3fb 50%, #f4f7fc 70%);
+  background: linear-gradient(100deg, var(--panel-2) 30%, var(--bg-soft) 50%, var(--panel-2) 70%);
   background-size: 220% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -603,8 +613,7 @@ main {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background:
-    radial-gradient(120% 120% at 100% 0%, rgba(37, 99, 235, .10) 0%, transparent 55%),
-    linear-gradient(180deg, #eef3fb, #eef3fb);
+    var(--panel);
   box-shadow: var(--shadow);
 }
 
@@ -681,7 +690,7 @@ main {
 .bar-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: var(--accent);
   transition: width .6s cubic-bezier(.22, 1, .36, 1);
 }
 
@@ -845,7 +854,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
 .peer-card .pc { margin-top: 2px; font-family: var(--mono); font-size: 11px; color: var(--text-mute); }
 .peer-card .sim { display: flex; align-items: center; gap: 8px; margin: 11px 0 9px; }
 .peer-card .sim .track { flex: 1; height: 4px; border-radius: 999px; background: #e4eaf4; overflow: hidden; }
-.peer-card .sim .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.peer-card .sim .fill { height: 100%; background: var(--accent); }
 .peer-card .sim .val { font-family: var(--mono); font-size: 12px; color: var(--accent-2); }
 .peer-card .pm { display: flex; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 11.5px; color: var(--text-dim); }
 .peer-card .rs { display: grid; gap: 3px; margin-top: 9px; }
@@ -854,7 +863,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
 .peer-card .dim { display: grid; grid-template-columns: 50px minmax(0, 1fr) 28px; align-items: center; gap: 6px; }
 .peer-card .dim .dl2 { font-size: 10px; color: var(--text-mute); }
 .peer-card .dim .dt2 { height: 3px; border-radius: 999px; background: #e4eaf4; overflow: hidden; }
-.peer-card .dim .dt2 i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #b7cbe8, var(--accent-2)); }
+.peer-card .dim .dt2 i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
 .peer-card .dim .dv2 { font-family: var(--mono); font-size: 10px; text-align: right; color: var(--text-dim); }
 
 /* ---------------- 13. 页脚 ---------------- */
@@ -877,11 +886,9 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   padding: 15px 16px 16px;
   margin-bottom: 12px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background:
-    radial-gradient(120% 120% at 100% 0%, rgba(37, 99, 235, .08) 0%, transparent 55%),
-    var(--panel);
-  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: none;
 }
 
 .mk-hero-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -902,7 +909,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
 
 .mk-hero-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: stretch; }
 
-.mk-breadth .bk-num { font-family: var(--mono); font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+.mk-breadth .bk-num { font-family: var(--mono); font-size: var(--num-hero); font-weight: 700; letter-spacing: -.02em; }
 .mk-breadth .bk-num .up { color: var(--up); }
 .mk-breadth .bk-num .down { color: var(--down); }
 .mk-breadth .bk-sub { margin-top: 5px; font-size: 11px; color: var(--text-mute); }
@@ -912,11 +919,11 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   margin-top: 11px;
   overflow: hidden;
   border-radius: 999px;
-  background: #e4eaf4;
+  background: var(--panel-3);
 }
 .mk-breadth .bk-bar i { display: block; height: 100%; }
 .mk-breadth .bk-bar .u { background: var(--up); }
-.mk-breadth .bk-bar .f { background: #a9b6c9; }
+.mk-breadth .bk-bar .f { background: var(--text-mute); }
 .mk-breadth .bk-bar .d { background: var(--down); }
 
 /* 涨跌分布：柱状 */
@@ -929,7 +936,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
 .mk-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .mk-kpi { padding: 10px 11px; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--panel-2); }
 .mk-kpi .k { font-size: 10.5px; color: var(--text-mute); }
-.mk-kpi .v { margin-top: 4px; font-family: var(--mono); font-size: 14px; color: var(--text); }
+.mk-kpi .v { margin-top: 4px; font-family: var(--mono); font-size: var(--num-key); font-weight: 650; color: var(--text); }
 .mk-kpi .s { margin-top: 2px; font-size: 10px; color: var(--text-mute); }
 
 .mk-row { display: grid; gap: 12px; margin-bottom: 12px; align-items: start; }
@@ -987,21 +994,23 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
 .mk-tier { display: grid; grid-template-columns: 56px minmax(0, 1fr) 34px; gap: 9px; align-items: center; }
 .mk-tier .tl { font-size: 11.5px; color: var(--text-dim); }
 .mk-tier .tb { height: 14px; border-radius: 7px; background: #e4eaf4; overflow: hidden; }
-.mk-tier .tb i { display: block; height: 100%; border-radius: 7px; background: linear-gradient(90deg, rgba(225, 29, 51, .55), rgba(225, 29, 51, .95)); }
+.mk-tier .tb i { display: block; height: 100%; border-radius: 7px; background: var(--up); }
 .mk-tier .tc { font-family: var(--mono); font-size: 12px; text-align: right; color: var(--text); }
 
-.mk-list { display: grid; gap: 4px; }
+.mk-list { display: grid; gap: 0; }
 .mk-item {
+  /* 榜单：表格行而不是"每条一个小圆角卡" */
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
-  padding: 8px 9px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-xs);
-  background: var(--panel-2);
+  padding: 7px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  background: transparent;
   cursor: pointer;
-  transition: border-color .15s, background .15s;
+  transition: background .15s;
 }
 .mk-item:active { border-color: #c3d5ee; background: var(--panel-3); }
 .mk-item .r { font-family: var(--mono); font-size: 10px; color: var(--text-mute); }
@@ -1053,7 +1062,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   .mk-hero { padding: 18px 22px; }
   .mk-hero-body { grid-template-columns: 180px minmax(0, 1fr) 280px; gap: 24px; }
   .mk-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .mk-hot-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .mk-hot-grid { display: block; }
   .mk-kpis { grid-template-columns: 1fr 1fr; }
   .qc-name { font-size: 23px; }
   .qc-price .p { font-size: 34px; }
@@ -1087,7 +1096,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   }
   .appbar-top { padding-right: 0; justify-self: start; min-width: 0; }
   .brand .logo { width: 34px; height: 34px; border-radius: 10px; }
-  .brand-text h1 { font-size: 17px; }
+  .brand-text h1 { font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
   .brand-text .status-line { max-width: none; font-size: 11px; }
   .appnav { margin-top: 0; gap: 6px; }
   .nav-btn { flex: none; padding: 7px 20px; border-radius: 8px; font-size: 13px; }
@@ -1123,7 +1132,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   .btn-ghost:hover { border-color: #9dbfe8; color: var(--text); }
 
   /* 两栏区块（评分/解读、估值/资金）在平板上也能并排 */
-  .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 0; }
+  .grid-2 { display: block; margin-bottom: 0; }
   .grid-2 > .card { margin-bottom: 0; }
 
   /* ---------------- 市场全景：内部两栏（首屏信息不挤成一条） ---------------- */
@@ -1162,17 +1171,11 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
      - 热榜 4 张同样 2 列（≥1600 时 4 列一行），不会出现「3+1」尴尬空位。 */
   #marketView { display: block; }
   .mk-full { margin-bottom: 16px; }
+  /* 分区带：单栏流式，不再切 2×2 网格 */
   .mk-cards {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    align-items: stretch;
+    display: block;
   }
-  .mk-cards > .card {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-  }
+  .mk-cards > .card { margin: 0; }
   /* 名单类卡片限高，内容再多也不把同行卡片拉成一条缝 */
   .mk-cards .mk-list,
   .mk-cards .mk-tiers {
@@ -1181,31 +1184,16 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
     scrollbar-width: thin;
   }
   .mk-hot-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    display: block;
   }
   .mk-hero { margin-bottom: 16px; }
 
-  #result {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    align-items: stretch;   /* 同一行卡片等高，避免内容不一导致的下方留白 */
-  }
+  /* 分区带：分析结果单栏，靠发丝线切段 */
+  #result { display: block; }
   #result > .card,
-  #result > .grid-2 > .card { margin-bottom: 0; height: 100%; display: flex; flex-direction: column; }
+  #result > .grid-2 > .card { margin-bottom: 0; }
   /* 需要整行宽度的模块：宽表格 / 多图 / 矩阵 */
-  #result > #backBar,
-  #result > #quoteCard,
-  #result > #keyFacts,
-  #result > #sec-trends,
-  #result > #sec-fundamentals,
-  #result > #sec-recent5,
-  #result > #sec-peers,
-  #result > #sec-risk,
-  #result > .grid-2,
-  #result > #footer { grid-column: 1 / -1; }
+  /* 单栏分区带：不再需要 grid-column 跨列 */
 }
 
 /* ============================================================
@@ -1213,7 +1201,6 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
    ============================================================ */
 @media (min-width: 1600px) {
   main { max-width: 1640px; }
-  .mk-hot-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 /* ============================================================
    章节序号层：个股分析页 16 个章节按文档顺序自动编号
@@ -1293,6 +1280,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
   background: var(--bg-soft);
   border: 1px solid var(--line-soft);
 }
+.seg button svg { vertical-align: -2px; margin-right: 4px; }
 .seg button {
   padding: 6px 14px;
   border: 1px solid transparent;
@@ -1306,7 +1294,7 @@ tr.self-row td { background: rgba(37, 99, 235, .08) !important; }
 .seg button.on {
   color: #1d4ed8;
   font-weight: 650;
-  background: linear-gradient(180deg, rgba(37, 99, 235, .14), rgba(37, 99, 235, .05));
+  background: var(--panel);
   border-color: rgba(37, 99, 235, .34);
 }
 .settings-foot { display: flex; justify-content: flex-end; margin-top: 14px; }
@@ -1421,7 +1409,7 @@ JS = r"""(function () {
     for (let i = 0; i <= 3; i += 1) {
       const p = bottom + ((top - bottom) * i) / 3;
       const y = yOf(p);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}" stroke-width="1"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e6e1d8')}" stroke-width="1"/>`;
       grid += `<text x="${padL + innerW + 6}" y="${(y + 3).toFixed(1)}">${p.toFixed(2)}</text>`;
     }
 
@@ -1459,10 +1447,10 @@ JS = r"""(function () {
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="K线图">
       ${grid}
-      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>` : ''}
+      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="${cv('--chart-grid', '#e6e1d8')}"/>` : ''}
       ${volBody}
       ${body}
-      ${maPts.length > 2 ? `<polyline points="${maPts.join(' ')}" fill="none" stroke="#3b82f6" stroke-width="1.4" opacity="0.9"/>` : ''}
+      ${maPts.length > 2 ? `<polyline points="${maPts.join(' ')}" fill="none" stroke="${cv('--accent-2', '#2f6fd0')}" stroke-width="1.4" opacity="0.9"/>` : ''}
       <line x1="${padL}" y1="${yOf(last.close).toFixed(1)}" x2="${padL + innerW}" y2="${yOf(last.close).toFixed(1)}" stroke="${lastColor}" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.6"/>
       ${dates}
     </svg>`;
@@ -1483,7 +1471,7 @@ JS = r"""(function () {
     let grid = '';
     [1, 10, 100, 1000].filter((v) => v <= scaleMax).forEach((r) => {
       const y = yOf(r);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e6e1d8')}"/>`;
       grid += `<text x="${padL - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end">#${r}</text>`;
     });
 
@@ -1498,7 +1486,7 @@ JS = r"""(function () {
     let dots = '';
     pts.forEach((p, i) => {
       if (i % dotStep === 0 || i === pts.length - 1) {
-        dots += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="#2563eb"/>`;
+        dots += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="${cv('--accent', '#1e4fbf')}"/>`;
         dots += `<text x="${p.x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${String(p.date).slice(5)}</text>`;
       }
     });
@@ -1507,7 +1495,7 @@ JS = r"""(function () {
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="热度排名趋势">
       ${grid}
       <polygon points="${area}" fill="rgba(37, 99, 235, 0.10)"/>
-      <polyline points="${line}" fill="none" stroke="#2563eb" stroke-width="1.8"/>
+      <polyline points="${line}" fill="none" stroke="${cv('--accent', '#1e4fbf')}" stroke-width="1.8"/>
       ${dots}
       <text x="${padL}" y="10">排名越靠上越热门 · 最佳 #${best.rank}</text>
     </svg>`;
@@ -1541,7 +1529,7 @@ JS = r"""(function () {
     });
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="单季归母净利润">
-      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="${cv('--chart-zero', '#dbe3ef')}"/>
+      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="${cv('--chart-zero', '#ddd8cf')}"/>
       ${bars}
     </svg>`;
   }
@@ -1610,7 +1598,7 @@ JS = r"""(function () {
     for (let i = 0; i <= 3; i += 1) {
       const v = min + (span * i) / 3;
       const y = yOf(v);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e6e1d8')}"/>`;
       grid += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(yDigits)}${ySuffix}</text>`;
     }
     if (isNum(refLine)) {
@@ -1661,11 +1649,11 @@ JS = r"""(function () {
     for (let i = 0; i <= 3; i += 1) {
       const v = min + (span * i) / 3;
       const y = yOf(v);
-      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
+      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e6e1d8')}"/>`;
       out += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(digits)}${ySuffix}</text>`;
     }
     if (isNum(refLine)) {
-      out += `<line x1="${padL}" y1="${yOf(refLine).toFixed(1)}" x2="${W - padR}" y2="${yOf(refLine).toFixed(1)}" stroke="#3b82f6" stroke-dasharray="4 4"/>`;
+      out += `<line x1="${padL}" y1="${yOf(refLine).toFixed(1)}" x2="${W - padR}" y2="${yOf(refLine).toFixed(1)}" stroke="${cv('--accent-2', '#2f6fd0')}" stroke-dasharray="4 4"/>`;
     }
     rows.forEach((b, i) => {
       const x = padL + i * step + step / 2;
@@ -1728,11 +1716,11 @@ JS = r"""(function () {
       <div class="score-top">
         <div class="score-ring">
           <svg viewBox="0 0 110 110" width="118" height="118">
-            <circle cx="55" cy="55" r="46" fill="none" stroke="${cv('--chart-grid', '#e3e9f2')}" stroke-width="9"/>
+            <circle cx="55" cy="55" r="46" fill="none" stroke="${cv('--chart-grid', '#e6e1d8')}" stroke-width="9"/>
             <circle cx="55" cy="55" r="46" fill="none" stroke="url(#sg)" stroke-width="9" stroke-linecap="round"
               stroke-dasharray="${dash.toFixed(1)} ${(circ - dash).toFixed(1)}" transform="rotate(-90 55 55)"/>
             <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#3b82f6"/>
+              <stop offset="0%" stop-color="${cv('--accent', '#1e4fbf')}"/><stop offset="100%" stop-color="${cv('--accent-2', '#2f6fd0')}"/>
             </linearGradient></defs>
           </svg>
           <div class="num"><span class="val">${isNum(s.overall) ? s.overall : '—'}</span><small>/100</small></div>
@@ -1896,8 +1884,8 @@ JS = r"""(function () {
     el('sec-trends').innerHTML = `${cardTitle('多期财务趋势', '近 8 个财年的利润率 / ROE 演化，叠加 6 个年度报告期的财务指标（同花顺指标口径）')}
       ${points.length >= 2 ? `<div class="chart-box"><h3 class="chart-title">利润率与 ROE 趋势（%）</h3>${lineChart({
         series: [
-          { key: 'grossMargin', label: '毛利率', color: '#2563eb' },
-          { key: 'netMargin', label: '净利率', color: '#3b82f6' },
+          { key: 'grossMargin', label: '毛利率', color: cv('--accent', '#1e4fbf') },
+          { key: 'netMargin', label: '净利率', color: cv('--accent-2', '#2f6fd0') },
           { key: 'roe', label: 'ROE（平均净资产）', color: '#c77700' },
         ],
         points,
@@ -1985,8 +1973,8 @@ JS = r"""(function () {
       ${series.length >= 2 ? `<div class="chart-box"><h3 class="chart-title">ROE 及其驱动因子（近似口径，%）</h3>${lineChart({
         series: [
           { key: 'roe', label: 'ROE', color: '#c77700' },
-          { key: 'netMargin', label: '净利率', color: '#2563eb' },
-          { key: 'turnover', label: '总资产周转率(次)', color: '#3b82f6' },
+          { key: 'netMargin', label: '净利率', color: cv('--accent', '#1e4fbf') },
+          { key: 'turnover', label: '总资产周转率(次)', color: cv('--accent-2', '#2f6fd0') },
         ],
         points: series.map((s) => ({ label: String(s.year), values: { roe: s.roe, netMargin: s.netMargin, turnover: isNum(s.assetTurnover) ? s.assetTurnover * 50 : null } })),
         ySuffix: '',
@@ -2832,7 +2820,10 @@ JS = r"""(function () {
     const parts = [];
     if (m.tradeDate) parts.push(`交易日 ${m.tradeDate}`);
     if (mem.status === 'running' && mem.progress) parts.push(`板块索引 ${mem.progress.done}/${mem.progress.total}`);
-    else if (mem.status === 'ready' && mem.date) parts.push(`板块索引 ${mem.date}`);
+    else if (mem.status === 'ready' && mem.date) {
+      // 日期与交易日相同就不重复显示（原来会出现 "交易日 X · 板块索引 X"）
+      parts.push(mem.date === m.tradeDate ? '板块索引已就绪' : `板块索引 ${mem.date}`);
+    }
     if (state.data && state.data.resolved) parts.push(`已分析 ${state.data.resolved.name}`);
     const text = parts.join(' · ');
     if (text && $("#statusText")) $("#statusText").textContent = text;

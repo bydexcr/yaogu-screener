@@ -59,10 +59,13 @@ body {
   white-space: nowrap;
 }
 .nav-btn.on {
-  color: #04141c;
-  border-color: transparent;
-  background: linear-gradient(135deg, #22d3ee, #61e6c9);
-  font-weight: 700;
+  /* 去 AI 味：胶囊渐变 + 内发光 → 白底 + 底部强调线（像标签页，不像徽章） */
+  color: var(--text);
+  font-weight: 650;
+  background: var(--panel);
+  border-color: var(--line);
+  border-bottom: 2px solid var(--accent);
+  box-shadow: none;
 }
 .nav-btn:active { transform: scale(.97); }
 

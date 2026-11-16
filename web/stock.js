@@ -104,7 +104,7 @@
     for (let i = 0; i <= 3; i += 1) {
       const p = bottom + ((top - bottom) * i) / 3;
       const y = yOf(p);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}" stroke-width="1"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + innerW}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e6e1d8')}" stroke-width="1"/>`;
       grid += `<text x="${padL + innerW + 6}" y="${(y + 3).toFixed(1)}">${p.toFixed(2)}</text>`;
     }
 
@@ -142,10 +142,10 @@
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="K线图">
       ${grid}
-      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>` : ''}
+      ${volH ? `<line x1="${padL}" y1="${vTop}" x2="${padL + innerW}" y2="${vTop}" stroke="${cv('--chart-grid', '#e6e1d8')}"/>` : ''}
       ${volBody}
       ${body}
-      ${maPts.length > 2 ? `<polyline points="${maPts.join(' ')}" fill="none" stroke="#3b82f6" stroke-width="1.4" opacity="0.9"/>` : ''}
+      ${maPts.length > 2 ? `<polyline points="${maPts.join(' ')}" fill="none" stroke="${cv('--accent-2', '#2f6fd0')}" stroke-width="1.4" opacity="0.9"/>` : ''}
       <line x1="${padL}" y1="${yOf(last.close).toFixed(1)}" x2="${padL + innerW}" y2="${yOf(last.close).toFixed(1)}" stroke="${lastColor}" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.6"/>
       ${dates}
     </svg>`;
@@ -166,7 +166,7 @@
     let grid = '';
     [1, 10, 100, 1000].filter((v) => v <= scaleMax).forEach((r) => {
       const y = yOf(r);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e6e1d8')}"/>`;
       grid += `<text x="${padL - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end">#${r}</text>`;
     });
 
@@ -181,7 +181,7 @@
     let dots = '';
     pts.forEach((p, i) => {
       if (i % dotStep === 0 || i === pts.length - 1) {
-        dots += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="#2563eb"/>`;
+        dots += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="${cv('--accent', '#1e4fbf')}"/>`;
         dots += `<text x="${p.x.toFixed(1)}" y="${H - 8}" text-anchor="middle">${String(p.date).slice(5)}</text>`;
       }
     });
@@ -190,7 +190,7 @@
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="热度排名趋势">
       ${grid}
       <polygon points="${area}" fill="rgba(37, 99, 235, 0.10)"/>
-      <polyline points="${line}" fill="none" stroke="#2563eb" stroke-width="1.8"/>
+      <polyline points="${line}" fill="none" stroke="${cv('--accent', '#1e4fbf')}" stroke-width="1.8"/>
       ${dots}
       <text x="${padL}" y="10">排名越靠上越热门 · 最佳 #${best.rank}</text>
     </svg>`;
@@ -224,7 +224,7 @@
     });
     return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="单季归母净利润">
-      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="${cv('--chart-zero', '#dbe3ef')}"/>
+      <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="${cv('--chart-zero', '#ddd8cf')}"/>
       ${bars}
     </svg>`;
   }
@@ -293,7 +293,7 @@
     for (let i = 0; i <= 3; i += 1) {
       const v = min + (span * i) / 3;
       const y = yOf(v);
-      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e6e1d8')}"/>`;
       grid += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(yDigits)}${ySuffix}</text>`;
     }
     if (isNum(refLine)) {
@@ -344,11 +344,11 @@
     for (let i = 0; i <= 3; i += 1) {
       const v = min + (span * i) / 3;
       const y = yOf(v);
-      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e3e9f2')}"/>`;
+      out += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cv('--chart-grid', '#e6e1d8')}"/>`;
       out += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${v.toFixed(digits)}${ySuffix}</text>`;
     }
     if (isNum(refLine)) {
-      out += `<line x1="${padL}" y1="${yOf(refLine).toFixed(1)}" x2="${W - padR}" y2="${yOf(refLine).toFixed(1)}" stroke="#3b82f6" stroke-dasharray="4 4"/>`;
+      out += `<line x1="${padL}" y1="${yOf(refLine).toFixed(1)}" x2="${W - padR}" y2="${yOf(refLine).toFixed(1)}" stroke="${cv('--accent-2', '#2f6fd0')}" stroke-dasharray="4 4"/>`;
     }
     rows.forEach((b, i) => {
       const x = padL + i * step + step / 2;
@@ -411,11 +411,11 @@
       <div class="score-top">
         <div class="score-ring">
           <svg viewBox="0 0 110 110" width="118" height="118">
-            <circle cx="55" cy="55" r="46" fill="none" stroke="${cv('--chart-grid', '#e3e9f2')}" stroke-width="9"/>
+            <circle cx="55" cy="55" r="46" fill="none" stroke="${cv('--chart-grid', '#e6e1d8')}" stroke-width="9"/>
             <circle cx="55" cy="55" r="46" fill="none" stroke="url(#sg)" stroke-width="9" stroke-linecap="round"
               stroke-dasharray="${dash.toFixed(1)} ${(circ - dash).toFixed(1)}" transform="rotate(-90 55 55)"/>
             <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#3b82f6"/>
+              <stop offset="0%" stop-color="${cv('--accent', '#1e4fbf')}"/><stop offset="100%" stop-color="${cv('--accent-2', '#2f6fd0')}"/>
             </linearGradient></defs>
           </svg>
           <div class="num"><span class="val">${isNum(s.overall) ? s.overall : '—'}</span><small>/100</small></div>
@@ -579,8 +579,8 @@
     el('sec-trends').innerHTML = `${cardTitle('多期财务趋势', '近 8 个财年的利润率 / ROE 演化，叠加 6 个年度报告期的财务指标（同花顺指标口径）')}
       ${points.length >= 2 ? `<div class="chart-box"><h3 class="chart-title">利润率与 ROE 趋势（%）</h3>${lineChart({
         series: [
-          { key: 'grossMargin', label: '毛利率', color: '#2563eb' },
-          { key: 'netMargin', label: '净利率', color: '#3b82f6' },
+          { key: 'grossMargin', label: '毛利率', color: cv('--accent', '#1e4fbf') },
+          { key: 'netMargin', label: '净利率', color: cv('--accent-2', '#2f6fd0') },
           { key: 'roe', label: 'ROE（平均净资产）', color: '#c77700' },
         ],
         points,
@@ -668,8 +668,8 @@
       ${series.length >= 2 ? `<div class="chart-box"><h3 class="chart-title">ROE 及其驱动因子（近似口径，%）</h3>${lineChart({
         series: [
           { key: 'roe', label: 'ROE', color: '#c77700' },
-          { key: 'netMargin', label: '净利率', color: '#2563eb' },
-          { key: 'turnover', label: '总资产周转率(次)', color: '#3b82f6' },
+          { key: 'netMargin', label: '净利率', color: cv('--accent', '#1e4fbf') },
+          { key: 'turnover', label: '总资产周转率(次)', color: cv('--accent-2', '#2f6fd0') },
         ],
         points: series.map((s) => ({ label: String(s.year), values: { roe: s.roe, netMargin: s.netMargin, turnover: isNum(s.assetTurnover) ? s.assetTurnover * 50 : null } })),
         ySuffix: '',
@@ -1515,7 +1515,10 @@
     const parts = [];
     if (m.tradeDate) parts.push(`交易日 ${m.tradeDate}`);
     if (mem.status === 'running' && mem.progress) parts.push(`板块索引 ${mem.progress.done}/${mem.progress.total}`);
-    else if (mem.status === 'ready' && mem.date) parts.push(`板块索引 ${mem.date}`);
+    else if (mem.status === 'ready' && mem.date) {
+      // 日期与交易日相同就不重复显示（原来会出现 "交易日 X · 板块索引 X"）
+      parts.push(mem.date === m.tradeDate ? '板块索引已就绪' : `板块索引 ${mem.date}`);
+    }
     if (state.data && state.data.resolved) parts.push(`已分析 ${state.data.resolved.name}`);
     const text = parts.join(' · ');
     if (text && $("#statusText")) $("#statusText").textContent = text;

@@ -53,7 +53,7 @@
   .btn-ghost:hover { border-color: #9dbfe8; color: var(--text); }
 
   /* 两栏区块（评分/解读、估值/资金）在平板上也能并排 */
-  .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 0; }
+  .grid-2 { display: block; margin-bottom: 0; }
   .grid-2 > .card { margin-bottom: 0; }
 
   /* ---------------- 市场全景：内部两栏（首屏信息不挤成一条） ---------------- */
@@ -92,17 +92,8 @@
      - 热榜 4 张同样 2 列（≥1600 时 4 列一行），不会出现「3+1」尴尬空位。 */
   #marketView { display: block; }
   .mk-full { margin-bottom: 16px; }
-  .mk-cards {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    align-items: stretch;
-  }
-  .mk-cards > .card {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-  }
+  .mk-cards { display: block; }
+  .mk-cards > .card { margin: 0; }
   /* 名单类卡片限高，内容再多也不把同行卡片拉成一条缝 */
   .mk-cards .mk-list,
   .mk-cards .mk-tiers {
@@ -110,33 +101,14 @@
     overflow-y: auto;
     scrollbar-width: thin;
   }
-  .mk-hot-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-  }
+  .mk-hot-grid { display: block; }
   .mk-hero { margin-bottom: 16px; }
 
-  #result {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    align-items: start;
-  }
-  #result { align-items: stretch; }
+  #result { display: block; }
   #result > .card,
   #result > .grid-2 > .card { margin-bottom: 0; height: 100%; display: flex; flex-direction: column; }
   /* 需要整行宽度的模块：宽表格 / 多图 / 矩阵 */
-  #result > #backBar,
-  #result > #quoteCard,
-  #result > #keyFacts,
-  #result > #sec-trends,
-  #result > #sec-fundamentals,
-  #result > #sec-recent5,
-  #result > #sec-peers,
-  #result > #sec-risk,
-  #result > .grid-2,
-  #result > #footer { grid-column: 1 / -1; }
+  /* 单栏分区带：不再需要 grid-column 跨列 */
 }
 
 /* ============================================================
@@ -144,5 +116,4 @@
    ============================================================ */
 @media (min-width: 1600px) {
   main { max-width: 1640px; }
-  .mk-hot-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }

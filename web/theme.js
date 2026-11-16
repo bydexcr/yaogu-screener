@@ -1,9 +1,10 @@
-/* 主题切换（浅色 / 深色）：入口在「设置」面板里（桌面端顶栏 ⚙；手机端走原生设置页） */
+/* 主题切换（浅色 / 深色）：入口在设置面板里（桌面端顶栏齿轮按钮；手机端走原生设置页） */
 (function () {
   'use strict';
   var KEY = 'yaogu.theme';
   var DARK = 'dark';
   var LIGHT = 'light';
+
 
   function links() {
     return Array.prototype.slice.call(document.querySelectorAll('link[data-theme-dark]'));

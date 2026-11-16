@@ -18,9 +18,6 @@ HTML = r"""<!DOCTYPE html>
 <header class="appbar">
   <div class="appbar-top">
     <div class="brand">
-      <span class="logo" aria-hidden="true">
-        <svg viewBox="0 0 64 64" width="22" height="22"><path d="M10 46l11-13 9 8 12-21 12 10" fill="none" stroke="#4e8cff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="30" r="3.4" fill="#7fb0ff"/></svg>
-      </span>
       <div class="brand-text">
         <h1>大A小散</h1>
         <p class="status-line"><span class="dot" id="statusBadge"></span><span id="statusText">复盘加载中</span></p>
@@ -35,11 +32,11 @@ HTML = r"""<!DOCTYPE html>
   <div class="search-box" id="searchBox">
     <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
-           placeholder="股票名称或代码，如 贵州茅台 / 600519" aria-label="股票搜索">
+           placeholder="名称或代码" aria-label="股票搜索">
     <button id="searchBtn" class="btn-primary" type="button">分析</button>
     <div class="suggest" id="suggest" hidden></div>
   </div>
-  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置">⚙</button>
+  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.1 14.6a1.5 1.5 0 0 0 .3 1.7l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.5 1.5 0 0 0-1.7-.3 1.5 1.5 0 0 0-.9 1.4v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.7.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.5 1.5 0 0 0 .3-1.7 1.5 1.5 0 0 0-1.4-.9H3a1.9 1.9 0 1 1 0-3.8h.1a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.7l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.5 1.5 0 0 0 1.7.3h.1a1.5 1.5 0 0 0 .9-1.4V3a1.9 1.9 0 1 1 3.8 0v.1a1.5 1.5 0 0 0 .9 1.4 1.5 1.5 0 0 0 1.7-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.5 1.5 0 0 0-.3 1.7v.1a1.5 1.5 0 0 0 1.4.9h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.5 1.5 0 0 0-1.4.9z"/></svg></button>
 </header>
 
 <main id="main">
@@ -82,8 +79,8 @@ HTML = r"""<!DOCTYPE html>
         <div class="hint">深色适合盯盘，浅色适合白天</div>
       </div>
       <div class="seg" id="themeSeg">
-        <button type="button" data-theme="light">浅色</button>
-        <button type="button" data-theme="dark">深色</button>
+        <button type="button" data-theme="light"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.1 5.1l1.4 1.4M17.5 17.5l1.4 1.4M18.9 5.1l-1.4 1.4M6.5 17.5l-1.4 1.4"/></svg>浅色</button>
+        <button type="button" data-theme="dark"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13.4A8.2 8.2 0 1 1 10.6 3.5a6.6 6.6 0 0 0 9.9 9.9z"/></svg>深色</button>
       </div>
     </div>
     <div class="settings-foot"><button class="btn-ghost" id="settingsClose" type="button">关闭</button></div>
@@ -109,15 +106,13 @@ CSS = r"""/* ============================================================
   margin-bottom: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background:
-    radial-gradient(120% 140% at 100% 0%, rgba(37, 99, 235, .10) 0%, transparent 58%),
-    var(--panel);
+  background: var(--panel);
 }
 .rv-topbar-main { min-width: 0; }
 .rv-sys {
-  font-size: 10.5px; letter-spacing: 1.6px; color: var(--accent-2);
-  border: 1px solid rgba(37, 99, 235, .35); background: var(--accent-weak);
-  border-radius: 999px; padding: 2px 9px;
+  /* 低调化：不做"系统徽章"，只做灰色小标签 */
+  font-size: 10.5px; letter-spacing: 1.2px; color: var(--text-mute);
+  border: 0; background: none; padding: 0;
 }
 .rv-title { font-size: 19px; margin: 8px 0 0; letter-spacing: .4px; }
 .rv-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -126,11 +121,11 @@ CSS = r"""/* ============================================================
   border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px;
 }
 .rv-tag.ghost { color: var(--text-mute); background: transparent; }
-.rv-tag.heat.hot { color: #200; background: linear-gradient(135deg, #c94b28, #e11d33); border-color: transparent; }
-.rv-tag.heat.warm { color: #241a00; background: linear-gradient(135deg, #f0b429, #c77700); border-color: transparent; }
+.rv-tag.heat.hot { color: #fff; background: var(--up); border-color: transparent; }
+.rv-tag.heat.warm { color: #fff; background: var(--warn); border-color: transparent; }
 .rv-tag.heat.mid { color: var(--text); }
-.rv-tag.heat.cool { color: #ffffff; background: linear-gradient(135deg, #0d8f68, #0d9b6c); border-color: transparent; }
-.rv-tag.heat.cold { color: #ffffff; background: linear-gradient(135deg, #0a6b5f, #0a8a6e); border-color: transparent; }
+.rv-tag.heat.cool { color: #ffffff; background: var(--down); border-color: transparent; }
+.rv-tag.heat.cold { color: #ffffff; background: #0a6b5f; border-color: transparent; }
 .rv-topbar-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 .rv-select {
   appearance: none; color: var(--text); background: var(--panel-2);
@@ -145,10 +140,12 @@ CSS = r"""/* ============================================================
 /* ---------------- 区块骨架 ---------------- */
 .rv-flow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .rv-sec {
-  background: var(--panel);
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  padding: 13px 14px 14px;
+  /* 分区带：透明底 + 顶部发丝线 */
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 16px 0 20px;
 }
 .rv-sec-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
 .rv-no {
@@ -178,8 +175,8 @@ CSS = r"""/* ============================================================
 .rv-verdict {
   margin: 0 0 10px; font-size: 14.5px; line-height: 1.75; color: var(--text); font-weight: 600;
   padding: 11px 13px; border-radius: 12px;
-  background: linear-gradient(135deg, rgba(37, 99, 235, .12), rgba(37, 99, 235, .02));
-  border: 1px solid rgba(37, 99, 235, .22);
+  background: var(--panel);
+  border: 1px solid var(--line);
 }
 .rv-points { margin: 0; padding-left: 18px; }
 .rv-points li { font-size: 12.5px; line-height: 1.85; color: var(--text-dim); }
@@ -315,7 +312,7 @@ CSS = r"""/* ============================================================
 .rv-tier { display: grid; grid-template-columns: 74px minmax(0, 1fr) 34px; gap: 8px; align-items: center; }
 .rv-tier .tl { font-size: 11.5px; color: var(--text-dim); }
 .rv-tier .tk { height: 15px; background: var(--panel-3); border-radius: 4px; overflow: hidden; }
-.rv-tier .tk i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, rgba(225, 29, 51, .5), var(--up)); }
+.rv-tier .tk i { display: block; height: 100%; border-radius: 4px; background: var(--up); }
 .rv-tier .tc { font-size: 11.5px; color: var(--text-mute); text-align: right; font-family: var(--mono); }
 
 .rv-foot { margin: 14px 2px 0; font-size: 11px; line-height: 1.8; color: var(--text-mute); }

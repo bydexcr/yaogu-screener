@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#f3f6fb">
+<meta name="theme-color" content="#f7f5f1">
 <title>大A小散 · 妖股雷达</title>
 <script>window.__DSH_STATE__ = null;</script>
 <style>
@@ -12,14 +12,15 @@
    大A小散 · 视觉系统 v2（雷达页）— 与个股分析页共用同一套令牌
    ============================================================ */
 :root{
-  --bg:#f3f6fb; --bg-soft:#eaf0f9;
-  --card:#ffffff; --card-2:#f7f9fd; --card-3:#e9eff8;
-  --line:#dbe3ef; --line-soft:#e8eef7;
-  --fg:#12233a; --dim:#52637a; --muted:#7d8ca1;
-  --hit:#e11d33; --ok:#0d9b6c; --warn:#c77700; --accent:#2563eb; --accent-2:#3b82f6;
+  --bg:#f7f5f1; --bg-soft:#efece6;
+  --card:#ffffff; --card-2:#f5f2ec; --card-3:#e9e5dc;
+  --line:#ddd8cf; --line-soft:#e9e4db;
+  --fg:#14181d; --dim:#4c545e; --muted:#828b96;
+  --hit:#e11d33; --ok:#0d9b6c; --warn:#c77700; --accent:#1e4fbf; --accent-2:#2f6fd0;
   --up:#e11d33; --down:#0d9b6c;
-  --accent-weak:rgba(37, 99, 235, .12);
-  --radius:18px; --radius-sm:12px; --radius-xs:10px;
+  --accent-weak:rgba(30, 79, 191, .10);
+  --radius:10px; --radius-sm:8px; --radius-xs:6px;
+  --num-hero:34px; --num-key:20px; --num-body:13px;
   --mono:ui-monospace,"SF Mono","Roboto Mono","Droid Sans Mono",Menlo,Consolas,monospace;
   --font:-apple-system,"SF Pro Text","PingFang SC","HarmonyOS Sans SC","MiSans","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
 }
@@ -32,7 +33,7 @@ body{
 }
 body::before{
   content:"";position:fixed;inset:0 0 auto 0;height:300px;pointer-events:none;z-index:0;
-  background:radial-gradient(120% 100% at 50% 0%,rgba(37, 99, 235, .10) 0%,transparent 62%);
+  display:none;   /* 去 AI 味：顶部蓝色光晕删除 */
 }
 h1,h2,h3,h4{font-weight:600;letter-spacing:-.1px}
 a{color:inherit;text-decoration:none}
@@ -50,10 +51,10 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointe
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .logo{
   display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:10px;
-  background:linear-gradient(160deg,#ccdcf5,#eef3fb);border:1px solid #ccd9ee;
+  background:var(--fg);border:1px solid var(--fg);color:#fff;
   box-shadow:inset 0 1px 0 rgba(15, 32, 51, .06);
 }
-.brand-text h1{font-size:17px;font-weight:650;line-height:1.25;letter-spacing:.2px}
+.brand-text h1{font-size:17px;font-weight:800;line-height:1.25;letter-spacing:-.01em}
 .brand-sub{font-size:10.5px;color:var(--muted);margin-top:2px;white-space:nowrap}
 .bar-badges{margin-left:auto;display:flex;gap:6px;flex:none}
 .badge{
@@ -75,10 +76,11 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointe
   transition:color .15s,background .15s,border-color .15s;
 }
 .nav-btn.on{
-  color:#1d4ed8;font-weight:650;
-  background:linear-gradient(180deg,rgba(37, 99, 235, .14),rgba(37, 99, 235, .05));
-  border-color:rgba(37, 99, 235, .34);
-  box-shadow:0 2px 10px -6px rgba(37, 99, 235, .5),inset 0 1px 0 rgba(255, 255, 255, .7);
+  color:var(--fg);font-weight:650;
+  background:var(--card);
+  border-color:var(--line);
+  border-bottom:2px solid var(--accent);
+  box-shadow:none;
 }
 
 /* ---------- 数据条 ---------- */
@@ -113,15 +115,16 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointe
 main{position:relative;z-index:1;padding:12px 12px 8px}
 .cols{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 .card{
-  background:var(--card);border:1px solid var(--line-soft);border-radius:var(--radius);
-  padding:16px;min-width:0;
+  /* 分区带：透明底 + 顶部发丝线 */
+  background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;
+  padding:18px 0 22px;min-width:0;
 }
 .card h2{
   display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600;margin:0 0 2px;flex-wrap:wrap;
 }
 .card h2::before{
   content:"";width:3px;height:14px;border-radius:2px;flex:none;
-  background:linear-gradient(180deg,var(--accent),rgba(37, 99, 235, .35));
+  display:none;   /* 去 AI 味：标题装饰竖条删除 */
 }
 .tick{font-size:11px;line-height:1.65;color:var(--muted);font-weight:400}
 .sub{
@@ -246,8 +249,8 @@ td.empty{text-align:center;color:var(--muted);font-family:var(--font)}
 .bar-name{font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar-track{position:relative;height:7px;border-radius:999px;background:#e9eff8;overflow:hidden}
 .bar-fill{position:absolute;top:0;height:100%;border-radius:999px}
-.bar-fill.pos{background:linear-gradient(90deg,rgba(225, 29, 51, .55),rgba(225, 29, 51, .95))}
-.bar-fill.neg{background:linear-gradient(90deg,rgba(13, 155, 108, .95),rgba(13, 155, 108, .55))}
+.bar-fill.pos{background:var(--hit)}
+.bar-fill.neg{background:var(--ok)}
 .bar-zero{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#c9d5e6}
 .bar-thr{position:absolute;top:-3px;bottom:-3px;width:1px;border-left:1px dashed rgba(199, 119, 0, .75)}
 .bar-val{font-family:var(--mono);font-size:11px;text-align:right}
@@ -354,8 +357,9 @@ footer{
 .settings-row .lbl{font-size:13px;color:var(--fg)}
 .settings-row .hint{margin-top:2px;font-size:11px;color:var(--muted)}
 .seg{display:inline-flex;gap:4px;padding:3px;border-radius:10px;background:var(--bg-soft);border:1px solid var(--line-soft)}
+.seg button svg{vertical-align:-2px;margin-right:4px}
 .seg button{padding:6px 14px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--dim);font-size:12.5px;cursor:pointer;transition:color .15s,background .15s}
-.seg button.on{color:#1d4ed8;font-weight:650;background:linear-gradient(180deg,rgba(37, 99, 235, .14),rgba(37, 99, 235, .05));border-color:rgba(37, 99, 235, .34)}
+.seg button.on{color:var(--fg);font-weight:650;background:var(--card);border-color:var(--line);border-bottom:2px solid var(--accent)}
 .settings-foot{display:flex;justify-content:flex-end;margin-top:14px}
 @media (min-width:900px){.icon-btn{display:grid}}
 </style>
@@ -365,9 +369,6 @@ footer{
   <header class="bar">
     <div class="bar-top">
       <div class="brand">
-        <span class="logo" aria-hidden="true">
-          <svg viewBox="0 0 64 64" width="22" height="22"><path d="M10 46l11-13 9 8 12-21 12 10" fill="none" stroke="#2563eb" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="30" r="3.4" fill="#3b82f6"/></svg>
-        </span>
         <div class="brand-text">
           <h1>大A小散</h1>
           <p class="brand-sub">妖股低吸雷达</p>
@@ -383,7 +384,7 @@ footer{
       <a class="nav-btn on" href="/radar">妖股雷达</a>
       <a class="nav-btn" href="/review">复盘</a>
     </nav>
-  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置">⚙</button>
+  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.1 14.6a1.5 1.5 0 0 0 .3 1.7l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.5 1.5 0 0 0-1.7-.3 1.5 1.5 0 0 0-.9 1.4v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.7.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.5 1.5 0 0 0 .3-1.7 1.5 1.5 0 0 0-1.4-.9H3a1.9 1.9 0 1 1 0-3.8h.1a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.7l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.5 1.5 0 0 0 1.7.3h.1a1.5 1.5 0 0 0 .9-1.4V3a1.9 1.9 0 1 1 3.8 0v.1a1.5 1.5 0 0 0 .9 1.4 1.5 1.5 0 0 0 1.7-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.5 1.5 0 0 0-.3 1.7v.1a1.5 1.5 0 0 0 1.4.9h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.5 1.5 0 0 0-1.4.9z"/></svg></button>
   </header>
 
   <div class="panel-top">
@@ -405,9 +406,9 @@ footer{
   </div>
 
   <div class="chips">
-    <span class="chip">① T-1 涨停或 &gt;8%</span><span class="chip">② T-1 缩量</span>
-    <span class="chip">③ 30 日新高</span><span class="chip">④ T-1 成交额 ≥ 5 亿</span>
-    <span class="chip">⑤ T 日低开 5%~8%</span><span class="chip dim">剔除 ST / 北交所</span>
+    <span class="chip">T-1 涨停或 &gt;8%</span><span class="chip">T-1 缩量</span>
+    <span class="chip">30 日新高</span><span class="chip">T-1 成交额 ≥ 5 亿</span>
+    <span class="chip">T 日低开 5%~8%</span><span class="chip dim">剔除 ST / 北交所</span>
     <span class="chip" id="senti" style="display:none"></span>
   </div>
 
@@ -762,6 +763,9 @@ async function refresh(){
     ph.textContent=(st.phase||"-")+(st.offline?"(回放)":"");
     ph.className="badge"+(st.phase==="连续竞价"||st.phase==="集合竞价"?" live":"");
     $("#warnbar").style.display=(st.data_ready===false)?"":"none";
+    // 去 AI 味：T/T-1/T-2 还是 "-" 时整行隐藏，别让人看到一排空占位
+    const statsEl=document.querySelector(".stats");
+    if(statsEl) statsEl.style.display=(st.t_date?"":"none");
     $("#src").textContent="源:"+(st.source||"-"); $("#src").className="badge"+(st.new_hits&&st.new_hits.length?" hit":"");
     $("#t0").textContent=st.t_date||"-"; $("#t1").textContent=st.t1_date||"-"; $("#t2").textContent=st.t2_date||"-";
     $("#pool").textContent=st.pool_size??"-";
@@ -797,8 +801,12 @@ async function refresh(){
           <span class="up">开盘 ${fmt(h.open_pct,2)}%</span>
           <span class="tick">现价 ${fmt(h.last_price,2)} (${fmt(h.last_pct,2)}%)</span></div>`).join("");
     }else{
-      $("#timeline").innerHTML=`<div class="empty">暂无命中 · 今日候选无低开 ${esc(String(lo))}%~${esc(String(hi))}%<br>
-        <span style="font-size:11px">命中需 ①~⑤ 全满足：候选池里出现 T 日竞价/开盘低开区间即为信号</span></div>`;
+      const upd = (st.updated || "").slice(11) || "—";
+      $("#timeline").innerHTML=`<div class="empty">
+        <div><b>今日暂无命中</b>　候选 ${esc(String(st.pool_size ?? "—"))} 只 / 低开命中 0　·　最近扫描 ${esc(upd)}</div>
+        <div style="font-size:11px;margin-top:4px">判定区间：T 日开盘较昨收低开 ${esc(String(lo))}%~${esc(String(hi))}%；候选池里出现落在该区间的开盘价即触发。</div>
+        <div style="font-size:11px;margin-top:2px">示例：昨收 10.00 → 触发需开盘落在 9.20 ~ 9.50。</div>
+      </div>`;
     }
     const evs=(st.events||[]).filter(e=>e.type==="confirm"||e.type==="broken").slice(0,12);
     $("#evs").innerHTML=evs.length?evs.map(e=>
@@ -912,8 +920,8 @@ else { refresh(); setInterval(refresh, 3000); }
         <div class="hint">深色适合盯盘，浅色适合白天</div>
       </div>
       <div class="seg" id="themeSeg">
-        <button type="button" data-theme="light">浅色</button>
-        <button type="button" data-theme="dark">深色</button>
+        <button type="button" data-theme="light"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.1 5.1l1.4 1.4M17.5 17.5l1.4 1.4M18.9 5.1l-1.4 1.4M6.5 17.5l-1.4 1.4"/></svg>浅色</button>
+        <button type="button" data-theme="dark"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13.4A8.2 8.2 0 1 1 10.6 3.5a6.6 6.6 0 0 0 9.9 9.9z"/></svg>深色</button>
       </div>
     </div>
     <div class="settings-foot"><button class="btn-ghost" id="settingsClose" type="button">关闭</button></div>
