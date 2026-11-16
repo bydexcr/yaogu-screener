@@ -121,6 +121,10 @@ class Candidate:
 
     def to_dict(self) -> dict:
         d = asdict(self)
+        # 兜底：inf / nan 不是合法 JSON（json.dumps 会写成 Infinity/NaN，前端 JSON.parse 直接抛错）
+        for k, v in list(d.items()):
+            if isinstance(v, float) and (v != v or v == float("inf") or v == float("-inf")):
+                d[k] = None
         return d
 
 

@@ -106,7 +106,7 @@ THEME_JS = r"""/* 主题切换（浅色 / 深色）：入口在「设置」面�
 })();
 """
 
-STOCK_DARK = r"""/* 由 _probe/make_dark_theme.py 生成：深色主题（浅色 stock.css / 雷达内联样式的反向映射） */
+STOCK_DARK = r"""/* 由 web/build_dark_theme.py 生成：深色主题（浅色 stock.css / 雷达内联样式的反向映射） */
 /* ============================================================
    大A小散 · 视觉系统 v2（统一设计语言）
    令牌 → 布局 → 组件 → 图表 → 市场全景 → 响应式
@@ -1287,7 +1287,7 @@ tr.self-row td { background: rgba(78, 140, 255, .08) !important; }
 }
 """
 
-RADAR_DARK = r"""/* 由 _probe/make_dark_theme.py 生成：深色主题（浅色 stock.css / 雷达内联样式的反向映射） */
+RADAR_DARK = r"""/* 由 web/build_dark_theme.py 生成：深色主题（浅色 stock.css / 雷达内联样式的反向映射） */
 
 /* ============================================================
    大A小散 · 视觉系统 v2（雷达页）— 与个股分析页共用同一套令牌

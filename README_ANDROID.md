@@ -91,13 +91,27 @@ android/                          # Android 工程（Gradle + Chaquopy）
 
 | 文件 | 作用 |
 |---|---|
-| `theme.js` | 按钮注入 + 记忆 + 切换（`link[data-theme-dark]` 用 `media="not all" → all` 预加载切换，无闪烁） |
+| `theme.js` | 设置面板里的主题切换（`link[data-theme-dark]` 用 `media="not all" → all` 预加载切换，无闪烁） |
 | `stock-dark.css` | 深色主题：由 `stock.css` 反向映射生成（个股分析 + 复盘页共用） |
 | `radar-dark.css` | 深色主题：由 `index.html` 内联样式反向映射生成（妖股雷达页） |
 | `theme_assets.py` | 上述三者打进 APK 的内嵌副本（`build_theme_assets.py` 生成） |
 | 图表配色 | `stock.css` 定义 `--chart-grid/--chart-zero/--chart-axis/--chart-ink`，`stock.js` 用 `cv()` 读取，切主题后由 `window.__rerenderCharts()` 重绘 |
 
-生成/重建顺序：改完 `stock.css` 或雷达内联样式后 → 跑 `make_dark_theme.py`（反向映射）→ `build_theme_assets.py` → `build_stock_frontend.py` / `build_index_html.py`。
+### 改完前端必跑的 5 个生成脚本
+
+前端产物有 4 份内嵌副本（`index_html.py` / `stock_assets.py` / `review_assets.py` / `theme_assets.py`）+ 2 份深色样式，都是**生成物**，漏跑就会出现"浏览器是新样式、APK 里是旧样式"：
+
+```powershell
+python web/build_dark_theme.py            # 由 light 生成 stock-dark.css / radar-dark.css
+python web/build_stock_frontend.py --no-pc  # 由 stock.html/css/js 生成 stock_assets.py
+python web/build_index_html.py            # 由 index.html 生成 index_html.py
+python web/build_review_assets.py         # 由 review.* 生成 review_assets.py
+python web/build_theme_assets.py          # 由 theme.js + 两份 dark.css 生成 theme_assets.py
+python scripts/check_sync.py              # 校验 web/ ↔ android/.../web/ ↔ mobile/ ↔ strategy.py
+```
+
+这些脚本统一按 **LF** 读写（`.gitattributes` 也是 `eol=lf`），所以本机和 CI 生成的产物逐字节一致。
+CI 的 `check.yml` 会把上面 5 个脚本重跑一遍，并用 `git diff --exit-code` 挡住"忘了重跑"的提交。
 
 ### 顶部导航三页对齐
 

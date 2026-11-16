@@ -17,11 +17,14 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-PC = Path(r"D:\DeepSeek_workspace\stock-analyzer\public")
+import os
+
+PC = Path(os.environ.get("STOCK_ANALYZER_PUBLIC") or (HERE.parent / "stock-analyzer" / "public"))
 
 
 def read(p: Path) -> str:
-    return p.read_text(encoding="utf-8")
+    """统一按 LF 读取，保证本机(CRLF)与 CI(LF) 生成的产物一致。"""
+    return p.read_text(encoding="utf-8").replace("\r\n", "\n")
 
 
 def extract_pc_parts(app_js: str):
@@ -70,13 +73,13 @@ def main():
     if (PC / "app.js").exists() and not skip_pc:
         renders, market = extract_pc_parts(read(PC / "app.js"))
         js = "\n".join([head.rstrip(), "", renders.rstrip(), "", market.rstrip(), "", control.lstrip()])
-        js_target.write_text(js, encoding="utf-8")
+        js_target.write_text(js, encoding="utf-8", newline="\n")
         css = (read(PC / "styles.css") + "\n" + read(HERE / "_part_mobile.css")
                + "\n" + read(HERE / "_part_desktop.css") + "\n" + read(HERE / "_part_sections.css"))
-        (HERE / "stock.css").write_text(css, encoding="utf-8")
+        (HERE / "stock.css").write_text(css, encoding="utf-8", newline="\n")
         print(f"[build] 从 PC 版抽取渲染层：renders {renders.count(chr(10))} 行 / market {market.count(chr(10))} 行")
     else:
-        js = js_target.read_text(encoding="utf-8")
+        js = js_target.read_text(encoding="utf-8").replace("\r\n", "\n")
         css = read(HERE / "stock.css")
         print("[build] 保留现有 stock.js / stock.css" + ("（--no-pc）" if skip_pc else "（未找到 PC 版源码）"))
 
@@ -92,7 +95,7 @@ def main():
         "JS = " + py_literal(js),
         "",
     ])
-    (HERE / "stock_assets.py").write_text(assets, encoding="utf-8")
+    (HERE / "stock_assets.py").write_text(assets, encoding="utf-8", newline="\n")
 
     print(f"[build] stock.js  {js.count(chr(10))} 行")
     print(f"[build] stock.css {css.count(chr(10))} 行")

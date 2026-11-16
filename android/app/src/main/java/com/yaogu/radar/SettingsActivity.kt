@@ -107,14 +107,15 @@ class SettingsActivity : Activity() {
                 cfgFile.writeText(out.toString(2))
 
                 val prefsEdit = prefs.edit()
-                if (key.isNotBlank()) {
-                    prefsEdit.putString("api_key", key)
-                    File(filesDir, "key").writeText(key)
-                }
+                val keyCleared = key.isBlank() && (prefs.getString("api_key", "") ?: "").isNotBlank()
+                // 无条件写入：清空输入框时也要把 prefs 与 key 文件清掉，否则旧 Key 会继续生效
+                prefsEdit.putString("api_key", key)
+                runCatching { File(filesDir, "key").writeText(key) }
                 prefsEdit.putBoolean("sound_on", swSound.isChecked)
                 prefsEdit.putString("theme", if (rbDark.isChecked) "dark" else "light")
                 prefsEdit.putBoolean("reload_web", true).apply()
-                Toast.makeText(this, "已保存，下一轮轮询热生效", Toast.LENGTH_SHORT).show()
+                val tip = if (keyCleared) "已保存，API Key 已清空（需重新填写才能取数）" else "已保存，下一轮轮询热生效"
+                Toast.makeText(this, tip, Toast.LENGTH_SHORT).show()
                 finish()
             } catch (e: Exception) {
                 Toast.makeText(this, "参数有误：" + (e.message ?: "请检查输入"), Toast.LENGTH_LONG).show()

@@ -111,6 +111,8 @@ def save_snapshot_html(state: dict) -> str:
     """把引擎状态内嵌为自包含 HTML（双击即可查看，无需服务器）。"""
     html = _load_index_html()
     payload = json.dumps(state, ensure_ascii=False, default=str)
+    # 内插进 <script>：必须转义 </script>，否则股票名里带 "</script>" 会把快照截断
+    payload = payload.replace("</", "<\\/")
     if _STATE_MARK not in html:
         raise RuntimeError("index.html 缺少状态占位符")
     return html.replace(_STATE_MARK, f"window.__DSH_STATE__ = {payload};", 1)
@@ -208,9 +210,34 @@ def api_diag() -> dict:
 
 
 class _Handler(BaseHTTPRequestHandler):
-    get_state: Callable[[], str] = lambda: "{}"
+    """请求处理器。
+
+    注意：回调（get_state）、页面 HTML、token **不再写在类的属性上**。
+    类属性 + 普通函数会被 Python 当成方法绑定（self 会被塞成第一个参数），
+    且同进程起两个 Dashboard 时会互相覆盖。真正的值挂在 ThreadingHTTPServer 实例上
+    （见 Dashboard.start()），这里只做兜底读取。
+    """
+
+    # 兜底默认值（正常都会被 server 实例上的属性覆盖）
+    get_state: Callable[[], str] = staticmethod(lambda: "{}")
     index_html = ""
     token: str = ""            # 非空时要求 ?token=xxx（局域网访问保护）
+
+    # ---------------- 从 server 实例取配置 ----------------
+    @property
+    def _state_fn(self) -> Callable[[], str]:
+        fn = getattr(self.server, "dashboard_state", None)
+        return fn if callable(fn) else self.get_state
+
+    @property
+    def _page_html(self) -> str:
+        html = getattr(self.server, "dashboard_html", None)
+        return html if isinstance(html, str) and html else self.index_html
+
+    @property
+    def _token(self) -> str:
+        tok = getattr(self.server, "dashboard_token", "")
+        return tok if isinstance(tok, str) else ""
 
     def log_message(self, *a):
         # 正常请求日志噪声太大，不打印
@@ -231,10 +258,10 @@ class _Handler(BaseHTTPRequestHandler):
             pass
 
     def _authed(self) -> bool:
-        if not self.token:
+        if not self._token:
             return True
         qs = parse_qs(urlparse(self.path).query)
-        return qs.get("token", [""])[0] == self.token
+        return qs.get("token", [""])[0] == self._token
 
     def _send(self, code: int, body: bytes, ctype: str):
         self.send_response(code)
@@ -258,7 +285,7 @@ class _Handler(BaseHTTPRequestHandler):
         qs = parse_qs(parsed.query)
 
         if path.startswith("/api/state"):
-            self._send(200, self.get_state().encode("utf-8"), "application/json; charset=utf-8")
+            self._send(200, self._state_fn().encode("utf-8"), "application/json; charset=utf-8")
             return
         if path.startswith("/api/diag"):
             self._json(self._safe(api_diag))
@@ -313,12 +340,12 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path in ("/", "/index.html", "/stock"):
             if path == "/radar":
-                self._send(200, self.index_html.encode("utf-8"), "text/html; charset=utf-8")
+                self._send(200, self._page_html.encode("utf-8"), "text/html; charset=utf-8")
             else:
                 self._send(200, _load_stock_html().encode("utf-8"), "text/html; charset=utf-8")
             return
         if path == "/radar":
-            self._send(200, self.index_html.encode("utf-8"), "text/html; charset=utf-8")
+            self._send(200, self._page_html.encode("utf-8"), "text/html; charset=utf-8")
             return
         if path in ("/review", "/review.html"):
             self._send(200, _load_review_html().encode("utf-8"), "text/html; charset=utf-8")
@@ -356,9 +383,7 @@ class Dashboard:
         self._thread: threading.Thread | None = None
 
     def start(self) -> "Dashboard":
-        _Handler.index_html = _load_index_html()
-        _Handler.get_state = self.get_state
-        _Handler.token = self.token
+        page_html = _load_index_html()
 
         for p in range(self.port, self.port + 20):
             try:
@@ -369,6 +394,10 @@ class Dashboard:
                 continue
         if not self._httpd:
             raise RuntimeError(f"网页看板端口被占用（{self.host}:{self.port}~{self.port + 19}）")
+        # 交给 server 实例：普通函数/绑定方法都能正确调用，多个 Dashboard 也互不影响
+        self._httpd.dashboard_state = self.get_state
+        self._httpd.dashboard_html = page_html
+        self._httpd.dashboard_token = self.token
         self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
         self._thread.start()
         # 后台预热板块成分索引（首次约 30~90 秒，之后走落盘缓存）
@@ -377,6 +406,12 @@ class Dashboard:
             threading.Thread(target=stock_data.MEMBERSHIP.ensure, daemon=True).start()
         except Exception as e:  # noqa: BLE001
             print(f"[看板] 板块索引预热跳过: {e}")
+        # 后台预热市场全景缓存（首屏 /api/market 冷启动 7~10 秒 → 预热后秒开）
+        try:
+            stock_market = _load_stock_module("stock_market")
+            threading.Thread(target=stock_market.dashboard, daemon=True).start()
+        except Exception as e:  # noqa: BLE001
+            print(f"[看板] 市场全景预热跳过: {e}")
         return self
 
     def stop(self):

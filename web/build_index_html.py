@@ -25,9 +25,10 @@ HEADER = (
 
 
 def main() -> None:
-    html = SRC.read_text(encoding="utf-8")
+    html = SRC.read_text(encoding="utf-8").replace("\r\n", "\n")
     b64 = base64.b64encode(html.encode("utf-8")).decode("ascii")
-    DST.write_text(HEADER + f"HTML = base64.b64decode('{b64}').decode('utf-8')\n", encoding="utf-8")
+    DST.write_text(HEADER + f"HTML = base64.b64decode('{b64}').decode('utf-8')\n",
+                   encoding="utf-8", newline="\n")
     print(f"[build_index_html] {SRC.name} {len(html)} 字符 -> {DST.name} {DST.stat().st_size} 字节")
 
 

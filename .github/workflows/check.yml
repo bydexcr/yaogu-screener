@@ -1,0 +1,51 @@
+name: check
+
+# 轻量校验：语法 / 前端生成物是否与源码一致 / 三份副本是否同步
+# 不构建 APK（那个由 build-apk.yml 负责）
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Python 语法检查
+        run: |
+          python -m compileall -q web mobile strategy.py
+          echo "compileall OK"
+
+      - name: 前端产物是否可重现（重新生成一遍）
+        run: |
+          python web/build_dark_theme.py
+          python web/build_stock_frontend.py --no-pc
+          python web/build_index_html.py
+          python web/build_review_assets.py
+          python web/build_theme_assets.py
+
+      - name: 生成物必须与提交内容一致
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::前端生成物已过期。请本地依次执行："
+            echo "::error::python web/build_dark_theme.py && python web/build_stock_frontend.py --no-pc && python web/build_index_html.py && python web/build_review_assets.py && python web/build_theme_assets.py"
+            git --no-pager diff --stat
+            exit 1
+          fi
+          echo "生成物与源码一致"
+
+      - name: 三份副本一致性（web / mobile / strategy.py）
+        run: python scripts/check_sync.py

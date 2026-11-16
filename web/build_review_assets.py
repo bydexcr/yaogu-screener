@@ -17,7 +17,7 @@ DST = HERE / "review_assets.py"
 
 
 def read(name: str) -> str:
-    return (HERE / name).read_text(encoding="utf-8")
+    return (HERE / name).read_text(encoding="utf-8").replace("\r\n", "\n")
 
 
 def py_literal(text: str) -> str:
@@ -39,7 +39,7 @@ def main() -> None:
         "JS = " + py_literal(js),
         "",
     ])
-    DST.write_text(assets, encoding="utf-8")
+    DST.write_text(assets, encoding="utf-8", newline="\n")
     print(f"[build_review_assets] html {len(html)} / css {len(css)} / js {len(js)} 字符 -> {DST.name} {DST.stat().st_size} 字节")
 
 

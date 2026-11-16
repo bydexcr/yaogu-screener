@@ -13,7 +13,7 @@ DST = HERE / "theme_assets.py"
 
 
 def read(name: str) -> str:
-    return (HERE / name).read_text(encoding="utf-8")
+    return (HERE / name).read_text(encoding="utf-8").replace("\r\n", "\n")
 
 
 def py_literal(text: str) -> str:
@@ -35,7 +35,7 @@ def main() -> None:
         "RADAR_DARK = " + py_literal(radar_dark),
         "",
     ])
-    DST.write_text(out, encoding="utf-8")
+    DST.write_text(out, encoding="utf-8", newline="\n")
     print("[build_theme_assets] js %d / stock-dark %d / radar-dark %d -> %s %d 字节" % (
         len(js), len(stock_dark), len(radar_dark), DST.name, DST.stat().st_size))
 
