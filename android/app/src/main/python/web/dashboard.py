@@ -261,6 +261,13 @@ class _Handler(BaseHTTPRequestHandler):
     def _authed(self) -> bool:
         if not self._token:
             return True
+        # 本机访问不需要令牌（看板默认就绑本机；绑 0.0.0.0 时也只拦局域网请求）
+        try:
+            peer = self.client_address[0]
+        except Exception:  # noqa: BLE001
+            peer = ""
+        if _is_loopback(peer):
+            return True
         qs = parse_qs(urlparse(self.path).query)
         return qs.get("token", [""])[0] == self._token
 
@@ -278,7 +285,11 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):  # noqa: N802
         if not self._authed():
-            self._send(401, "需要访问令牌：请在网址后加 ?token=<你的令牌>".encode("utf-8"),
+            hint = ""
+            f = _token_file()
+            if f is not None:
+                hint = f"\n令牌文件：{f}（内容即令牌）"
+            self._send(401, ("需要访问令牌：请在网址后加 ?token=<你的令牌>" + hint).encode("utf-8"),
                        "text/plain; charset=utf-8")
             return
         parsed = urlparse(self.path)
@@ -423,11 +434,32 @@ class Dashboard:
 LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
+def _is_loopback(addr: str) -> bool:
+    """请求方是不是本机（127.0.0.0/8、::1、IPv4-mapped 形式）。"""
+    a = (addr or "").strip().lower()
+    return (a in LOCAL_HOSTS or a.startswith("127.")
+            or a == "::1" or a == "::ffff:127.0.0.1")
+
+
+def _token_file():
+    """令牌落盘位置：优先 YAOGU_DATA_DIR，其次 ~/.config/yaogu。"""
+    import os
+    from pathlib import Path as _P
+    base = (os.environ.get("YAOGU_DATA_DIR") or "").strip()
+    root = _P(base) if base else (_P.home() / ".config" / "yaogu")
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+    except Exception:  # noqa: BLE001
+        return None
+    return root / "web_token.txt"
+
+
 def _effective_token(host: str, token: str) -> str:
     """决定本次监听要不要访问令牌。
 
-    - 只监听本机 → 允许空令牌（仅本机可访问）；
-    - 监听 0.0.0.0 / 局域网 IP 且没给令牌 → 自动生成一个，避免看板裸奔。
+    - 只监听本机 → 空令牌（本来就只有本机能访问）；
+    - 监听 0.0.0.0 / 局域网 IP 且没给令牌 → 自动生成并**落盘复用**，
+      此时仅**非本机请求**需要 ?token=…（本机浏览器照旧直接打开）。
     """
     tok = (token or "").strip()
     if tok:
@@ -435,7 +467,22 @@ def _effective_token(host: str, token: str) -> str:
     h = (host or "").strip().lower()
     if h in LOCAL_HOSTS:
         return ""
-    return secrets.token_urlsafe(9)
+    f = _token_file()
+    if f is not None:
+        try:
+            if f.exists():
+                saved = f.read_text(encoding="utf-8").strip()
+                if saved:
+                    return saved
+        except Exception:  # noqa: BLE001
+            pass
+    tok = secrets.token_urlsafe(9)
+    if f is not None:
+        try:
+            f.write_text(tok + "\n", encoding="utf-8")
+        except Exception:  # noqa: BLE001
+            pass
+    return tok
 
 
 def start_dashboard(engine, host: str = "127.0.0.1", port: int = 8311,

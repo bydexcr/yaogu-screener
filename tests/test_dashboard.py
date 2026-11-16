@@ -57,6 +57,7 @@ def test_handler_token_gate():
 
     handler = D._Handler.__new__(D._Handler)
     handler.server = FakeServer()
+    handler.client_address = ("192.168.1.9", 5555)      # 来自局域网
     handler.path = "/api/state?token=s3cret"
     assert handler._authed() is True
 
@@ -65,6 +66,32 @@ def test_handler_token_gate():
 
     handler.path = "/api/state"
     assert handler._authed() is False
+
+
+def test_handler_token_skipped_for_loopback():
+    """本机访问不该被令牌拦住（否则绑 0.0.0.0 时本地浏览器都打不开）。"""
+    class FakeServer:
+        dashboard_state = staticmethod(lambda: "{}")
+        dashboard_html = "<html/>"
+        dashboard_token = "s3cret"
+
+    handler = D._Handler.__new__(D._Handler)
+    handler.server = FakeServer()
+    handler.path = "/api/state"
+    for peer in ("127.0.0.1", "127.0.1.1", "::1", "::ffff:127.0.0.1"):
+        handler.client_address = (peer, 5555)
+        assert handler._authed() is True, peer
+    handler.client_address = ("10.0.0.8", 5555)
+    assert handler._authed() is False
+
+
+@pytest.mark.parametrize("addr,expect", [
+    ("127.0.0.1", True), ("127.1.2.3", True), ("::1", True),
+    ("::ffff:127.0.0.1", True), ("192.168.1.9", False), ("10.0.0.2", False),
+    ("", False),
+])
+def test_is_loopback(addr, expect):
+    assert D._is_loopback(addr) is expect
 
 
 def test_handler_falls_back_to_class_defaults():
