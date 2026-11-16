@@ -34,6 +34,9 @@ Web 层是**零第三方依赖**的：`web/dashboard.py` 用标准库 `Threading
 | `GET /api/state` | 引擎状态（妖股雷达用） |
 | `GET /api/diag` | 环境自检：Python 版本、服务目录、已加载模块、板块索引状态与缓存目录、Key 是否可取到、后台任务日志、最近错误 |
 
+> 安全：看板默认只监听 `127.0.0.1`；若配置成 `0.0.0.0` 或局域网 IP 且没设 token，
+> `start_dashboard()` 会**自动生成访问令牌**并要求 `?token=…`，避免看板在局域网裸奔。
+
 性能（实测，本机）：`/api/market` 冷启动 7 s 左右，但 `Dashboard.start()` 会在后台**预热一次**，
 所以首屏通常是 **0.01 s**；`/api/stock` 冷 0.3~3 s，缓存 TTL 内 26 ms 级。
 `/api/review` 冷 6~7 s，读当日存档 0.03 s。

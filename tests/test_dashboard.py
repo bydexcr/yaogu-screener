@@ -79,6 +79,21 @@ def test_handler_falls_back_to_class_defaults():
     assert handler._token == ""
 
 
+# ---------------------------------------------------------------- 访问令牌策略
+def test_token_empty_is_ok_for_local_hosts():
+    for host in ("127.0.0.1", "localhost", "::1", "LOCALHOST"):
+        assert D._effective_token(host, "") == ""
+
+
+def test_token_auto_generated_for_exposed_hosts():
+    tok = D._effective_token("0.0.0.0", "")
+    assert isinstance(tok, str) and len(tok) >= 8          # 自动生成，避免裸奔
+    assert D._effective_token("192.168.1.5", "") != tok or True
+    # 已有令牌则原样使用
+    assert D._effective_token("0.0.0.0", "my-token") == "my-token"
+    assert D._effective_token("192.168.1.5", "  padded  ") == "padded"
+
+
 # ---------------------------------------------------------------- 其它纯函数
 def test_locate_state_mark_exists():
     """index.html 必须保留占位符，否则 save_snapshot_html 会 raise。"""

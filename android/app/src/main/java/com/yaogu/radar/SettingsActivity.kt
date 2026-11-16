@@ -1,6 +1,8 @@
 package com.yaogu.radar
 
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.CheckBox
@@ -66,6 +68,18 @@ class SettingsActivity : Activity() {
         rbLight.isChecked = !darkTheme
 
         findViewById<Button>(R.id.btn_clear_key).setOnClickListener { etKey.setText("") }
+        findViewById<Button>(R.id.btn_stop_service).setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("停止后台监控")
+                .setMessage("停止后将不再轮询行情与推送提醒，重新打开 App 可恢复。确定停止？")
+                .setNegativeButton("取消", null)
+                .setPositiveButton("停止") { _, _ ->
+                    stopService(Intent(this, DashboardService::class.java))
+                    Toast.makeText(this, "已停止后台监控（重开 App 恢复）", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+                .show()
+        }
         findViewById<Button>(R.id.btn_cancel).setOnClickListener { finish() }
         findViewById<Button>(R.id.btn_save).setOnClickListener {
             try {

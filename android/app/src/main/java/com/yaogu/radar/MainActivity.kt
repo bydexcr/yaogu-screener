@@ -35,6 +35,7 @@ class MainActivity : Activity() {
         web.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                retries = 0                 // 真正加载成功才清零，避免"白屏但 progress>0"误判
                 applyThemeToWeb()
             }
 
@@ -43,7 +44,8 @@ class MainActivity : Activity() {
                 request: android.webkit.WebResourceRequest?,
                 error: android.webkit.WebResourceError?
             ) {
-                scheduleReload()
+                // 只对主框架失败重试；子资源 404 之类不该整页重载
+                if (request?.isForMainFrame == true) scheduleReload()
             }
         }
         // 悬浮设置按钮（ImageButton）：进入设置页
@@ -67,7 +69,7 @@ class MainActivity : Activity() {
         applyThemeToWeb()
         if (getSharedPreferences("yaogu", MODE_PRIVATE).getBoolean("reload_web", false)) {
             getSharedPreferences("yaogu", MODE_PRIVATE).edit().putBoolean("reload_web", false).apply()
-            handler.postDelayed({ web.loadUrl("http://127.0.0.1:8311/") }, 500)
+            handler.postDelayed({ web.loadUrl(PAGE_URL) }, 500)
         }
     }
 
@@ -105,19 +107,29 @@ class MainActivity : Activity() {
     }
 
     private fun load() {
-        web.loadUrl("http://127.0.0.1:8311/")
-        handler.postDelayed({
-            if (retries < 30) {
-                retries++
-                if (web.progress == 0) load()
-            }
-        }, 2000)
+        web.loadUrl(PAGE_URL)
     }
 
+    /** 主框架加载失败时的退避重试：2s → 4s → 6s …，上限 15s，最多 12 次。 */
     private fun scheduleReload() {
-        if (retries < 30) {
-            retries++
-            handler.postDelayed({ load() }, 2000)
+        if (retries >= MAX_RETRIES) return
+        retries++
+        val delay = minOf(2000L * retries, 15000L)
+        handler.postDelayed({ load() }, delay)
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacksAndMessages(null)   // 否则 Activity 销毁后回调仍持有引用
+        try {
+            web.stopLoading()
+            web.destroy()
+        } catch (ignored: Throwable) {
         }
+        super.onDestroy()
+    }
+
+    companion object {
+        private const val PAGE_URL = "http://127.0.0.1:8311/"
+        private const val MAX_RETRIES = 12
     }
 }

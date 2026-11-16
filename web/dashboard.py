@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 import threading
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -419,10 +420,32 @@ class Dashboard:
             self._httpd.shutdown()
 
 
+LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
+def _effective_token(host: str, token: str) -> str:
+    """决定本次监听要不要访问令牌。
+
+    - 只监听本机 → 允许空令牌（仅本机可访问）；
+    - 监听 0.0.0.0 / 局域网 IP 且没给令牌 → 自动生成一个，避免看板裸奔。
+    """
+    tok = (token or "").strip()
+    if tok:
+        return tok
+    h = (host or "").strip().lower()
+    if h in LOCAL_HOSTS:
+        return ""
+    return secrets.token_urlsafe(9)
+
+
 def start_dashboard(engine, host: str = "127.0.0.1", port: int = 8311,
                     token: str = "") -> Dashboard | None:
+    eff = _effective_token(host, token)
+    if eff and eff != (token or "").strip():
+        print(f"[看板] 监听 {host} 且未设置令牌，已自动生成: {eff}"
+              f"（访问时需带 ?token={eff}）")
     try:
-        dash = Dashboard(get_state=engine.state_json, host=host, port=port, token=token)
+        dash = Dashboard(get_state=engine.state_json, host=host, port=port, token=eff)
         dash.start()
         return dash
     except Exception as e:
