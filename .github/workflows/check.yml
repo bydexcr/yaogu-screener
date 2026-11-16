@@ -29,6 +29,11 @@ jobs:
           python -m compileall -q web mobile strategy.py
           echo "compileall OK"
 
+      - name: 单元测试（strategy / dashboard）
+        run: |
+          python -m pip install --quiet --disable-pip-version-check pytest
+          python -m pytest -q
+
       - name: 前端产物是否可重现（重新生成一遍）
         run: |
           python web/build_dark_theme.py

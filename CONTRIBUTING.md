@@ -47,6 +47,7 @@ python scripts/check_sync.py
 
 ```powershell
 python -m compileall -q web mobile strategy.py   # 语法
+python -m pytest -q                              # 单元测试（strategy / dashboard）
 python scripts/check_sync.py                     # 副本一致
 python web/build_dark_theme.py                   # 生成物可重现（跑完 git status 应无新增改动）
 python web/build_stock_frontend.py --no-pc
@@ -56,11 +57,22 @@ python web/build_theme_assets.py
 git status                                       # 除预期文件外应为空
 ```
 
+### 单元测试
+
+`tests/` 下是纯函数级别的金标用例（无网络、无 IO、毫秒级）：
+
+| 文件 | 覆盖 |
+|---|---|
+| `tests/test_strategy.py` | 代码/板块工具、C1~C5 判定（含「正好 +8.0% 必须排除」的浮点边界）、日内承接/走弱状态机、评分单调性与 100 分封顶、涨停池合并、`to_dict()` 的 inf/nan 兜底 |
+| `tests/test_dashboard.py` | `save_snapshot_html` 的 `</` 转义、`/api/state` 回调从 server 实例取、token 鉴权 |
+
+跑法：`python -m pytest -q`（首次需 `pip install pytest`）。CI 的 `check.yml` 每次都会跑。
+
 ## 四、CI 会检查什么
 
 | 工作流 | 触发 | 做什么 |
 |---|---|---|
-| `.github/workflows/check.yml` | 每次 push / PR | `compileall` → 重跑 5 个生成器 → `git diff --exit-code`（生成物必须与提交一致）→ `scripts/check_sync.py` |
+| `.github/workflows/check.yml` | 每次 push / PR | `compileall` → `pytest` → 重跑 5 个生成器 → `git diff --exit-code`（生成物必须与提交一致）→ `scripts/check_sync.py` |
 | `.github/workflows/build-apk.yml` | push 且改动 `android/**` 或该 workflow 本身；也可手动 | 构建 debug + release APK，按版本号命名产物 |
 
 两个工作流都绿了才算"可以发版"。

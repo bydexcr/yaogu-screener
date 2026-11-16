@@ -230,7 +230,9 @@ def evaluate_stock(bars: Sequence[DailyBar], thscode: str, name: str,
 
     # C1: T-1 涨停或涨幅 > 8%
     pct1 = check_c1(b1, b2, min_gain)
-    if pct1 <= min_gain:
+    # 容差：10.8/10.0 这类除法在二进制浮点下会得到 8.000000000000007%，
+    # 不加容差会让「正好 +8.0%」混进候选池（而界面显示 8.0%，与规则自相矛盾）。
+    if pct1 <= min_gain + 1e-9:
         return None
 
     # C2: T-1 量 < T-2 量
