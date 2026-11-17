@@ -63,6 +63,15 @@ HTML = r"""<!DOCTYPE html>
       <div class="rv-skeleton">正在生成复盘…</div>
     </div>
 
+    <section class="rv-sec rv-hits" id="rvHits">
+      <header class="rv-sec-head">
+        <span class="rv-no">★</span>
+        <h3 class="rv-sec-title">历史命中回顾</h3>
+        <span class="rv-sec-hint" id="rvHitsHint">这套低吸策略最近准不准</span>
+      </header>
+      <div class="rv-sec-body" id="rvHitsBody"><div class="rv-skeleton">加载中…</div></div>
+    </section>
+
     <p class="rv-foot" id="rvFoot"></p>
   </section>
 </main>
@@ -314,6 +323,42 @@ CSS = r"""/* ============================================================
 .rv-tier .tk { height: 15px; background: var(--panel-3); border-radius: 4px; overflow: hidden; }
 .rv-tier .tk i { display: block; height: 100%; border-radius: 4px; background: var(--up); }
 .rv-tier .tc { font-size: 11.5px; color: var(--text-mute); text-align: right; font-family: var(--mono); }
+
+/* ---------- 历史命中回顾 ---------- */
+.rv-hits-sum { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.rv-hits-chip {
+  padding: 5px 10px; border: 1px solid var(--line-soft); border-radius: 9px;
+  background: var(--panel-2); font-size: 11.5px; color: var(--text-dim);
+}
+.rv-hits-chip b { font-family: var(--mono); font-size: 12.5px; color: var(--text); margin-left: 3px; }
+.rv-hits-chip i { font-style: normal; color: var(--text-mute); margin-left: 4px; font-size: 10.5px; }
+
+.rv-hit-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 10px; }
+.rv-stat-tb, .rv-hit-tb {
+  display: grid; min-width: 560px; font-size: 11.5px;
+  border-top: 1px solid var(--line-soft);
+}
+.rv-stat-tb { grid-template-columns: minmax(140px, 1fr) repeat(6, minmax(56px, auto)); }
+.rv-hit-tb { grid-template-columns: 62px minmax(118px, 1fr) repeat(8, minmax(50px, auto)); min-width: 720px; }
+.rv-stat-tb > span, .rv-hit-tb > span {
+  padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono); white-space: nowrap; color: var(--text-dim);
+}
+.rv-stat-tb > span.nm, .rv-hit-tb > span.nm,
+.rv-hit-tb > span:first-child { text-align: left; font-family: var(--font); color: var(--text); }
+.rv-hit-tb > span.st { font-family: var(--font); color: var(--text-mute); }
+.rv-hit-tb > span.nm small { color: var(--text-mute); font-size: 10.5px; margin-left: 5px; font-family: var(--mono); }
+.rv-stat-tb > .hd, .rv-hit-tb > .hd {
+  color: var(--text-mute); font-size: 10.5px; font-weight: 400; background: var(--panel-2);
+}
+.rv-stat-tb > .up, .rv-hit-tb > .up { color: var(--up); }
+.rv-stat-tb > .down, .rv-hit-tb > .down { color: var(--down); }
+.rv-stat-tb > .flat, .rv-hit-tb > .flat { color: var(--text-mute); }
+.rv-hit-tb > span.nm .sus { color: var(--warn); margin-right: 3px; font-weight: 700; }
+.rv-hits-chip.warn { border-color: rgba(199, 119, 0, .45); color: var(--warn); }
+.rv-hits-chip.warn b { color: var(--warn); }
+.rv-hit-tb > span[data-code] { cursor: pointer; }
+.rv-hit-tb > span[data-code]:hover { color: var(--accent); }
 
 .rv-foot { margin: 14px 2px 0; font-size: 11px; line-height: 1.8; color: var(--text-mute); }
 
@@ -722,8 +767,129 @@ JS = r"""(function () {
     document.addEventListener('click', (e) => { if (!el('searchBox').contains(e.target)) close(); });
   }
 
+
+  /* ------------------------------------------------------------------ 历史命中回顾 */
+  const HITS_DAYS = 30;
+  const fpct = (v, d = 2) => (isNum(v) ? `${v > 0 ? '+' : ''}${v.toFixed(d)}%` : '—');
+
+  function statRow(label, s, opts) {
+    const o = opts || {};
+    if (!s) {
+      return `<span class="nm">${esc(label)}</span><span>—</span><span>—</span>
+        <span>—</span><span>—</span><span>—</span><span>—</span>`;
+    }
+    // 最大回撤天然 <= 0：胜率恒为 0、最好恒为 0，展示出来只会误导
+    return `<span class="nm">${esc(label)}</span>
+      <span>${s.n}</span>
+      <span class="${cls(s.mean)}">${fpct(s.mean)}</span>
+      <span class="${cls(s.median)}">${fpct(s.median)}</span>
+      <span class="${o.noWin ? '' : (s.win >= 50 ? 'up' : 'down')}">${o.noWin ? '—' : `${s.win}%`}</span>
+      <span class="down">${fpct(s.worst)}</span>
+      <span class="${o.noWin ? '' : 'up'}">${o.noWin ? '—' : fpct(s.best)}</span>`;
+  }
+
+  function hitRow(r) {
+    const status = r.status === 'done' ? '已验证' : (r.status === 'pending' ? '待验证' : '无日线');
+    const zone = r.zone === 'deep' ? '深水' : '主栏';
+    // 日志里的开盘涨幅来自 09:25 快照，可能还停在前一日；与真实开盘价差得多就标出来
+    const warn = r.suspect
+      ? ` title="日志记的开盘涨幅 ${fpct(r.open_pct)}，当日真实开盘 ${fpct(r.gap_real)}；收益按真实开盘价计算"`
+      : '';
+    const mark = r.suspect ? '<b class="sus">⚠</b>' : '';
+    return `<span>${esc(String(r.date || '').slice(5))}</span>
+      <span class="nm" data-code="${esc(r.thscode)}"${warn}>${mark}${esc(r.name || r.thscode)}<small>${esc(zone)}</small></span>
+      <span>${fpct(r.open_pct, 1)}</span>
+      <span>${n2(r.buy)}</span>
+      <span class="${cls(r.r0)}">${fpct(r.r0)}</span>
+      <span class="${cls(r.o1)}">${fpct(r.o1)}</span>
+      <span class="${cls(r.r1)}">${fpct(r.r1)}</span>
+      <span class="${cls(r.r2)}">${fpct(r.r2)}</span>
+      <span class="${cls(r.r3)}">${fpct(r.r3)}</span>
+      <span class="st">${status}</span>`;
+  }
+
+  function renderHits(d) {
+    const box = el('rvHitsBody');
+    const hint = el('rvHitsHint');
+    if (!box) return;
+    if (!d || !d.ok) {
+      box.innerHTML = `<div class="rv-empty">历史命中加载失败：${esc((d && d.error) || '未知错误')}</div>`;
+      return;
+    }
+    const rows = d.rows || [];
+    const dirs = ((d.meta || {}).dirs || []).map(esc).join(' · ') || '—';
+    if (!rows.length) {
+      if (hint) hint.textContent = '暂无命中日志';
+      box.innerHTML = `<div class="rv-empty">${esc(d.note || '还没有命中日志')}</div>
+        <p class="rv-caliber">已查找目录：${dirs}</p>`;
+      return;
+    }
+
+    const cov = d.coverage || {};
+    const s = d.stats || {};
+    const r1 = s.r1;
+    if (hint) hint.textContent = `近 ${d.days} 天 · 命中 ${rows.length} 次`;
+    const chips = [
+      `<span class="rv-hits-chip">命中<b>${rows.length}</b><i>次</i></span>`,
+      r1 ? `<span class="rv-hits-chip">T+1 胜率<b>${r1.win}%</b><i>(n=${r1.n})</i></span>` : '',
+      r1 ? `<span class="rv-hits-chip">T+1 均值<b class="${cls(r1.mean)}">${fpct(r1.mean)}</b></span>` : '',
+      `<span class="rv-hits-chip">已验证<b>${cov.done || 0}</b>`,
+      cov.pending ? `<i>待验证 ${cov.pending}</i></span>` : '</span>',
+      cov.missing ? `<span class="rv-hits-chip">无日线<b>${cov.missing}</b></span>` : '',
+      cov.suspect ? `<span class="rv-hits-chip warn">疑似假命中<b>${cov.suspect}</b><i>开盘价口径</i></span>` : '',
+    ].join('');
+
+    const statHead = `<span class="hd">指标</span><span class="hd">n</span><span class="hd">均值</span>
+      <span class="hd">中位</span><span class="hd">胜率</span><span class="hd">最差</span><span class="hd">最好</span>`;
+    const statBody = [
+      statRow('T 日 开盘→收盘 r0', s.r0),
+      statRow('T 日 最大回撤 dd', s.dd, { noWin: true }),
+      statRow('T+1 开盘 o1', s.o1),
+      ...[1, 2, 3, 4, 5].filter((k) => d.horizon >= k).map((k) => statRow(`T+${k} 收盘 r${k}`, s['r' + k])),
+    ].join('');
+
+    const hitHead = `<span class="hd">T 日</span><span class="hd">名称</span><span class="hd">开盘涨</span>
+      <span class="hd">买入价</span><span class="hd">r0</span><span class="hd">T+1开</span>
+      <span class="hd">r1</span><span class="hd">r2</span><span class="hd">r3</span><span class="hd">状态</span>`;
+    const hitBody = rows.slice(0, 60).map(hitRow).join('');
+
+    const groups = (d.groups || []).filter((g) => g.stats && g.stats.r1);
+    const groupLine = groups.map((g) =>
+      `<span class="rv-hits-chip">${esc(g.label)}<b>n=${g.n}</b><i>T+1 ${fpct(g.stats.r1.mean)} · 胜率 ${g.stats.r1.win}%</i></span>`
+    ).join('');
+
+    box.innerHTML = `<div class="rv-hits-sum">${chips}${groupLine}</div>
+      <div class="rv-hit-scroll"><div class="rv-stat-tb">${statHead}${statBody}</div></div>
+      <div class="rv-hit-scroll"><div class="rv-hit-tb">${hitHead}${hitBody}</div></div>
+      <p class="rv-caliber">口径与离线 backtest.py 一致：买入价 = T 日开盘（09:25 集合竞价），
+        价格取前复权日线；r{k} = T+k 收盘 / 买入价 − 1。样本 ${cov.total} 笔
+        （已验证 ${cov.done} · 待验证 ${cov.pending} · 无日线 ${cov.missing}），
+        ${rows.length < 5 ? '样本不足 5 笔，胜率仅供参考。' : '仅统计已发生的交易日。'}
+        ${cov.suspect ? `其中 ${cov.suspect} 笔标了 ⚠：日志里的开盘涨幅（09:25 快照）与当日真实开盘价不一致，
+          收益一律按真实开盘价计算。` : ''}</p>`;
+  }
+
+  async function loadHits() {
+    const box = el('rvHitsBody');
+    if (!box) return;
+    try {
+      const res = await fetch('/api/hits?days=' + HITS_DAYS);
+      const d = await res.json();
+      renderHits(d);
+      box.querySelectorAll('[data-code]').forEach((n) => {
+        const code = n.getAttribute('data-code');
+        if (!code) return;
+        n.classList.add('clickable');
+        n.addEventListener('click', () => { location.href = '/?q=' + encodeURIComponent(code); });
+      });
+    } catch (err) {
+      box.innerHTML = `<div class="rv-empty">历史命中加载失败：${esc(err.message || '网络错误')}</div>`;
+    }
+  }
+
   function init() {
     bindSearch();
+    loadHits();
     el('rvRefresh').addEventListener('click', () => { state.retry = 0; loadReview(currentDate(), true); });
     loadDates();
     loadReview('', false);

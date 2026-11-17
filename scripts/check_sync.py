@@ -25,6 +25,7 @@ APK_MOBILE = APK_PY / "mobile"
 RUNTIME_WEB = [
     "__init__.py", "dashboard.py",
     "stock_data.py", "stock_analysis.py", "stock_market.py", "stock_review.py",
+    "hit_log.py",
     "stock.html", "stock.css", "stock.js", "stock_assets.py", "stock-dark.css",
     "review.html", "review.css", "review.js", "review_assets.py",
     "index.html", "index_html.py", "radar-dark.css",

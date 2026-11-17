@@ -221,6 +221,42 @@
 .rv-tier .tk i { display: block; height: 100%; border-radius: 4px; background: var(--up); }
 .rv-tier .tc { font-size: 11.5px; color: var(--text-mute); text-align: right; font-family: var(--mono); }
 
+/* ---------- 历史命中回顾 ---------- */
+.rv-hits-sum { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.rv-hits-chip {
+  padding: 5px 10px; border: 1px solid var(--line-soft); border-radius: 9px;
+  background: var(--panel-2); font-size: 11.5px; color: var(--text-dim);
+}
+.rv-hits-chip b { font-family: var(--mono); font-size: 12.5px; color: var(--text); margin-left: 3px; }
+.rv-hits-chip i { font-style: normal; color: var(--text-mute); margin-left: 4px; font-size: 10.5px; }
+
+.rv-hit-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 10px; }
+.rv-stat-tb, .rv-hit-tb {
+  display: grid; min-width: 560px; font-size: 11.5px;
+  border-top: 1px solid var(--line-soft);
+}
+.rv-stat-tb { grid-template-columns: minmax(140px, 1fr) repeat(6, minmax(56px, auto)); }
+.rv-hit-tb { grid-template-columns: 62px minmax(118px, 1fr) repeat(8, minmax(50px, auto)); min-width: 720px; }
+.rv-stat-tb > span, .rv-hit-tb > span {
+  padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono); white-space: nowrap; color: var(--text-dim);
+}
+.rv-stat-tb > span.nm, .rv-hit-tb > span.nm,
+.rv-hit-tb > span:first-child { text-align: left; font-family: var(--font); color: var(--text); }
+.rv-hit-tb > span.st { font-family: var(--font); color: var(--text-mute); }
+.rv-hit-tb > span.nm small { color: var(--text-mute); font-size: 10.5px; margin-left: 5px; font-family: var(--mono); }
+.rv-stat-tb > .hd, .rv-hit-tb > .hd {
+  color: var(--text-mute); font-size: 10.5px; font-weight: 400; background: var(--panel-2);
+}
+.rv-stat-tb > .up, .rv-hit-tb > .up { color: var(--up); }
+.rv-stat-tb > .down, .rv-hit-tb > .down { color: var(--down); }
+.rv-stat-tb > .flat, .rv-hit-tb > .flat { color: var(--text-mute); }
+.rv-hit-tb > span.nm .sus { color: var(--warn); margin-right: 3px; font-weight: 700; }
+.rv-hits-chip.warn { border-color: rgba(199, 119, 0, .45); color: var(--warn); }
+.rv-hits-chip.warn b { color: var(--warn); }
+.rv-hit-tb > span[data-code] { cursor: pointer; }
+.rv-hit-tb > span[data-code]:hover { color: var(--accent); }
+
 .rv-foot { margin: 14px 2px 0; font-size: 11px; line-height: 1.8; color: var(--text-mute); }
 
 /* ============================================================

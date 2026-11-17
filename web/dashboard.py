@@ -8,6 +8,7 @@
   GET /api/stock?q=…        → 个股综合分析
   GET /api/market/sector?code=… → 板块成分股
   GET /api/search?q=…        → 代码/名称联想
+  GET /api/hits?days=30     → 历史命中回顾（命中日志 + 前复权日线算入场后收益）
   GET /stock.css|/stock.js  → 个股分析页静态资源
 """
 from __future__ import annotations
@@ -153,6 +154,12 @@ def api_review(date: str = "", force: bool = False) -> dict:
 def api_review_dates() -> dict:
     rv = _load_review_module()
     return {"ok": True, "dates": rv.saved_dates()}
+
+
+def api_hits(days: int = 30) -> dict:
+    """历史命中回顾：读引擎落盘的命中日志，按前复权日线算入场后收益。"""
+    hit_log = _load_stock_module("hit_log")
+    return hit_log.build(days=days)
 
 
 def api_diag() -> dict:
@@ -318,6 +325,13 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path.startswith("/api/diag"):
             self._json(self._safe(api_diag))
+            return
+        if path.startswith("/api/hits"):
+            try:
+                days = int(qs.get("days", ["30"])[0] or 30)
+            except ValueError:
+                days = 30
+            self._json(self._safe(api_hits, days))
             return
         if path.startswith("/api/review/dates"):
             self._json(self._safe(api_review_dates))
