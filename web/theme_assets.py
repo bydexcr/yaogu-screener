@@ -637,6 +637,24 @@ main {
 .qc-stat .v { margin-top: 4px; font-family: var(--mono); font-size: 13px; color: var(--text); white-space: nowrap; }
 
 /* 速览卡 */
+/* 首屏 K 线：刻意不用 .card —— .card 会参与章节自动编号（#result .card>h2::before），
+   也会被 initCollapse 折叠；这里要的恰恰是"永远可见" */
+.hero-k {
+  border-top: 1px solid var(--line);
+  padding: 14px 0 6px;
+}
+.hero-k:empty { display: none; }
+.hero-k h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--text);
+}
+
 .facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

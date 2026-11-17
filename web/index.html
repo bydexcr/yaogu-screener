@@ -534,7 +534,7 @@ footer{
     </div>
   </main>
 
-  <footer>数据源：同花顺（主）→ 东财 → 腾讯 → 网易（辅）；评分 = 连板 / 缩量 / 封板时间 / 成交额加权（仅排序参考）。
+  <footer>数据源：<span id="footSrc">同花顺金融数据服务</span>（安卓版为单一数据源；PC 版实时快照失败时才会降级 东财 → 腾讯 → 网易）；评分 = 连板 / 缩量 / 封板时间 / 成交额加权（仅排序参考）。
     本看板仅供技术研究与复盘，不构成投资建议；数据可能有延迟，实盘请以券商终端为准。</footer>
 
   <script>
@@ -797,6 +797,9 @@ async function refresh(){
     const statsEl=document.querySelector(".stats");
     if(statsEl) statsEl.style.display=(st.t_date?"":"none");
     $("#src").textContent="源:"+(st.source||"-"); $("#src").className="badge"+(st.new_hits&&st.new_hits.length?" hit":"");
+    // 页脚数据源按引擎实际报的源显示，别把 PC 才有的多源降级说成通用能力
+    const fs=$("#footSrc");
+    if(fs) fs.textContent=(st.source && st.source.indexOf("同花顺")<0) ? st.source : "同花顺金融数据服务";
     $("#t0").textContent=st.t_date||"-"; $("#t1").textContent=st.t1_date||"-"; $("#t2").textContent=st.t2_date||"-";
     $("#pool").textContent=st.pool_size??"-";
     const wc=st.watch||{}; $("#hits").textContent=wc.hit??"-"; $("#wd").textContent=wc.deep??"-";

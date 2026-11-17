@@ -742,7 +742,7 @@ def build_trend(hist: List[dict], quote: dict) -> dict:
         "low60": min((b["low"] for b in last60 if b.get("low") is not None), default=None),
         "series": [{"date": b["date"], "close": b["close"], "volume": b.get("volume")} for b in hist[-120:]],
         "candles": [{"date": b["date"], "open": b.get("open"), "high": b.get("high"), "low": b.get("low"),
-                     "close": b.get("close"), "volume": b.get("volume")} for b in hist[-40:]],
+                     "close": b.get("close"), "volume": b.get("volume")} for b in hist[-60:]],
     }
 
 

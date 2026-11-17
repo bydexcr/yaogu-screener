@@ -89,6 +89,7 @@ HTML = r"""<!DOCTYPE html>
     </div>
 
     <div class="quote-card" id="quoteCard"></div>
+    <div class="hero-k" id="keyKline"></div>
     <div class="facts" id="keyFacts"></div>
 
     <div class="grid-2">
@@ -633,6 +634,24 @@ main {
 .qc-stat .v { margin-top: 4px; font-family: var(--mono); font-size: 13px; color: var(--text); white-space: nowrap; }
 
 /* 速览卡 */
+/* 首屏 K 线：刻意不用 .card —— .card 会参与章节自动编号（#result .card>h2::before），
+   也会被 initCollapse 折叠；这里要的恰恰是"永远可见" */
+.hero-k {
+  border-top: 1px solid var(--line);
+  padding: 14px 0 6px;
+}
+.hero-k:empty { display: none; }
+.hero-k h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--text);
+}
+
 .facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1366,9 +1385,18 @@ JS = r"""(function () {
   }
 
   /* ------------------------------ SVG 图 ------------------------------ */
+  /* viewBox 宽度跟视口走。以前六张图都写死 400，而 svg.chart 是 width:100%，
+     桌面(1707px)会被放大到 1552px 宽、815~1009px 高，文字跟着放大 3~4 倍——这是
+     "个股分析页看不见 K 线"的另一半原因：展开后图像是坏的，没人会去看。 */
+  function chartW(opts) {
+    const vp = (typeof window !== 'undefined' && window.innerWidth) || 400;
+    const w = (opts && opts.width) || Math.min(1200, Math.max(320, vp - 64));
+    return Math.round(w);
+  }
+
   function candleChart(candles, opts = {}) {
     if (!candles || candles.length < 2) return '<p class="badge-note">日线数据不足，无法绘制。</p>';
-    const W = 400;
+    const W = chartW(opts);
     const H = opts.height || 250;
     const volH = opts.volume === false ? 0 : 52;
     const gap = 14;
@@ -1446,7 +1474,7 @@ JS = r"""(function () {
 
   function rankChart(trend) {
     if (!trend || trend.length < 3) return '<p class="badge-note">热度趋势数据不足（该股近期未进入热度统计样本）。</p>';
-    const W = 400;
+    const W = chartW();
     const H = 200;
     const padL = 46;
     const padR = 12;
@@ -1491,7 +1519,7 @@ JS = r"""(function () {
 
   function profitBars(quarters) {
     if (!quarters || quarters.length < 2) return '<p class="badge-note">单季数据不足。</p>';
-    const W = 400;
+    const W = chartW();
     const H = 190;
     const padL = 8;
     const padR = 8;
@@ -1565,7 +1593,7 @@ JS = r"""(function () {
     const { series, points, height = 210, refLine = null, ySuffix = '', yDigits = 2 } = opts;
     const rows = (points || []).filter((p) => series.some((s) => isNum(p.values[s.key])));
     if (rows.length < 2) return '<p class="badge-note">可用数据点不足，无法绘制趋势。</p>';
-    const W = 400;
+    const W = chartW(opts);
     const H = height;
     const padL = 48;
     const padR = 42;
@@ -1620,7 +1648,7 @@ JS = r"""(function () {
     const { bars, height = 180, ySuffix = '', refLine = null, digits = 2 } = opts;
     const rows = (bars || []).filter((b) => isNum(b.value));
     if (rows.length < 2) return '<p class="badge-note">可用数据点不足。</p>';
-    const W = 400;
+    const W = chartW(opts);
     const H = height;
     const padL = 48;
     const padR = 14;
@@ -1670,7 +1698,7 @@ JS = r"""(function () {
       counts[idx] += 1;
     }
     const maxCount = Math.max(...counts, 1);
-    const W = 400;
+    const W = chartW(opts);
     const H = height;
     const padL = 10;
     const padR = 10;
@@ -2222,7 +2250,7 @@ JS = r"""(function () {
   function renderTech(d) {
     const t = d.trendTech;
     const sec = d.sector;
-    el('sec-tech').innerHTML = `${cardTitle('技术形态与中期走势', '前复权日线 · 近 40 个交易日 K 线（紫线为 20 日均线）')}
+    el('sec-tech').innerHTML = `${cardTitle('技术形态与中期走势', '前复权日线 · 近 60 个交易日 K 线（蓝线为 20 日均线）')}
       ${candleChart(t.candles, { height: 260 })}
       <div class="kpi-grid" style="margin-top:16px">
         ${kpi('均线状态', esc(t.state), `MA5 ${n(t.ma5)} / MA20 ${n(t.ma20)}`)}
@@ -2283,6 +2311,21 @@ JS = r"""(function () {
       <div style="margin-top:8px">${esc(m.disclaimer)}</div>`;
   }
 
+  /* 首屏 K 线：把已经画好的蜡烛图搬到行情卡下面，不用展开十几个折叠章节才看得到 */
+  function renderKeyKline(d) {
+    const box = el('keyKline');
+    if (!box) return;
+    const t = d.trendTech || {};
+    const c = t.candles || [];
+    if (c.length < 2) { box.innerHTML = ''; return; }
+    const w = box.clientWidth;      // 按真实宽度出 viewBox，避免 SVG 被拉伸放大（字也跟着变糊）
+    box.innerHTML = `<h2>近期走势
+      <span class="tick">前复权日线 · 近 ${c.length} 个交易日 · 下半为成交量，蓝线为 20 日均线</span></h2>
+      ${candleChart(c, { height: 240, width: w })}`;
+    // 首次渲染时容器可能刚解除 hidden、还没算出宽度（clientWidth=0），下一拍按真实宽度重画一次
+    if (!w) setTimeout(() => renderKeyKline(d), 0);
+  }
+
   function render(d) {
     $("#marketView").hidden = true;
     $("#loadingState").hidden = true;
@@ -2291,6 +2334,7 @@ JS = r"""(function () {
     $("#backBar").hidden = false;
     renderQuote(d);
     renderKeyFacts(d);
+    renderKeyKline(d);
     renderScores(d);
     renderNarrative(d);
     renderFundamentals(d);
