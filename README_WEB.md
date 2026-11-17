@@ -31,11 +31,18 @@ Web 层是**零第三方依赖**的：`web/dashboard.py` 用标准库 `Threading
 | `GET /api/search?q=` | 代码/名称联想 |
 | `GET /api/review[?date=YYYY-MM-DD][&force=1]` | 当日复盘；`date` 查历史存档，`force=1` 强制重算 |
 | `GET /api/review/dates` | 已存档的复盘日期列表 |
-| `GET /api/state` | 引擎状态（妖股雷达用） |
+| `GET /api/state` | 引擎状态（妖股雷达用）；带 `ETag`，`If-None-Match` 命中时回 **304 且无 body** |
 | `GET /api/diag` | 环境自检：Python 版本、服务目录、已加载模块、板块索引状态与缓存目录、Key 是否可取到、后台任务日志、最近错误 |
 
 > 安全：看板默认只监听 `127.0.0.1`；若配置成 `0.0.0.0` 或局域网 IP 且没设 token，
 > `start_dashboard()` 会**自动生成访问令牌**并要求 `?token=…`，避免看板在局域网裸奔。
+
+**轮询口径**（妖股雷达 `/radar`）：前端不再写死 3 秒，而是按状态里的
+`next_refresh ?? interval` 自调度（2 s ~ 10 min 夹紧），引擎侧真实节奏是
+集合竞价 10 s / 连续竞价 30 s / 盘前·午休 120 s / 收盘后 300 s；
+`document.hidden` 时完全停轮询，回到前台立刻补一次。配合 ETag，
+收盘后一轮"数据没变"的请求只花约 200 字节（改造前是每 3 秒一份 ~81 KB，
+其中 89% 是 `sector_flow`）。
 
 性能（实测，本机）：`/api/market` 冷启动 7 s 左右，但 `Dashboard.start()` 会在后台**预热一次**，
 所以首屏通常是 **0.01 s**；`/api/stock` 冷 0.3~3 s，缓存 TTL 内 26 ms 级。
