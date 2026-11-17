@@ -17,6 +17,13 @@ THEME_JS = r"""/* 主题切换（浅色 / 深色）：入口在设置面板里�
     var dark = theme === DARK;
     if (document.body) document.body.classList.toggle('dark', dark);
     document.documentElement.setAttribute('data-theme', dark ? DARK : LIGHT);
+    // 移动端浏览器的地址栏 / 原生控件跟着主题走：默认主题是浅色，
+    // 别再让浅色用户顶着一条深色地址栏（App 内 WebView 没有地址栏，这里是浏览器场景）
+    var cs = document.getElementById('metaColorScheme');
+    if (cs) cs.setAttribute('content', dark ? DARK : LIGHT);
+    var tc = document.getElementById('metaThemeColor');
+    if (tc) tc.setAttribute('content', dark ? '#070a0f' : '#f7f5f1');
+    try { document.documentElement.style.colorScheme = dark ? DARK : LIGHT; } catch (e) { /* 老 WebView */ }
     links().forEach(function (l) {
       // 用 media 开关：带 `media="not all"` 的样式表会被预加载但不生效，切换瞬间生效
       l.disabled = false;
@@ -59,10 +66,37 @@ THEME_JS = r"""/* 主题切换（浅色 / 深色）：入口在设置面板里�
   window.__theme = { set: set, get: stored, isDark: function () { return stored() === DARK; } };
 
   // ---------------- 设置面板 ----------------
+  // 焦点陷阱：设置面板与雷达页的候选详情弹窗共用（Tab 在弹窗内循环，不跑到背后的页面）
+  window.__dlgTrap = function (e, box) {
+    if (!box || e.key !== 'Tab') return;
+    var list = Array.prototype.filter.call(
+      box.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])'),
+      function (n) { return n.offsetParent !== null || n === document.activeElement; });
+    if (!list.length) return;
+    var first = list[0], last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+
+  var sheetFocusBack = null;
+
   function openSheet(open) {
     var mask = document.getElementById('settingsMask');
     if (!mask) return;
-    mask.hidden = !open;
+    if (open === !mask.hidden) return;              // 状态没变就别反复折腾焦点
+    var btn = document.getElementById('settingsBtn');
+    if (open) {
+      sheetFocusBack = document.activeElement;
+      mask.hidden = false;
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+      var close = document.getElementById('settingsClose');
+      if (close) close.focus();                     // 焦点进面板，Tab 不会再跑到背景
+    } else {
+      mask.hidden = true;
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+      if (sheetFocusBack && sheetFocusBack.focus) sheetFocusBack.focus();
+      sheetFocusBack = null;
+    }
   }
 
   function initSheet() {
@@ -84,7 +118,10 @@ THEME_JS = r"""/* 主题切换（浅色 / 深色）：入口在设置面板里�
       });
     }
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') openSheet(false);
+      var m = document.getElementById('settingsMask');
+      var isOpen = !!(m && !m.hidden);
+      if (e.key === 'Escape') { openSheet(false); return; }
+      if (isOpen) window.__dlgTrap(e, m);
     });
   }
 
@@ -182,12 +219,6 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
   min-height: 100vh;
-}
-
-/* 顶部极淡的光晕，只做层次，不抢内容 */
-body::before {
-  /* 去 AI 味：顶部蓝色光晕是纯装饰，删掉 */
-  display: none;
 }
 
 html { scroll-behavior: smooth; --topbar-h: 108px; }
@@ -472,12 +503,6 @@ main {
   margin: 0 0 4px;
 }
 
-/* 章节标识：3px 主色竖条 */
-.card > h2::before {
-  /* 去 AI 味：标题前的装饰竖条删掉，层级改由字重/字距撑 */
-  display: none;
-}
-
 .card .sub {
   margin: 6px 0 14px 12px;
   font-size: 11.5px;
@@ -681,7 +706,7 @@ thead th {
   font-size: 11px;
   color: var(--text-mute);
   white-space: nowrap;
-  background: #10161f;
+  background: var(--panel-3);
   border-bottom: 1px solid var(--line);
 }
 thead th:first-child { text-align: left; }
@@ -1304,10 +1329,6 @@ body{
   background:var(--bg);color:var(--fg);font:14px/1.55 var(--font);
   -webkit-font-smoothing:antialiased;min-height:100vh;padding:0;
 }
-body::before{
-  content:"";position:fixed;inset:0 0 auto 0;height:300px;pointer-events:none;z-index:0;
-  display:none;   /* 去 AI 味：顶部蓝色光晕删除 */
-}
 h1,h2,h3,h4{font-weight:600;letter-spacing:-.1px}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointer}
@@ -1395,10 +1416,6 @@ main{position:relative;z-index:1;padding:12px 12px 8px}
 .card h2{
   display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600;margin:0 0 2px;flex-wrap:wrap;
 }
-.card h2::before{
-  content:"";width:3px;height:14px;border-radius:2px;flex:none;
-  display:none;   /* 去 AI 味：标题装饰竖条删除 */
-}
 .tick{font-size:11px;line-height:1.65;color:var(--muted);font-weight:400}
 .sub{
   margin:14px 0 8px;font-size:11.5px;color:var(--dim);
@@ -1437,7 +1454,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)
 th{
   position:sticky;top:0;z-index:1;text-align:right;font-weight:500;font-size:10.5px;
   color:var(--muted);padding:8px 8px;white-space:nowrap;
-  background:#10161f;border-bottom:1px solid var(--line);font-family:var(--font);
+  background:var(--card-3);border-bottom:1px solid var(--line);font-family:var(--font);
 }
 th:first-child{text-align:left}
 td{
@@ -1455,6 +1472,12 @@ tbody tr:active td{background:var(--card-3)}
 td.empty{text-align:center;color:var(--muted);font-family:var(--font)}
 
 /* 候选表：手机端转卡片 */
+/* 命中行：左侧 3px 强调条 + 底色。刚命中(红) / 承接(绿) / 走弱(黄) 分开，
+   滚动盯盘时不用逐个读文字也能看出方向（≤679px 的卡片布局还会覆盖 border-color）。 */
+table.cand tr.hit-row{background:rgba(255, 84, 104, .06);box-shadow:inset 3px 0 0 rgba(255, 84, 104, .62)}
+table.cand tr.hit-row.confirm{background:rgba(22, 199, 132, .07);box-shadow:inset 3px 0 0 rgba(22, 199, 132, .72)}
+table.cand tr.hit-row.broken{background:rgba(255, 176, 32, .08);box-shadow:inset 3px 0 0 rgba(255, 176, 32, .72)}
+
 @media (max-width:679px){
   /* 只有候选表转卡片、不需要横向滚动；其它宽表（板块资金等）仍要 .tbl 的横向滚动，
      否则会把整页撑宽（实测 390px 下页面宽 495px，可以左右滑动） */
@@ -1552,6 +1575,12 @@ td.empty{text-align:center;color:var(--muted);font-family:var(--font)}
   border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));
   box-shadow:0 -20px 48px -24px rgba(9, 12, 18, .16);
 }
+/* 入场动效只做位移，不做透明度：动画在后台标签页可能被节流停在首帧，
+   停在首帧时它最多是低 8px，绝不会变成"看不见"。关闭即时（盯盘不做拖沓退场）。 */
+.modal-mask.anim-in .modal{animation:mSlide .18s ease}
+@keyframes mSlide{from{transform:translateY(8px)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.modal-mask.anim-in .modal{animation:none}}
+
 .modal-head{
   display:flex;align-items:center;gap:10px;padding-bottom:12px;margin-bottom:6px;
   border-bottom:1px solid var(--line-soft);font-size:15px;font-weight:650;

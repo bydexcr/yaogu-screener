@@ -3,7 +3,7 @@
 零依赖本地网页看板 + 个股分析页
   GET /                    → 个股分析首页（市场全景 + 搜索 + 分析结果）
   GET /radar               → 妖股雷达看板（原 index.html，轮询 /api/state）
-  GET /api/state           → 引擎状态 JSON
+  GET /api/state           → 引擎状态 JSON（带 ETag，未变化回 304）
   GET /api/market           → 市场全景
   GET /api/stock?q=…        → 个股综合分析
   GET /api/market/sector?code=… → 板块成分股
@@ -12,6 +12,7 @@
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import secrets
 import threading
@@ -271,13 +272,22 @@ class _Handler(BaseHTTPRequestHandler):
         qs = parse_qs(urlparse(self.path).query)
         return qs.get("token", [""])[0] == self._token
 
-    def _send(self, code: int, body: bytes, ctype: str):
+    def _send(self, code: int, body: bytes, ctype: str, etag: str = ""):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Cache-Control", "no-store")
+        if etag:
+            self.send_header("ETag", etag)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _send_not_modified(self, etag: str):
+        """304 Not Modified：不写 body（服务端是 HTTP/1.0，连接随即关闭，不存在分帧问题）。"""
+        self.send_response(304)
+        self.send_header("ETag", etag)
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
 
     def _json(self, obj, code: int = 200):
         self._send(code, json.dumps(obj, ensure_ascii=False, default=str).encode("utf-8"),
@@ -297,7 +307,14 @@ class _Handler(BaseHTTPRequestHandler):
         qs = parse_qs(parsed.query)
 
         if path.startswith("/api/state"):
-            self._send(200, self._state_fn().encode("utf-8"), "application/json; charset=utf-8")
+            # 轮询里绝大多数响应和上一轮逐字节相同：带 ETag，未变化只回 304，
+            # 前端既不用解析 JSON 也不用重建表格 DOM（滚动位置/悬停状态得以保留）。
+            body = self._state_fn().encode("utf-8")
+            etag = '"%s"' % hashlib.sha1(body).hexdigest()[:20]
+            if (self.headers.get("If-None-Match") or "").strip() == etag:
+                self._send_not_modified(etag)
+                return
+            self._send(200, body, "application/json; charset=utf-8", etag=etag)
             return
         if path.startswith("/api/diag"):
             self._json(self._safe(api_diag))
@@ -351,10 +368,7 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, _load_radar_dark().encode("utf-8"), "text/css; charset=utf-8")
             return
         if path in ("/", "/index.html", "/stock"):
-            if path == "/radar":
-                self._send(200, self._page_html.encode("utf-8"), "text/html; charset=utf-8")
-            else:
-                self._send(200, _load_stock_html().encode("utf-8"), "text/html; charset=utf-8")
+            self._send(200, _load_stock_html().encode("utf-8"), "text/html; charset=utf-8")
             return
         if path == "/radar":
             self._send(200, self._page_html.encode("utf-8"), "text/html; charset=utf-8")

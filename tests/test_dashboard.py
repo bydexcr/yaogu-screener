@@ -121,6 +121,69 @@ def test_token_auto_generated_for_exposed_hosts():
     assert D._effective_token("192.168.1.5", "  padded  ") == "padded"
 
 
+# ---------------------------------------------------------------- /api/state 的 ETag
+def _serve_state(state: dict):
+    """起一个真服务器（端口随机），返回 (url, 关闭函数)；不走 Dashboard.start 以免抢 8311。"""
+    import threading
+    from http.server import ThreadingHTTPServer
+
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), D._Handler)
+    srv.dashboard_state = lambda: json.dumps(state, ensure_ascii=False)
+    srv.dashboard_html = "<html/>"
+    srv.dashboard_token = ""
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+
+    def close():
+        srv.shutdown()
+        srv.server_close()
+
+    return "http://127.0.0.1:%d/api/state" % srv.server_address[1], close
+
+
+def test_state_returns_etag_and_304_when_unchanged():
+    """状态逐字节没变时必须回 304 且不带 body —— 这是 3 秒轮询 95 MB/h 的主要治理点。"""
+    import urllib.error
+    import urllib.request
+
+    state = {"phase": "已收盘", "interval": 30, "next_refresh": 300}
+    url, close = _serve_state(state)
+    try:
+        with urllib.request.urlopen(url) as r:
+            assert r.status == 200
+            etag = r.headers["ETag"]
+            assert etag.startswith('"') and etag.endswith('"')
+            assert json.loads(r.read()) == state
+
+        # 同一个 ETag 再问一次 → 304，且没有响应体
+        req = urllib.request.Request(url, headers={"If-None-Match": etag})
+        with pytest.raises(urllib.error.HTTPError) as ei:
+            urllib.request.urlopen(req)
+        assert ei.value.code == 304
+        assert ei.value.read() == b""
+
+        # 状态变化 → ETag 变 → 重新给 200 且带新 body
+        state["phase"] = "连续竞价"
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"If-None-Match": etag})) as r:
+            assert r.status == 200
+            assert r.headers["ETag"] != etag
+            assert json.loads(r.read())["phase"] == "连续竞价"
+    finally:
+        close()
+
+
+def test_state_without_if_none_match_always_200():
+    """不带 If-None-Match（首屏/硬刷新）必须正常给数据。"""
+    import urllib.request
+
+    url, close = _serve_state({"phase": "集合竞价"})
+    try:
+        with urllib.request.urlopen(url) as r:
+            assert r.status == 200
+            assert json.loads(r.read())["phase"] == "集合竞价"
+    finally:
+        close()
+
+
 # ---------------------------------------------------------------- 其它纯函数
 def test_locate_state_mark_exists():
     """index.html 必须保留占位符，否则 save_snapshot_html 会 raise。"""

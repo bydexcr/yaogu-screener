@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#f7f5f1">
+<meta name="color-scheme" content="light" id="metaColorScheme">
+<meta name="theme-color" content="#f7f5f1" id="metaThemeColor">
 <title>大A小散 · 妖股雷达</title>
 <script>window.__DSH_STATE__ = null;</script>
 <style>
@@ -30,10 +30,6 @@ html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg);color:var(--fg);font:14px/1.55 var(--font);
   -webkit-font-smoothing:antialiased;min-height:100vh;padding:0;
-}
-body::before{
-  content:"";position:fixed;inset:0 0 auto 0;height:300px;pointer-events:none;z-index:0;
-  display:none;   /* 去 AI 味：顶部蓝色光晕删除 */
 }
 h1,h2,h3,h4{font-weight:600;letter-spacing:-.1px}
 a{color:inherit;text-decoration:none}
@@ -122,10 +118,6 @@ main{position:relative;z-index:1;padding:12px 12px 8px}
 .card h2{
   display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600;margin:0 0 2px;flex-wrap:wrap;
 }
-.card h2::before{
-  content:"";width:3px;height:14px;border-radius:2px;flex:none;
-  display:none;   /* 去 AI 味：标题装饰竖条删除 */
-}
 .tick{font-size:11px;line-height:1.65;color:var(--muted);font-weight:400}
 .sub{
   margin:14px 0 8px;font-size:11.5px;color:var(--dim);
@@ -164,7 +156,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)
 th{
   position:sticky;top:0;z-index:1;text-align:right;font-weight:500;font-size:10.5px;
   color:var(--muted);padding:8px 8px;white-space:nowrap;
-  background:#f4f7fc;border-bottom:1px solid var(--line);font-family:var(--font);
+  background:var(--card-3);border-bottom:1px solid var(--line);font-family:var(--font);
 }
 th:first-child{text-align:left}
 td{
@@ -182,6 +174,12 @@ tbody tr:active td{background:var(--card-3)}
 td.empty{text-align:center;color:var(--muted);font-family:var(--font)}
 
 /* 候选表：手机端转卡片 */
+/* 命中行：左侧 3px 强调条 + 底色。刚命中(红) / 承接(绿) / 走弱(黄) 分开，
+   滚动盯盘时不用逐个读文字也能看出方向（≤679px 的卡片布局还会覆盖 border-color）。 */
+table.cand tr.hit-row{background:rgba(225, 29, 51, .06);box-shadow:inset 3px 0 0 rgba(225, 29, 51, .62)}
+table.cand tr.hit-row.confirm{background:rgba(13, 155, 108, .07);box-shadow:inset 3px 0 0 rgba(13, 155, 108, .72)}
+table.cand tr.hit-row.broken{background:rgba(199, 119, 0, .08);box-shadow:inset 3px 0 0 rgba(199, 119, 0, .72)}
+
 @media (max-width:679px){
   /* 只有候选表转卡片、不需要横向滚动；其它宽表（板块资金等）仍要 .tbl 的横向滚动，
      否则会把整页撑宽（实测 390px 下页面宽 495px，可以左右滑动） */
@@ -279,6 +277,12 @@ td.empty{text-align:center;color:var(--muted);font-family:var(--font)}
   border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));
   box-shadow:0 -20px 48px -24px rgba(15, 32, 51, .16);
 }
+/* 入场动效只做位移，不做透明度：动画在后台标签页可能被节流停在首帧，
+   停在首帧时它最多是低 8px，绝不会变成"看不见"。关闭即时（盯盘不做拖沓退场）。 */
+.modal-mask.anim-in .modal{animation:mSlide .18s ease}
+@keyframes mSlide{from{transform:translateY(8px)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.modal-mask.anim-in .modal{animation:none}}
+
 .modal-head{
   display:flex;align-items:center;gap:10px;padding-bottom:12px;margin-bottom:6px;
   border-bottom:1px solid var(--line-soft);font-size:15px;font-weight:650;
@@ -384,7 +388,7 @@ footer{
       <a class="nav-btn on" href="/radar">妖股雷达</a>
       <a class="nav-btn" href="/review">复盘</a>
     </nav>
-  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.1 14.6a1.5 1.5 0 0 0 .3 1.7l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.5 1.5 0 0 0-1.7-.3 1.5 1.5 0 0 0-.9 1.4v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.7.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.5 1.5 0 0 0 .3-1.7 1.5 1.5 0 0 0-1.4-.9H3a1.9 1.9 0 1 1 0-3.8h.1a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.7l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.5 1.5 0 0 0 1.7.3h.1a1.5 1.5 0 0 0 .9-1.4V3a1.9 1.9 0 1 1 3.8 0v.1a1.5 1.5 0 0 0 .9 1.4 1.5 1.5 0 0 0 1.7-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.5 1.5 0 0 0-.3 1.7v.1a1.5 1.5 0 0 0 1.4.9h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.5 1.5 0 0 0-1.4.9z"/></svg></button>
+  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.1 14.6a1.5 1.5 0 0 0 .3 1.7l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.5 1.5 0 0 0-1.7-.3 1.5 1.5 0 0 0-.9 1.4v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.7.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.5 1.5 0 0 0 .3-1.7 1.5 1.5 0 0 0-1.4-.9H3a1.9 1.9 0 1 1 0-3.8h.1a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.7l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.5 1.5 0 0 0 1.7.3h.1a1.5 1.5 0 0 0 .9-1.4V3a1.9 1.9 0 1 1 3.8 0v.1a1.5 1.5 0 0 0 .9 1.4 1.5 1.5 0 0 0 1.7-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.5 1.5 0 0 0-.3 1.7v.1a1.5 1.5 0 0 0 1.4.9h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.5 1.5 0 0 0-1.4.9z"/></svg></button>
   </header>
 
   <div class="panel-top">
@@ -577,9 +581,29 @@ function showCand(code){
   $("#mTitle").textContent=(c.name||"?")+" "+c.thscode;
   $("#mBody").innerHTML=rows.map(([k,v])=>
     `<div class="m-row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
-  $("#candModal").style.display="flex";
+  openModalEl();
 }
-function hideCand(){ $("#candModal").style.display="none"; }
+// 弹窗开合：hidden 控制显隐（与设置面板一致），anim-in 播一次入场动效，焦点进出都记一次
+let modalHideTimer=null, modalAnimTimer=null, modalFocusBack=null;
+function openModalEl(){
+  const m=$("#candModal"); if(!m) return;
+  clearTimeout(modalHideTimer);
+  modalFocusBack=document.activeElement;
+  m.hidden=false;
+  void m.offsetWidth;         // 强制同步布局，让 animation 每次都从头播一遍
+  m.classList.add("anim-in");
+  // 兜底：后台标签页里动画可能被节流在首帧（opacity:0），260ms 后摘掉类回到基态（完全可见）
+  clearTimeout(modalAnimTimer);
+  modalAnimTimer=setTimeout(()=>m.classList.remove("anim-in"), 260);
+  const c=document.getElementById("mClose"); if(c) c.focus();
+}
+function hideCand(){
+  const m=$("#candModal"); if(!m||m.hidden) return;
+  m.classList.remove("anim-in");
+  clearTimeout(modalHideTimer);
+  if(modalFocusBack&&modalFocusBack.focus) modalFocusBack.focus();
+  modalHideTimer=setTimeout(()=>{ m.hidden=true; }, 150);
+}
 
 function sfNum(v,d=2,plus=false){ if(v===null||v===undefined||v==="") return "-";
   const n=Number(v); if(isNaN(n)) return "-";
@@ -754,8 +778,14 @@ function renderSectorFlow(sf){
 async function refresh(){
   let st = window.__DSH_STATE__;
   if(!st){
-    try{ st = await (await fetch("/api/state"+location.search,{cache:"no-store"})).json(); }
-    catch(e){ $("#errs").textContent="看板连接异常: "+e; return; }
+    try{
+      const r = await fetch("/api/state"+location.search,
+        {cache:"no-store", headers: pollEtag ? {"If-None-Match":pollEtag} : {}});
+      if(r.status===304){ return; }        // 数据没变：不解析、不重渲染
+      pollEtag = r.headers.get("ETag") || "";
+      st = await r.json();
+    }
+    catch(e){ $("#errs").textContent="看板连接异常: "+e; pollMs=8000; return; }
   }
   try{
     soundOn = (st && st.sound === false) ? false : true;   // 声音开关由设置页控制
@@ -771,7 +801,10 @@ async function refresh(){
     $("#pool").textContent=st.pool_size??"-";
     const wc=st.watch||{}; $("#hits").textContent=wc.hit??"-"; $("#wd").textContent=wc.deep??"-";
     $("#wc").textContent=wc.confirm??"-"; $("#wb").textContent=wc.broken??"-";
-    $("#upts").textContent=st.updated||"-"; $("#intv").textContent=st.interval??"-"; $("#cyc").textContent=st.cycle||"-";
+    $("#upts").textContent=st.updated||"-"; $("#cyc").textContent=st.cycle||"-";
+    // 「每 X s」显示引擎当前相位的真实节奏，它同时决定前端下一轮轮询间隔
+    $("#intv").textContent=(st.next_refresh ?? st.interval ?? "-");
+    pollMs = cadenceMs(st);
     $("#errs").textContent=(st.errors&&st.errors.length? st.errors[st.errors.length-1]:"");
     // 情绪面板
     const sg=st.sentiment;
@@ -842,7 +875,8 @@ async function refresh(){
         CAND[h.thscode]=h;
         const zt = h.zone==='main' ? '★低开' : (h.zone==='deep' ? '深水' : '-');
         const sx = h.sig==='confirm' ? '承接' : (h.sig==='broken' ? '走弱' : zt);
-        const cls = (h.zone==='main'||h.zone==='deep') ? 'hit-row' : '';
+        const cls = ((h.zone==='main'||h.zone==='deep') ? 'hit-row ' : '') +
+          (h.sig==='confirm' ? 'confirm' : (h.sig==='broken' ? 'broken' : ''));
         return `<tr class="${cls}" data-code="${esc(h.thscode)}">
           <td data-label="时间">${esc(String(h.hit_time||'').slice(11)||'-')}</td>
           <td data-label="代码">${esc(h.thscode)}</td>
@@ -858,7 +892,9 @@ async function refresh(){
     $("#cand").innerHTML=cs.map(c=>{
       CAND[c.thscode]=c;   // 供点击弹窗读取
       const zp=c.zone||"";
-      const cls=c.hit?"hit-row":"";
+      // 命中行按状态分色：承接(绿) / 走弱(黄) / 刚命中(红)
+      const cls=(c.hit?"hit-row ":"")+
+        (c.sig==="confirm"?"confirm":(c.sig==="broken"?"broken":""));
       const op=c.open_pct===null?'<span class="tick">未开盘</span>':
         (zp==="main"?`<span class="hl">${fmt(c.open_pct,2)}%</span>`:
          zp==="deep"?`<span class="dp">${fmt(c.open_pct,2)}%</span>`:
@@ -895,23 +931,48 @@ function wireCandEvents(){
   const mask=document.getElementById("candModal");
   if(mClose) mClose.addEventListener("click", hideCand);
   if(mask) mask.addEventListener("click", e=>{ if(e.target.id==="candModal") hideCand(); });
-  document.addEventListener("keydown", e=>{ if(e.key==="Escape") hideCand(); });
+  document.addEventListener("keydown", e=>{
+    const m=document.getElementById("candModal");
+    const open=!!(m && !m.hidden);
+    if(e.key==="Escape"){ if(open) hideCand(); return; }
+    if(open && window.__dlgTrap) window.__dlgTrap(e, m);
+  });
 }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", wireCandEvents);
 else wireCandEvents();
 
+// ---- 轮询节奏：跟随引擎真实节奏，页面在后台时不轮询 ----
+let pollTimer=null, pollMs=3000, pollEtag="";
+function cadenceMs(s){
+  const sec=Number((s && (s.next_refresh ?? s.interval)) ?? 30);
+  const ms=(isFinite(sec) && sec>0) ? sec*1000 : 30000;
+  return Math.max(2000, Math.min(600000, ms));   // 2s ~ 10min 夹紧，防异常值打爆
+}
+function scheduleRefresh(){
+  if(pollTimer){ clearTimeout(pollTimer); pollTimer=null; }
+  if(document.hidden) return;                   // 后台标签页/熄屏时完全不轮询
+  pollTimer=setTimeout(tick, pollMs);
+}
+async function tick(){
+  try{ await refresh(); } finally{ scheduleRefresh(); }
+}
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){ if(pollTimer){ clearTimeout(pollTimer); pollTimer=null; } }
+  else if(!window.__DSH_STATE__){ tick(); }      // 回到前台立刻补一次
+});
+
 if(window.__DSH_STATE__){ refresh(); document.title+=" · 快照"; }
-else { refresh(); setInterval(refresh, 3000); }
+else { tick(); }
 </script>
-  <div class="modal-mask" id="candModal" style="display:none">
-    <div class="modal">
+  <div class="modal-mask" id="candModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
       <div class="modal-head"><span id="mTitle">-</span><button class="modal-close" id="mClose">✕</button></div>
       <div id="mBody"></div>
     </div>
   </div>
 
 <div class="settings-mask" id="settingsMask" hidden>
-  <div class="settings-sheet" role="dialog" aria-label="设置">
+  <div class="settings-sheet" role="dialog" aria-modal="true" aria-label="设置">
     <h3>设置</h3>
     <p class="sub">偏好保存在本机浏览器，三个页面共用。</p>
     <div class="settings-row">

@@ -14,6 +14,13 @@
     var dark = theme === DARK;
     if (document.body) document.body.classList.toggle('dark', dark);
     document.documentElement.setAttribute('data-theme', dark ? DARK : LIGHT);
+    // 移动端浏览器的地址栏 / 原生控件跟着主题走：默认主题是浅色，
+    // 别再让浅色用户顶着一条深色地址栏（App 内 WebView 没有地址栏，这里是浏览器场景）
+    var cs = document.getElementById('metaColorScheme');
+    if (cs) cs.setAttribute('content', dark ? DARK : LIGHT);
+    var tc = document.getElementById('metaThemeColor');
+    if (tc) tc.setAttribute('content', dark ? '#070a0f' : '#f7f5f1');
+    try { document.documentElement.style.colorScheme = dark ? DARK : LIGHT; } catch (e) { /* 老 WebView */ }
     links().forEach(function (l) {
       // 用 media 开关：带 `media="not all"` 的样式表会被预加载但不生效，切换瞬间生效
       l.disabled = false;
@@ -56,10 +63,37 @@
   window.__theme = { set: set, get: stored, isDark: function () { return stored() === DARK; } };
 
   // ---------------- 设置面板 ----------------
+  // 焦点陷阱：设置面板与雷达页的候选详情弹窗共用（Tab 在弹窗内循环，不跑到背后的页面）
+  window.__dlgTrap = function (e, box) {
+    if (!box || e.key !== 'Tab') return;
+    var list = Array.prototype.filter.call(
+      box.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])'),
+      function (n) { return n.offsetParent !== null || n === document.activeElement; });
+    if (!list.length) return;
+    var first = list[0], last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+
+  var sheetFocusBack = null;
+
   function openSheet(open) {
     var mask = document.getElementById('settingsMask');
     if (!mask) return;
-    mask.hidden = !open;
+    if (open === !mask.hidden) return;              // 状态没变就别反复折腾焦点
+    var btn = document.getElementById('settingsBtn');
+    if (open) {
+      sheetFocusBack = document.activeElement;
+      mask.hidden = false;
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+      var close = document.getElementById('settingsClose');
+      if (close) close.focus();                     // 焦点进面板，Tab 不会再跑到背景
+    } else {
+      mask.hidden = true;
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+      if (sheetFocusBack && sheetFocusBack.focus) sheetFocusBack.focus();
+      sheetFocusBack = null;
+    }
   }
 
   function initSheet() {
@@ -81,7 +115,10 @@
       });
     }
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') openSheet(false);
+      var m = document.getElementById('settingsMask');
+      var isOpen = !!(m && !m.hidden);
+      if (e.key === 'Escape') { openSheet(false); return; }
+      if (isOpen) window.__dlgTrap(e, m);
     });
   }
 

@@ -6,8 +6,8 @@ HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#070a0f">
+<meta name="color-scheme" content="light" id="metaColorScheme">
+<meta name="theme-color" content="#f7f5f1" id="metaThemeColor">
 <title>大A小散 · 个股分析</title>
 <link rel="stylesheet" href="/stock.css">
 <link rel="stylesheet" href="/stock-dark.css" data-theme-dark media="not all">
@@ -35,7 +35,7 @@ HTML = r"""<!DOCTYPE html>
     <button id="searchBtn" class="btn-primary" type="button">分析</button>
     <div class="suggest" id="suggest" hidden></div>
   </div>
-  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.1 14.6a1.5 1.5 0 0 0 .3 1.7l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.5 1.5 0 0 0-1.7-.3 1.5 1.5 0 0 0-.9 1.4v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.7.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.5 1.5 0 0 0 .3-1.7 1.5 1.5 0 0 0-1.4-.9H3a1.9 1.9 0 1 1 0-3.8h.1a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.7l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.5 1.5 0 0 0 1.7.3h.1a1.5 1.5 0 0 0 .9-1.4V3a1.9 1.9 0 1 1 3.8 0v.1a1.5 1.5 0 0 0 .9 1.4 1.5 1.5 0 0 0 1.7-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.5 1.5 0 0 0-.3 1.7v.1a1.5 1.5 0 0 0 1.4.9h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.5 1.5 0 0 0-1.4.9z"/></svg></button>
+  <button id="settingsBtn" class="icon-btn" type="button" aria-label="设置" title="设置" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.1 14.6a1.5 1.5 0 0 0 .3 1.7l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.5 1.5 0 0 0-1.7-.3 1.5 1.5 0 0 0-.9 1.4v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.7.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.5 1.5 0 0 0 .3-1.7 1.5 1.5 0 0 0-1.4-.9H3a1.9 1.9 0 1 1 0-3.8h.1a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.7l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.5 1.5 0 0 0 1.7.3h.1a1.5 1.5 0 0 0 .9-1.4V3a1.9 1.9 0 1 1 3.8 0v.1a1.5 1.5 0 0 0 .9 1.4 1.5 1.5 0 0 0 1.7-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.5 1.5 0 0 0-.3 1.7v.1a1.5 1.5 0 0 0 1.4.9h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.5 1.5 0 0 0-1.4.9z"/></svg></button>
 </header>
 
 <main id="main">
@@ -119,7 +119,7 @@ HTML = r"""<!DOCTYPE html>
 <script src="/stock.js"></script>
 
 <div class="settings-mask" id="settingsMask" hidden>
-  <div class="settings-sheet" role="dialog" aria-label="设置">
+  <div class="settings-sheet" role="dialog" aria-modal="true" aria-label="设置">
     <h3>设置</h3>
     <p class="sub">偏好保存在本机浏览器，三个页面共用。</p>
     <div class="settings-row">
@@ -215,12 +215,6 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
   min-height: 100vh;
-}
-
-/* 顶部极淡的光晕，只做层次，不抢内容 */
-body::before {
-  /* 去 AI 味：顶部蓝色光晕是纯装饰，删掉 */
-  display: none;
 }
 
 html { scroll-behavior: smooth; --topbar-h: 108px; }
@@ -505,12 +499,6 @@ main {
   margin: 0 0 4px;
 }
 
-/* 章节标识：3px 主色竖条 */
-.card > h2::before {
-  /* 去 AI 味：标题前的装饰竖条删掉，层级改由字重/字距撑 */
-  display: none;
-}
-
 .card .sub {
   margin: 6px 0 14px 12px;
   font-size: 11.5px;
@@ -714,7 +702,7 @@ thead th {
   font-size: 11px;
   color: var(--text-mute);
   white-space: nowrap;
-  background: #f4f7fc;
+  background: var(--panel-3);
   border-bottom: 1px solid var(--line);
 }
 thead th:first-child { text-align: left; }

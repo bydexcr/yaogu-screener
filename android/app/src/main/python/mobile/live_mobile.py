@@ -314,6 +314,9 @@ class MobileEngine:
             "data_ready": self.data_ready,
             "t_date": self.t_date, "t1_date": self.t1_date, "t2_date": self.t2_date,
             "pool_size": len(self.pool), "interval": self.cfg.get("interval_seconds", 30),
+            # 当前相位的真实节奏（集合竞价 10s / 连续竞价 interval / 收盘后 300s），
+            # 前端按它决定下一次轮询，而不是写死 3 秒
+            "next_refresh": getattr(self, "next_refresh", None) or self.cfg.get("interval_seconds", 30),
             "open_range": self.strat.get("t_open_pct_range", [-8, -5]),
             "zones": {"main": self.strat.get("t_open_pct_range", [-8, -5]),
                       "deep": self.deep_range or [-10, -7],
@@ -461,6 +464,7 @@ def main() -> int:
         args.refresh_pool = False
         phase, active, sleep_s = session_phase(now, engine.t_date, interval)
         engine.phase = phase
+        engine.next_refresh = sleep_s
         if phase != last_phase:
             if last_phase:
                 print(f"{CYAN}── 阶段切换: {last_phase} → {phase}{RESET}", flush=True)

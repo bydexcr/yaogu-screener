@@ -23,10 +23,6 @@ body{
   background:var(--bg);color:var(--fg);font:14px/1.55 var(--font);
   -webkit-font-smoothing:antialiased;min-height:100vh;padding:0;
 }
-body::before{
-  content:"";position:fixed;inset:0 0 auto 0;height:300px;pointer-events:none;z-index:0;
-  display:none;   /* 去 AI 味：顶部蓝色光晕删除 */
-}
 h1,h2,h3,h4{font-weight:600;letter-spacing:-.1px}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointer}
@@ -114,10 +110,6 @@ main{position:relative;z-index:1;padding:12px 12px 8px}
 .card h2{
   display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600;margin:0 0 2px;flex-wrap:wrap;
 }
-.card h2::before{
-  content:"";width:3px;height:14px;border-radius:2px;flex:none;
-  display:none;   /* 去 AI 味：标题装饰竖条删除 */
-}
 .tick{font-size:11px;line-height:1.65;color:var(--muted);font-weight:400}
 .sub{
   margin:14px 0 8px;font-size:11.5px;color:var(--dim);
@@ -156,7 +148,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)
 th{
   position:sticky;top:0;z-index:1;text-align:right;font-weight:500;font-size:10.5px;
   color:var(--muted);padding:8px 8px;white-space:nowrap;
-  background:#10161f;border-bottom:1px solid var(--line);font-family:var(--font);
+  background:var(--card-3);border-bottom:1px solid var(--line);font-family:var(--font);
 }
 th:first-child{text-align:left}
 td{
@@ -174,6 +166,12 @@ tbody tr:active td{background:var(--card-3)}
 td.empty{text-align:center;color:var(--muted);font-family:var(--font)}
 
 /* 候选表：手机端转卡片 */
+/* 命中行：左侧 3px 强调条 + 底色。刚命中(红) / 承接(绿) / 走弱(黄) 分开，
+   滚动盯盘时不用逐个读文字也能看出方向（≤679px 的卡片布局还会覆盖 border-color）。 */
+table.cand tr.hit-row{background:rgba(255, 84, 104, .06);box-shadow:inset 3px 0 0 rgba(255, 84, 104, .62)}
+table.cand tr.hit-row.confirm{background:rgba(22, 199, 132, .07);box-shadow:inset 3px 0 0 rgba(22, 199, 132, .72)}
+table.cand tr.hit-row.broken{background:rgba(255, 176, 32, .08);box-shadow:inset 3px 0 0 rgba(255, 176, 32, .72)}
+
 @media (max-width:679px){
   /* 只有候选表转卡片、不需要横向滚动；其它宽表（板块资金等）仍要 .tbl 的横向滚动，
      否则会把整页撑宽（实测 390px 下页面宽 495px，可以左右滑动） */
@@ -271,6 +269,12 @@ td.empty{text-align:center;color:var(--muted);font-family:var(--font)}
   border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));
   box-shadow:0 -20px 48px -24px rgba(9, 12, 18, .16);
 }
+/* 入场动效只做位移，不做透明度：动画在后台标签页可能被节流停在首帧，
+   停在首帧时它最多是低 8px，绝不会变成"看不见"。关闭即时（盯盘不做拖沓退场）。 */
+.modal-mask.anim-in .modal{animation:mSlide .18s ease}
+@keyframes mSlide{from{transform:translateY(8px)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.modal-mask.anim-in .modal{animation:none}}
+
 .modal-head{
   display:flex;align-items:center;gap:10px;padding-bottom:12px;margin-bottom:6px;
   border-bottom:1px solid var(--line-soft);font-size:15px;font-weight:650;

@@ -75,12 +75,6 @@ html, body {
   min-height: 100vh;
 }
 
-/* 顶部极淡的光晕，只做层次，不抢内容 */
-body::before {
-  /* 去 AI 味：顶部蓝色光晕是纯装饰，删掉 */
-  display: none;
-}
-
 html { scroll-behavior: smooth; --topbar-h: 108px; }
 
 h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -.1px; }
@@ -363,12 +357,6 @@ main {
   margin: 0 0 4px;
 }
 
-/* 章节标识：3px 主色竖条 */
-.card > h2::before {
-  /* 去 AI 味：标题前的装饰竖条删掉，层级改由字重/字距撑 */
-  display: none;
-}
-
 .card .sub {
   margin: 6px 0 14px 12px;
   font-size: 11.5px;
@@ -572,7 +560,7 @@ thead th {
   font-size: 11px;
   color: var(--text-mute);
   white-space: nowrap;
-  background: #10161f;
+  background: var(--panel-3);
   border-bottom: 1px solid var(--line);
 }
 thead th:first-child { text-align: left; }
