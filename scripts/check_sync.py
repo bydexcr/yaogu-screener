@@ -77,14 +77,19 @@ def main() -> int:
         problems.append("strategy.py 内容不一致")
 
     if problems:
-        print("✗ 副本一致性检查未通过：")
+        print("[FAIL] 副本一致性检查未通过：")
         for x in problems:
             print("   -", x)
         return 1
 
-    print("✓ 副本一致性检查通过（web %d 个运行时文件 / mobile / strategy.py）" % len(RUNTIME_WEB))
+    print("[OK] 副本一致性检查通过（web %d 个运行时文件 / mobile / strategy.py）" % len(RUNTIME_WEB))
     return 0
 
 
 if __name__ == "__main__":
+    # Windows 控制台默认 GBK，输出中文/符号会抛 UnicodeEncodeError 盖掉真实结果
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
     sys.exit(main())

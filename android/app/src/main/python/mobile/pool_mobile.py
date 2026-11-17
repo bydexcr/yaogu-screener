@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -88,29 +89,48 @@ def build_pool(t1_date: str, t2_date: str, strat: dict, cache_dir: Path,
     end_ms = api.to_ms(t1_date) + 20 * 3600 * 1000     # T-1 收盘后
     start_ms = api.to_ms(t1_date) - 75 * 86400 * 1000  # 往前约 75 天，保证 ≥31 根K线
 
+    # 先剔除 ST（不发请求），余下的并发拉日K：原来逐只串行，100 只种子要 1~2 分钟
+    targets = [(code, meta) for code, meta in seeds.items()
+               if not (meta.get("is_st") or is_st(meta["name"]))]
+    try:
+        workers = max(1, min(int(os.environ.get("POOL_WORKERS", "5")), 8))
+    except ValueError:
+        workers = 5
+    print(f"[并发] {len(targets)} 只种子 × {workers} 线程拉日K…", flush=True)
+
+    def _fetch(item):
+        code, meta = item
+        try:
+            raw = api.history(code, start_ms, end_ms)
+        except Exception as e:      # 网络/接口错误只影响这一只
+            return code, meta, None, e
+        try:
+            return code, meta, _bars_to_daily(raw, until_date=t1_date), None
+        except Exception as e:
+            return code, meta, None, e
+
     pool: List[Candidate] = []
     missing = 0
-    for i, (code, meta) in enumerate(seeds.items(), 1):
-        name = meta["name"]
-        if meta.get("is_st") or is_st(name):
-            continue                      # 剔除 ST
-        try:
-            bars = _bars_to_daily(api.history(code, start_ms, end_ms), until_date=t1_date)
-        except Exception as e:
-            missing += 1
-            print(f"  [跳过] {code} 日K获取失败: {e}", flush=True)
-            continue
-        if len(bars) < 31:
-            continue
-        cand = evaluate_stock(bars, code, name, t1_date, t2_date, strat,
-                              exclude_st=exclude_st, exclude_bj=exclude_bj)
-        if cand:
-            pool.append(cand)
-        if i % 20 == 0:
-            print(f"  …{i}/{len(seeds)} 已处理，当前命中 {len(pool)}", flush=True)
+    done = 0
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futures = [ex.submit(_fetch, it) for it in targets]
+        for fut in as_completed(futures):
+            code, meta, bars, err = fut.result()
+            done += 1
+            if err is not None:
+                missing += 1
+                print(f"  [跳过] {code} 日K获取失败: {err}", flush=True)
+            elif bars is not None and len(bars) >= 31:
+                cand = evaluate_stock(bars, code, meta["name"], t1_date, t2_date, strat,
+                                      exclude_st=exclude_st, exclude_bj=exclude_bj)
+                if cand:
+                    pool.append(cand)
+            if done % 20 == 0:
+                print(f"  …{done}/{len(targets)} 已处理，当前命中 {len(pool)}", flush=True)
 
     enrich_with_limit_pool(pool, lu_map)
-    pool.sort(key=lambda c: (c.score, c.t1_pct), reverse=True)
+    # 并发抓取后顺序不定，排序用 thscode 兜底，保证同样输入永远同样输出
+    pool.sort(key=lambda c: (-c.score, -c.t1_pct, c.thscode))
 
     # 缓存
     cache_dir.mkdir(parents=True, exist_ok=True)

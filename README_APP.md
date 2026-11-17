@@ -7,6 +7,9 @@
 App 独立运行：内置 Python（Chaquopy）+ 同花顺 REST 数据层 + 本机看板 + 系统通知，
 不需要电脑、不需要 Termux、不需要 Node CLI / DuckDB。
 
+> **Chaquopy 自 12.0 起已开源（MIT），原来按商用/闭源收费的授权限制全部取消**，
+> 本项目使用 `com.chaquo.python` **15.0.1**（见 `android/build.gradle`），个人与商业项目都可免费构建、免费分发 APK。
+
 - 页面功能、接口、版式与主题怎么改 → 看 [README_WEB.md](README_WEB.md)
 - 改代码要跑哪些脚本、同步到哪 → 看 [CONTRIBUTING.md](CONTRIBUTING.md)
 

@@ -54,6 +54,27 @@ def test_is_bj(code, expect):
     assert S.is_bj(code) is expect
 
 
+@pytest.mark.parametrize("code", [
+    "430047", "830799", "870204", "880101",      # 4/8 开头：老北交所代码
+    "430047.BJ", "830799.BJ", "870204.BJ", "880101.BJ",
+    "920001", "920999", "920001.BJ",             # 920 段：新北交所代码
+])
+def test_is_bj_accepts_bare_bse_codes(code):
+    """接口不给 .BJ 后缀时，靠代码段也要认得出北交所（否则会被当主板 10% 涨幅）。"""
+    assert S.is_bj(code) is True
+    assert S.board_key(code) == "bj"
+
+
+@pytest.mark.parametrize("code", [
+    "600000", "600519", "601318", "603288", "605599",   # 60 开头是沪市主板，不能误判
+    "000001", "002594", "003816",                       # 00 开头深市主板 / 中小板
+    "300750", "301001", "688111", "689009", "510300", "900901",
+])
+def test_is_bj_rejects_non_bse_codes(code):
+    assert S.is_bj(code) is False
+    assert S.board_key(code) != "bj"
+
+
 @pytest.mark.parametrize("name,expect", [
     ("*ST美谷", True),
     ("ST中珠", True),
@@ -72,11 +93,23 @@ def test_is_st(name, expect):
     ("688111.SH", "star"),
     ("600000.SH", "main"),
     ("000001.SZ", "main"),
+    ("002594.SZ", "main"),
+    ("003816.SZ", "main"),
+    ("605599.SH", "main"),
     ("830799.BJ", "bj"),
+    ("430047.BJ", "bj"),
+    ("920001", "bj"),
     ("900901.SH", "other"),
 ])
 def test_board_key(code, expect):
     assert S.board_key(code) == expect
+
+
+def test_board_key_ignores_suffix_noise():
+    """带交易所后缀、大小写不一致时结论必须一致。"""
+    assert S.board_key("600000.sh") == "main"
+    assert S.board_key("300750.sz") == "gem"
+    assert S.board_key("830799.bj") == "bj"
 
 
 def test_is_limit_up_like_by_board():
@@ -84,6 +117,16 @@ def test_is_limit_up_like_by_board():
     assert S.is_limit_up_like(9.7, "600000.SH") is False
     assert S.is_limit_up_like(19.7, "300750.SZ") is True     # 创业板 20%
     assert S.is_limit_up_like(10.0, "300750.SZ") is False
+
+
+def test_is_limit_up_like_bj_uses_30pct():
+    """北交所涨跌幅 30%：+12% 在北交所不是涨停，在主板才是。"""
+    assert S.is_limit_up_like(29.7, "830799.BJ") is True
+    assert S.is_limit_up_like(29.6, "830799.BJ") is False
+    assert S.is_limit_up_like(12.0, "830799.BJ") is False
+    assert S.is_limit_up_like(12.0, "920001") is False
+    # 同样的涨幅，主板口径下算涨停 → 说明板块判定真的生效了
+    assert S.is_limit_up_like(12.0, "600000.SH") is True
 
 
 # ---------------------------------------------------------------- C1 / C3 原子函数

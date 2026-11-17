@@ -18,7 +18,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Optional, Sequence
 
 ST_RE = re.compile(r"ST", re.IGNORECASE)
-BJ_CODE_RE = re.compile(r"^(4|8|92)\d{4}$")
+BJ_CODE_RE = re.compile(r"^(?:4[3-9]\d{4}|8[3-9]\d{4}|920\d{3})$")
 
 
 # ---------------------------------------------------------------- 代码/板块工具
@@ -52,7 +52,7 @@ def board_key(thscode: str) -> str:
         return "gem"
     if code.startswith(("688", "689")):
         return "star"
-    if code.startswith(("60", "00", "001", "002", "003", "601", "603", "605")):
+    if code.startswith(("60", "00")):
         return "main"
     return "other"
 
@@ -60,11 +60,11 @@ def board_key(thscode: str) -> str:
 def is_limit_up_like(pct_pct: float, thscode: str) -> bool:
     """按板块粗略判断是否(接近)涨停，仅用于展示标签，不参与筛选。"""
     b = board_key(thscode)
-    if b == "gem" or b == "star":
+    if b == "bj":                      # 北交所 30% 涨跌幅
+        return pct_pct >= 29.7
+    if b == "gem" or b == "star":      # 创业板 / 科创板 20%
         return pct_pct >= 19.7
-    if b == "main":
-        return pct_pct >= 9.8
-    return pct_pct >= 9.8
+    return pct_pct >= 9.8              # 主板 10%
 
 
 # ---------------------------------------------------------------- 数据模型
