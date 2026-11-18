@@ -232,14 +232,6 @@
       p.textContent = pre ? '盘前，开盘后自动生成今日一句' : '暂无';
       p.classList.add('muted');
     }
-    $('#ovBrief').innerHTML = [
-      ['涨停 / 跌停', (lim.limitUpCount || 0) + ' / ' + (lim.limitDownCount || 0)],
-      ['炸板', lim.breakCount || 0],
-      ['封板率', (isNum(lim.sealRate) ? lim.sealRate.toFixed(1) : '—') + '%'],
-      ['最高连板', Math.round(lim.highestBoard || 0) + ' 板']
-    ].map(function (x) {
-      return '<div class="ov-kv">' + x[0] + '<b>' + (pre ? '—' : x[1]) + '</b></div>';
-    }).join('');
     var gen = (d.generatedAt || '').slice(11, 19);
     $('#ovSrc').innerHTML = '数据源 同花顺金融数据服务' + (gen ? ' · 生成于 ' + esc(gen) : '') +
       '<br>仅供技术研究与复盘，不构成投资建议';

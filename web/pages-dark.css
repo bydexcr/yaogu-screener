@@ -313,29 +313,17 @@ body.ov {
 
 .ov-src { font-size: 11px; line-height: 1.8; color: var(--text-mute); padding: 0 4px; }
 
-/* ---------------- 今日一句 + 结构速览 ---------------- */
-.ov-row3 { display: grid; grid-template-columns: 1.94fr 1fr; gap: 16px; align-items: stretch; }
+/* ---------------- 今日一句（页面最下方，整行通栏） ---------------- */
 .ov-row2 { display: grid; grid-template-columns: 1.32fr 1fr; gap: 16px; }
+/* 两栏都是 .ov-main 的 grid item；这两块排在右栏之后，跨满整行 */
+.ov-main > .ov-one,
+.ov-main > .ov-src { grid-column: 1 / -1; }
 .ov-one { display: flex; flex-direction: column; }
 .ov-one .ov-ch { margin-bottom: 0; }
 .ov-one p { font-size: 17px; line-height: 1.8; font-weight: 500; letter-spacing: -.01em; margin: auto 0; }
 .ov-one p b { background: linear-gradient(transparent 62%, rgba(232, 200, 122, .55) 62%); font-weight: 700; }
 .ov-one .foot { font-size: 11.5px; color: var(--text-mute); }
 .ov-one p.muted { font-size: 14px; font-weight: 400; color: var(--text-mute); }
-.ov-dark { background: #12161d; border-radius: 22px; padding: 20px 22px; color: #efeade; box-shadow: 0 12px 28px -18px rgba(0, 0, 0, .35); }
-/* 这张卡在深浅两套主题下都是深底，所以标题要用「两套都亮」的固定浅色；
-   写 #0f141c 会被深色映射表反转成近黑，标题直接消失 */
-.ov-dark h2 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: #e6edf8; }
-.ov-kv {
-  display: flex; align-items: baseline; justify-content: space-between; padding: 12px 0;
-  border-top: 1px solid rgba(9, 12, 18, .08); font-size: 13px; color: #a8a294;
-}
-.ov-kv:first-of-type { border-top: 0; }
-.ov-kv b {
-  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 17px; color: #e8c87a;
-  font-weight: 700; letter-spacing: -.01em;
-}
-
 /* ---------------- 骨架 / 错误 ---------------- */
 .ov-skel { padding: 40px 8px; text-align: center; color: var(--text-mute); font-size: 13px; }
 .ov-err { padding: 14px 18px; border-radius: 14px; background: rgba(255, 84, 104, .08); color: var(--up); font-size: 13px; }
@@ -347,7 +335,7 @@ body.ov {
 }
 @media (max-width: 1099px) {
   .ov-hero3 { grid-template-columns: minmax(0, 1fr); }
-  .ov-h3grid, .ov-row3, .ov-row2 { grid-template-columns: minmax(0, 1fr) !important; }
+  .ov-h3grid, .ov-row2 { grid-template-columns: minmax(0, 1fr) !important; }
 }
 @media (max-width: 899px) {
   .ov-head { flex-direction: column; gap: 12px; padding: 0 12px; }   /* 顶部留白由 .side 的 margin-bottom 统一给 */
