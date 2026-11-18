@@ -1945,6 +1945,7 @@ body.ov {
 
 /* ---------------- 今日一句 + 结构速览 ---------------- */
 .ov-row3 { display: grid; grid-template-columns: 1.94fr 1fr; gap: 16px; align-items: stretch; }
+.ov-row2 { display: grid; grid-template-columns: 1.32fr 1fr; gap: 16px; }
 .ov-one { display: flex; flex-direction: column; }
 .ov-one .ov-ch { margin-bottom: 0; }
 .ov-one p { font-size: 17px; line-height: 1.8; font-weight: 500; letter-spacing: -.01em; margin: auto 0; }
@@ -1976,7 +1977,7 @@ body.ov {
 }
 @media (max-width: 1099px) {
   .ov-hero3 { grid-template-columns: minmax(0, 1fr); }
-  .ov-h3grid, .ov-row3 { grid-template-columns: minmax(0, 1fr) !important; }
+  .ov-h3grid, .ov-row3, .ov-row2 { grid-template-columns: minmax(0, 1fr) !important; }
 }
 @media (max-width: 899px) {
   .ov-head { flex-direction: column; gap: 12px; padding: 14px 12px 0; }

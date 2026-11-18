@@ -40,12 +40,24 @@
   /* ---------------------------------------------------------------- 涨跌分布柱状 */
   function bars(buckets) {
     if (!buckets || !buckets.length) return '<div class="ov-skel">暂无涨跌分布数据</div>';
-    var W = 920, H = 470, padL = 10, padB = 44, padT = 42, padR = 10;
+    // 按容器实际宽度出图：固定 920 宽的 viewBox 在手机上会被整体缩到 ~39%，
+    // 11.5px 的刻度字只剩 4~5px，等于看不见。窄屏就让 viewBox 跟着窄。
+    var host = document.getElementById('ovBars');   // 注意：本文件里 el 是错误处理里的局部变量，不是工具函数
+    var avail = host ? host.clientWidth : 0;
+    var W = avail > 280 ? Math.min(avail, 920) : 920;
+    var H = Math.round(W * (W >= 700 ? 470 / 920 : 0.62));   // 窄屏略矮一点，别占满一屏
+    if (H < 260) H = 260;
+    var padL = 10, padB = 44, padT = 42, padR = 10;
     var innerW = W - padL - padR, innerH = H - padT - padB;
     var mx = 0;
     buckets.forEach(function (b) { mx = Math.max(mx, b.count || 0); });
     mx = mx || 1;
     var step = innerW / buckets.length, bw = step * 0.52, out = '';
+    // 窄屏（手机）8 个刻度挤在一行会连成一片：去掉 % 号，配合 CSS 把字号压到 10px
+    var narrow = W < 520;
+    var thin = function (s) {
+      return String(s).replace('%', '').replace('≤', '<').replace('≥', '>');
+    };
     buckets.forEach(function (b, i) {
       var h = (b.count || 0) / mx * innerH;
       var x = padL + i * step + (step - bw) / 2;
@@ -57,7 +69,7 @@
         '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 9).toFixed(1) + '" text-anchor="middle">' +
         (b.count || 0) + '</text>' +
         '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 24) + '" text-anchor="middle">' +
-        esc(b.label) + '</text>';
+        esc(narrow ? thin(b.label) : b.label) + '</text>';
     });
     out += '<line x1="' + padL + '" y1="' + (padT + innerH) + '" x2="' + (W - padR) + '" y2="' +
       (padT + innerH) + '" stroke="var(--line-soft)"/>';

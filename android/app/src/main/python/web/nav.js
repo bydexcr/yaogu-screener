@@ -64,6 +64,14 @@
       });
     }
     if (document.body) document.body.classList.add('has-side');
+  // 移动端导航条是横向滚动的，当前页可能在屏幕外（复盘/历史/设置），
+  // 进来先把当前项滚到可视区中间。block:'nearest' 避免顺带把页面纵向滚走。
+  try {
+    var cur = host.querySelector('.side-nav a.on');
+    if (cur && window.innerWidth < 900 && cur.scrollIntoView) {
+      cur.scrollIntoView({ block: 'nearest', inline: 'center' });
+    }
+  } catch (e) { /* 老 WebView 不支持对象参数，忽略 */ }
     loadBadge(host);
   }
 
