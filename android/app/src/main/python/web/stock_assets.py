@@ -366,20 +366,22 @@ input { -webkit-tap-highlight-color: transparent; }
 #searchInput::placeholder { color: #8b98ab; }
 #searchInput::-webkit-search-cancel-button { -webkit-appearance: none; }
 
+/* 主按钮＝黑色药丸（与市场全景页 .ov-btn-dark 同一套语言）。
+   深色主题会把 #1b1a17 映射成浅底、#fff 映射成深字，自动反相。 */
 .btn-primary {
   border: none;
   cursor: pointer;
-  padding: 9px 18px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 650;
-  letter-spacing: .3px;
-  color: #e8eef8;
-  background: var(--accent);
-  transition: filter .15s, transform .12s;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  color: #fff;
+  background: #1b1a17;
+  transition: opacity .15s, transform .12s;
   white-space: nowrap;
 }
-.btn-primary:active { transform: scale(.97); filter: brightness(.95); }
+.btn-primary:active { transform: scale(.97); opacity: .88; }
 
 .suggest {
   position: absolute;
