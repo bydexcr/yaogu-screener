@@ -14,6 +14,7 @@ import android.widget.EditText
 import android.widget.Toast
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.JavascriptInterface
 
 /**
  * 主界面：全屏 WebView 展示本机 Python 看板（http://127.0.0.1:8311）。
@@ -52,6 +53,14 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.btn_settings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+        // 网页内的设置面板通过这个桥调起原生设置页（API Key / 阈值 / 轮询间隔）。
+        // 网页端只有检测到 YaoguApp.openSettings 才显示那一行，浏览器里自动隐藏。
+        web.addJavascriptInterface(object {
+            @JavascriptInterface
+            fun openSettings() {
+                runOnUiThread { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) }
+            }
+        }, "YaoguApp")
         if (Build.VERSION.SDK_INT >= 33) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
         }

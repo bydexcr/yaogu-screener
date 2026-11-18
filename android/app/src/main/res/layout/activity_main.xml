@@ -10,9 +10,12 @@
         android:layout_height="match_parent"
         android:background="@color/bg" />
 
-    <!-- 悬浮设置按钮：40dp 圆角深底，浮在网页顶栏右侧（网页顶栏已预留 50px 安全区） -->
+    <!-- 设置入口已收进网页内的设置面板（经 JS 桥调起 SettingsActivity）。
+         这个悬浮按钮是旧版「网页顶栏预留 50px 安全区」时代的产物，顶栏被侧栏取代后会压在
+         深色卡片右上角，所以不再显示；保留视图是为了万一桥接失效可以一行切回来。 -->
     <ImageButton
         android:id="@+id/btn_settings"
+        android:visibility="gone"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_gravity="top|end"

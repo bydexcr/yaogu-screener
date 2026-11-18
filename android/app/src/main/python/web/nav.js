@@ -13,13 +13,15 @@
   };
 
   // key: 用来判断当前高亮的路径；settings 不开新页，直接呼出设置面板
+  // short: 窄屏（手机）用的短标签。6 个完整标签在 440px 宽的手机上排不下，
+  // 横向滚动条会把文字切一半（"股分析"、"历5"），所以窄屏直接换短名。
   var ITEMS = [
-    { key: '/', href: '/', name: '市场全景', icon: 'grid' },
-    { key: '/stock', href: '/stock', name: '个股分析', icon: 'candle' },
-    { key: '/radar', href: '/radar', name: '妖股雷达', icon: 'radar', badge: true },
-    { key: '/review', href: '/review', name: '复盘', icon: 'note' },
-    { key: '/review#hits', href: '/review#hits', name: '历史', icon: 'clock' },
-    { key: 'settings', href: '', name: '设置', icon: 'gear' }
+    { key: '/', href: '/', name: '市场全景', short: '全景', icon: 'grid' },
+    { key: '/stock', href: '/stock', name: '个股分析', short: '分析', icon: 'candle' },
+    { key: '/radar', href: '/radar', name: '妖股雷达', short: '雷达', icon: 'radar', badge: true },
+    { key: '/review', href: '/review', name: '复盘', short: '复盘', icon: 'note' },
+    { key: '/review#hits', href: '/review#hits', name: '历史', short: '历史', icon: 'clock' },
+    { key: 'settings', href: '', name: '设置', short: '设置', icon: 'gear' }
   ];
 
   function svg(name) {
@@ -36,6 +38,16 @@
     return p;
   }
 
+  // 窄屏换短标签，避免横向溢出把文字切一半
+  function fitLabels() {
+    var narrow = window.innerWidth < 680;   // 实测 6 个完整标签 + 图标要 ~625px 才排得下
+    var nodes = document.querySelectorAll('.side-nav a > span[data-full]');
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      n.textContent = narrow ? n.getAttribute('data-short') : n.getAttribute('data-full');
+    }
+  }
+
   function render() {
     var host = document.getElementById('appSide');
     if (!host) return;
@@ -48,7 +60,8 @@
         var bdg = it.badge ? '<span class="side-bdg" hidden></span>' : '';
         return '<a class="' + (on ? 'on' : '') + '" data-key="' + it.key + '"' +
           (it.href ? ' href="' + it.href + '"' : ' role="button" tabindex="0"') + '>' +
-          svg(it.icon) + '<span>' + it.name + '</span>' + bdg + '</a>';
+          svg(it.icon) + '<span data-full="' + it.name + '" data-short="' + (it.short || it.name) +
+          '">' + it.name + '</span>' + bdg + '</a>';
       }).join('') + '</nav>' +
       '<div class="side-foot">数据源 同花顺金融数据服务<br>仅供技术研究与复盘</div>';
 
@@ -66,6 +79,9 @@
     if (document.body) document.body.classList.add('has-side');
   // 移动端导航条是横向滚动的，当前页可能在屏幕外（复盘/历史/设置），
   // 进来先把当前项滚到可视区中间。block:'nearest' 避免顺带把页面纵向滚走。
+  fitLabels();
+  window.addEventListener('resize', fitLabels);
+
   try {
     var cur = host.querySelector('.side-nav a.on');
     if (cur && window.innerWidth < 900 && cur.scrollIntoView) {

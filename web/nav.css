@@ -82,6 +82,14 @@
   .side-nav .side-ic { width: 15px; height: 15px; }
 }
 
+/* 手机竖屏（<480）：6 个标签 + 图标 + 内边距排不下，
+   横滑会把文字切一半。这一档只留短文字标签，6 项刚好铺满不滚动。 */
+@media (max-width: 679px) {
+  .side-nav { justify-content: space-between; }
+  .side-nav a { padding: 8px 10px; font-size: 12.5px; gap: 0; }
+  .side-nav .side-ic { display: none; }
+}
+
 /* ---------------- 设置面板 / 弹窗的焦点框 ----------------
    默认的黑色 outline 和整套配色不搭；这里统一成主色环，
    鼠标点击不显示，键盘 Tab 才显示（:focus-visible）。 */

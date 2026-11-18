@@ -135,9 +135,24 @@
     try { return new URLSearchParams(location.search).get('sheet') === '1'; } catch (e) { return false; }
   })();
 
+  // 安卓端有 JS 桥（MainActivity 注入的 YaoguApp）时，才显示「数据接口与阈值」这一行；
+  // 浏览器里没有桥，这一行保持隐藏。
+  function initNativeBridge() {
+    var row = document.getElementById('apiRow');
+    var btn = document.getElementById('apiOpen');
+    if (!row || !btn) return;
+    var bridge = window.YaoguApp;
+    if (!bridge || typeof bridge.openSettings !== 'function') return;
+    row.hidden = false;
+    btn.addEventListener('click', function () {
+      try { bridge.openSettings(); } catch (e) { /* 忽略 */ }
+    });
+  }
+
   function init() {
     apply(fromQuery() || stored());
     initSheet();
+    initNativeBridge();
     if (wantSheet) openSheet(true);
   }
 
