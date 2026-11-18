@@ -87,8 +87,13 @@
       sheetFocusBack = document.activeElement;
       mask.hidden = false;
       if (btn) btn.setAttribute('aria-expanded', 'true');
-      var close = document.getElementById('settingsClose');
-      if (close) close.focus();                     // 焦点进面板，Tab 不会再跑到背景
+      // 焦点进面板即可，别聚焦某个按钮：按钮一拿到焦点，浏览器会画一圈默认黑描边，
+      // 和整套配色完全不符（用户反馈的"关闭按钮底框不一致"就是这个）。
+      // 聚焦容器同样能把 Tab 圈在面板里。
+      try {
+        mask.tabIndex = -1;
+        mask.focus({ preventScroll: true });
+      } catch (e) { /* 老 WebView 不支持 focus(options) */ mask.focus(); }
     } else {
       mask.hidden = true;
       if (btn) btn.setAttribute('aria-expanded', 'false');
@@ -123,13 +128,17 @@
     });
   }
 
+  // ?sheet=1（截图/排障用）必须在脚本求值时就记下来：
+  // 个股分析页的 showMarket() 会 history.replaceState 清掉 query，
+  // 等到 DOMContentLoaded 再读 location.search 就已经是空的了。
+  var wantSheet = (function () {
+    try { return new URLSearchParams(location.search).get('sheet') === '1'; } catch (e) { return false; }
+  })();
+
   function init() {
     apply(fromQuery() || stored());
     initSheet();
-    // 便于截图/排障：?sheet=1 直接打开设置面板
-    try {
-      if (new URLSearchParams(location.search).get('sheet') === '1') openSheet(true);
-    } catch (e) { /* 忽略 */ }
+    if (wantSheet) openSheet(true);
   }
 
   // 尽早切一次，避免深色用户看到浅色闪屏
