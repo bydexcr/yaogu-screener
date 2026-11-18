@@ -139,6 +139,8 @@ body.an .error-box {
   .an-head h1 { font-size: 24px; }
   .an-search { max-width: none; margin-bottom: 14px; }
   body.an .card { padding: 16px; border-radius: 18px; }
+  /* 指标卡固定两列：auto-fit 在父容器被撑宽时会变成三列并溢出 */
+  body.an .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body.an .hero-k { padding: 14px 16px 8px; }
 }
 /* ---------------- 色彩收口：把遗留的冷蓝灰换成暖纸色 ----------------

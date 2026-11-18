@@ -500,6 +500,7 @@ main {
 
 /* 分区带：透明底 + 顶部发丝线，取代"每个模块一个白盒子" */
 .card {
+  min-width: 0;                 /* 作为 grid/flex 子项时别被内容顶宽 */
   background: transparent;
   border: 0;
   border-top: 1px solid var(--line);
@@ -733,7 +734,10 @@ main {
 
 /* ---------------- 9. 表格 ---------------- */
 .table-wrap {
-  overflow-x: auto;
+  /* 两个方向都约束 + max-width：老 WebView 里只写 overflow-x 有时裁不住，
+     结果宽表把卡片和整个文档一起撑宽 */
+  overflow: auto;
+  max-width: 100%;
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-sm);
@@ -1790,6 +1794,8 @@ body.an .error-box {
   .an-head h1 { font-size: 24px; }
   .an-search { max-width: none; margin-bottom: 14px; }
   body.an .card { padding: 16px; border-radius: 18px; }
+  /* 指标卡固定两列：auto-fit 在父容器被撑宽时会变成三列并溢出 */
+  body.an .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body.an .hero-k { padding: 14px 16px 8px; }
 }
 /* ---------------- 色彩收口：把遗留的冷蓝灰换成暖纸色 ----------------

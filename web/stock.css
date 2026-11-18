@@ -328,6 +328,7 @@ main {
 
 /* 分区带：透明底 + 顶部发丝线，取代"每个模块一个白盒子" */
 .card {
+  min-width: 0;                 /* 作为 grid/flex 子项时别被内容顶宽 */
   background: transparent;
   border: 0;
   border-top: 1px solid var(--line);
@@ -561,7 +562,10 @@ main {
 
 /* ---------------- 9. 表格 ---------------- */
 .table-wrap {
-  overflow-x: auto;
+  /* 两个方向都约束 + max-width：老 WebView 里只写 overflow-x 有时裁不住，
+     结果宽表把卡片和整个文档一起撑宽 */
+  overflow: auto;
+  max-width: 100%;
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-sm);

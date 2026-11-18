@@ -86,6 +86,10 @@
     border-radius: 18px 18px 0 0;
     box-shadow: 0 -10px 26px -18px rgba(0, 0, 0, .55);
     overflow: visible;
+    /* 安卓 WebView 快速滚动时 fixed 元素会抖：提升到独立合成层 */
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
   }
   .side-nav a {
     flex: 1 1 0; min-width: 0;
@@ -103,6 +107,11 @@
   .side-nav a:active { background: rgba(255, 255, 255, .06); }
   /* 底部栏只放 5 项（去掉「历史」；桌面左侧栏仍保留） */
   .side-nav a[data-key="/review#hits"] { display: none; }
+
+  /* 页面级禁止横向溢出：宽表若没被裁住，会把文档撑宽 → 整页可左右拖、
+     position:fixed 的底栏也会被拉成内容宽度（真机反馈的"导航栏跟着放大"）。
+     宽表本身仍可在自己的 .table-wrap 里横向滚动。 */
+  html, body { overflow-x: hidden; }
 
   /* 内容别被底栏盖住：底栏约 62px + 安全区，留 78px 气口。
      选择器写成 html body.has-side.has-side 是为了压过 overview.css 里的
