@@ -24,6 +24,7 @@ def main() -> None:
     js = read("theme.js")
     stock_dark = read("stock-dark.css")
     radar_dark = read("radar-dark.css")
+    pages_dark = read("pages-dark.css")
     out = "\n".join([
         "# -*- coding: utf-8 -*-",
         '"""由 web/build_theme_assets.py 生成：APK 内嵌的主题切换资源（勿手改）"""',
@@ -34,10 +35,12 @@ def main() -> None:
         "",
         "RADAR_DARK = " + py_literal(radar_dark),
         "",
+        "PAGES_DARK = " + py_literal(pages_dark),
+        "",
     ])
     DST.write_text(out, encoding="utf-8", newline="\n")
-    print("[build_theme_assets] js %d / stock-dark %d / radar-dark %d -> %s %d 字节" % (
-        len(js), len(stock_dark), len(radar_dark), DST.name, DST.stat().st_size))
+    print("[build_theme_assets] js %d / stock-dark %d / radar-dark %d / pages-dark %d -> %s %d 字节" % (
+        len(js), len(stock_dark), len(radar_dark), len(pages_dark), DST.name, DST.stat().st_size))
 
 
 if __name__ == "__main__":

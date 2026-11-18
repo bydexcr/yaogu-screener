@@ -1364,7 +1364,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointe
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .logo{
   display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:10px;
-  background:var(--fg);border:1px solid var(--fg);color:#fff;
+  background:var(--fg);border:1px solid var(--fg);color:#0f141c;
   box-shadow:inset 0 1px 0 rgba(9, 12, 18, .06);
 }
 .brand-text h1{font-size:17px;font-weight:800;line-height:1.25;letter-spacing:-.01em}
@@ -1683,6 +1683,811 @@ footer{
 .seg button.on{color:var(--fg);font-weight:650;background:var(--card);border-color:var(--line);border-bottom:2px solid var(--accent)}
 .settings-foot{display:flex;justify-content:flex-end;margin-top:14px}
 @media (min-width:900px){.icon-btn{display:grid}}
+
+/* ===== 深色主题兜底：亮底深字，避免「深字压深底」看不清 ===== */
+.nav-btn.on,
+.seg button.on {
+  color: #04141c !important;
+  background: linear-gradient(135deg, #22d3ee, #61e6c9) !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 10px -6px rgba(34, 211, 238, .55) !important;
+}
+"""
+
+PAGES_DARK = r"""/* 由 web/build_dark_theme.py 生成：深色主题（浅色 stock.css / 雷达内联样式的反向映射） */
+
+/* ===== analysis.css ===== */
+/* ============================================================
+   analysis.css —— 个股分析页 v2：与「市场全景」同一套卡片体系
+   只作用于 body.an，不影响复盘 / 雷达页
+   ============================================================ */
+
+/* 只用三边 padding：左边距由 nav.css 的 body.has-side 负责，
+   写成 padding 简写会把 356px 覆盖成 32px，内容列就会跑到侧栏底下去 */
+body.an {
+  padding-top: 32px;
+  padding-right: 32px;
+  padding-bottom: 56px;
+  background: var(--bg);
+}
+@media (max-width: 899px) {
+  body.an { padding-top: 14px; padding-right: 12px; padding-bottom: 40px; padding-left: 12px; }
+}
+
+/* 内容列：与「市场全景」一致（1620 上限，窗宽不够时自然铺满） */
+body.an #main {
+  max-width: 1620px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* ---------------- 标题行（搜索框已从顶栏下移到这里） ---------------- */
+.an-head { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 18px; }
+.an-head h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.an-sub {
+  display: flex; align-items: center; gap: 7px; margin-top: 7px;
+  font-size: 12.5px; color: var(--text-mute);
+}
+.an-sub .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--down); flex: none; }
+/* 搜索行：放在标题行下方（原「市场全景」起始位置），与空态卡同宽居中 */
+.an-search { max-width: 760px; margin: 0 auto 18px; }
+
+body.an .search-box {
+  margin: 0;
+  width: 100%;
+  max-width: none;        /* stock.css 给的是 560px，会把搜索行缩窄并顶到右边 */
+  margin-left: 0;
+  padding: 4px 6px 4px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+}
+body.an .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
+body.an .search-box input { height: 34px; font-size: 13.5px; }
+body.an .search-box #searchBtn { border-radius: 999px; padding: 7px 18px; font-size: 13px; }
+body.an .search-box .suggest { top: calc(100% + 6px); left: 0; right: 0; }
+
+/* ---------------- 空态 ---------------- */
+.an-empty {
+  max-width: 760px;
+  margin: 0 auto;
+  background: var(--panel);
+  border-radius: 22px;
+  padding: 44px 28px 40px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 12px 28px -18px rgba(0, 0, 0, .20);
+}
+.an-empty h2 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.an-empty p { margin-top: 8px; font-size: 12.5px; color: var(--text-mute); }
+.an-eg { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 20px; }
+.an-eg a {
+  padding: 7px 14px; border-radius: 999px; background: var(--panel-2);
+  font-size: 12.5px; color: var(--text-dim); text-decoration: none; font-family: var(--mono);
+}
+.an-eg a:hover { background: var(--panel-3); color: var(--text); }
+
+/* ---------------- 卡片：从「分区带」改成白卡 ---------------- */
+body.an .card {
+  background: var(--panel);
+  border: 1px solid transparent;
+  border-top: 1px solid transparent;
+  border-radius: 22px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 12px 28px -18px rgba(0, 0, 0, .20);
+}
+body.an .card > h2 { font-size: 15px; font-weight: 700; letter-spacing: -.01em; color: var(--text); }
+body.an .card .sub { margin-left: 0; }
+/* stock.css 里有 `#result > .card{margin-bottom:0}`（id 选择器），
+   普通类选择器压不住，这里用同级的 body.an #result 提权，模块之间才有 16px 白隙 */
+body.an #result > .card,
+body.an #result > .grid-2 > .card { margin-bottom: 16px; }
+body.an #result > .grid-2 { display: grid; gap: 16px; margin-bottom: 16px; }
+body.an #result > .card:last-of-type,
+body.an #result > .grid-2:last-of-type { margin-bottom: 0; }
+
+/* 英雄容器 + 首屏 K 线：同一套圆角与投影 */
+body.an .quote-card,
+body.an .hero-k,
+body.an #sec-score {
+  border-radius: 22px;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 12px 28px -18px rgba(0, 0, 0, .20);
+}
+body.an .hero-k { padding: 18px 22px 10px; margin-bottom: 16px; background: var(--panel); }
+body.an .hero-k h2 { font-size: 15px; font-weight: 700; }
+
+/* ---------------- 关键指标：前 4 个升级成主 KPI ---------------- */
+body.an .facts { gap: 12px; margin-bottom: 16px; }
+body.an .fact {
+  border-radius: 16px;
+  border: 1px solid var(--line-soft);
+  background: var(--panel);
+  padding: 14px 16px;
+}
+body.an .fact .fl { font-size: 11px; }
+body.an .fact:nth-child(-n+4) {
+  border-color: var(--line);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+}
+body.an .fact:nth-child(-n+4) .fv {
+  font-size: var(--num-key);
+  font-weight: 650;
+  letter-spacing: -.02em;
+  margin-top: 8px;
+}
+
+/* ---------------- 返回栏 ---------------- */
+body.an .back-bar { margin-bottom: 14px; }
+body.an .back-bar a.btn-ghost { text-decoration: none; display: inline-flex; align-items: center; }
+
+/* ---------------- 加载 / 错误态与卡片对齐 ---------------- */
+body.an .loading,
+body.an .error-box {
+  border-radius: 22px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 12px 28px -18px rgba(0, 0, 0, .20);
+}
+
+/* 移动端：标题行竖排，搜索占满 */
+@media (max-width: 899px) {
+  .an-head { flex-direction: column; gap: 12px; }
+  .an-head h1 { font-size: 24px; }
+  .an-search { max-width: none; margin-bottom: 14px; }
+  body.an .card { padding: 16px; border-radius: 18px; }
+  body.an .hero-k { padding: 14px 16px 8px; }
+}
+/* ---------------- 色彩收口：把遗留的冷蓝灰换成暖纸色 ----------------
+   这些 #131a25 / #1a2330 / #16233a 是去 AI 味之前的旧色阶，
+   在暖纸底 + 白卡的体系里会突兀（行情卡的指标带尤其明显）。 */
+body.an .qc-stat { background: var(--panel-2); border-radius: 12px; }
+body.an .bar-track,
+body.an .peer-card .sim .track,
+body.an .peer-card .dim .dt2 { background: var(--panel-3); }
+body.an .suggest-item:hover { background: var(--panel-2); }
+body.an .suggest-item.active { background: var(--panel-3); }
+/* ===== overview.css ===== */
+/* ============================================================
+   overview.css —— 市场全景页（左栏 + 主力区 + 右栏）
+   令牌沿用 stock.css 的 :root；本文件只加页面级版式
+   ============================================================ */
+
+body.ov {
+  background: var(--bg);
+  padding-top: 32px;
+  padding-right: 32px;
+  padding-bottom: 32px;
+}
+@media (max-width: 899px) {
+  body.ov, body.ov.has-side { padding: 0 0 24px; }
+  .ov-side-host { display: block; }
+}
+
+.ov-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 396px;
+  gap: 16px;
+  align-items: start;
+  max-width: 1620px;
+}
+.ov-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* ---------------- 标题区 ---------------- */
+.ov-head { display: flex; align-items: flex-start; gap: 20px; padding: 6px 4px 2px; }
+.ov-head h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.ov-head p { font-size: 12.5px; color: var(--text-mute); margin-top: 6px; }
+.ov-head .sr { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+.ov-search {
+  display: flex; align-items: center; gap: 9px; min-width: 300px; padding: 11px 16px;
+  border-radius: 999px; background: var(--panel); border: 1px solid var(--line);
+  color: var(--text-mute); font-size: 13.5px;
+}
+.ov-search input {
+  border: 0; outline: 0; background: transparent; font: inherit; color: var(--text);
+  width: 100%; min-width: 0;
+}
+.ov-btn-dark {
+  padding: 11px 26px; border-radius: 999px; background: #e9e5dc; color: #0f141c; font-size: 14px;
+  font-weight: 600; border: 0; cursor: pointer; font-family: inherit;
+}
+
+/* ---------------- 三张彩色 hero ---------------- */
+.ov-hero3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ov-hc {
+  border-radius: 22px; padding: 20px; min-height: 150px; display: flex; flex-direction: column;
+  min-width: 0; container-type: inline-size;
+}
+/* 三张彩色卡片的底色（原来是内联 style，深色主题的映射改不到，挪到这里） */
+.ov-hc.ov-sage { background: #1b2620; }
+.ov-hc.ov-amber { background: #2c2513; }
+.ov-hc.ov-lav { background: #232037; }
+
+.ov-hc .top { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: #e6edf8; }
+.ov-hc .pill {
+  padding: 3px 10px; border-radius: 999px; background: rgba(9, 12, 18, .62);
+  font-size: 11.5px; font-weight: 500; color: #a9b6c9;
+}
+.ov-hc .big {
+  font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.05em;
+  font-size: clamp(24px, 1.9vw, 36px); font-weight: 700; line-height: 1.15; margin: 10px 0 0;
+  white-space: nowrap;
+}
+@supports (container-type: inline-size) {
+  .ov-hc .big { font-size: clamp(19px, 11cqw, 36px); }
+}
+.ov-hc .big small { font-size: .44em; font-weight: 600; letter-spacing: 0; margin: 0 2px; }
+.ov-hc .sub { margin-top: auto; padding-top: 10px; font-size: 12px; color: #a9b6c9; opacity: .85; }
+.ov-hc .sub em { font-style: normal; font-weight: 600; }
+.ov-hc .link {
+  margin-left: auto; padding: 6px 14px; border-radius: 999px; background: #0f141c; color: #e6edf8;
+  font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap;
+}
+
+/* ---------------- 通用卡 ---------------- */
+.ov-card {
+  background: var(--panel); border-radius: 22px; padding: 20px 22px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 12px 28px -18px rgba(0, 0, 0, .22);
+  min-width: 0;
+}
+.ov-ch { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.ov-ch h2 { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+.ov-ch .hint { font-size: 11.5px; color: var(--text-mute); }
+.ov-seg { margin-left: auto; display: flex; gap: 2px; padding: 3px; background: var(--panel-2); border-radius: 999px; }
+.ov-seg span { padding: 5px 13px; border-radius: 999px; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+.ov-seg span.on { background: var(--panel); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .10); }
+.ov-chart { width: 100%; height: auto; display: block; }
+.ov-chart .ov-bar { fill: #e6edf8; }
+.ov-chart .ov-bar-hi { fill: #3d4c63; }
+
+.ov-chart text { font-family: var(--mono); font-size: 11.5px; fill: var(--text-mute); }
+.ov-concl { font-size: 12.5px; color: var(--text-dim); line-height: 1.75; margin-top: 6px; }
+.ov-concl b { font-weight: 700; color: var(--text); }
+
+/* ---------------- 热门板块表 ---------------- */
+.ov-pt { width: 100%; border-collapse: collapse; }
+/* 表头只留小灰字、不要底色：stock.css 的 thead th 带 --panel-3 米色带，
+   在这里会变成一条和卡片背景不一致的色块 */
+.ov-pt th {
+  font-size: 11px; color: var(--text-mute); font-weight: 500; text-align: right;
+  padding: 0 0 10px; background: transparent; position: static;
+  border-bottom: 1px solid var(--line-soft);
+}
+.ov-pt th:first-child { text-align: left; }
+.ov-pt td {
+  padding: 11px 0; border-top: 1px solid var(--line-soft); text-align: right;
+  font-size: 13px; font-family: var(--mono); font-variant-numeric: tabular-nums;
+}
+.ov-pt td:first-child { text-align: left; font-family: var(--font); }
+.ov-pt td.ld { text-align: left; font-size: 12.5px; color: var(--text-dim); white-space: nowrap; }
+.ov-pt .nm { font-size: 14px; font-weight: 600; display: block; }
+.ov-pt .nm2 { font-size: 11.5px; color: var(--text-mute); margin-top: 2px; }
+.ov-pt .ld i { font-style: normal; color: var(--up); margin-left: 4px; }
+.ov-struct { font-size: 12.5px; color: var(--text-dim); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+.ov-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.ov-chip { padding: 5px 12px; border-radius: 999px; background: var(--panel-2); font-size: 11.5px; color: var(--text-dim); }
+.ov-chip b { font-family: var(--mono); font-weight: 700; color: var(--text); margin-left: 4px; }
+
+/* ---------------- 右栏 ---------------- */
+.ov-donut { display: flex; align-items: center; gap: 16px; }
+.ov-donut .ring { position: relative; flex: none; }
+.ov-donut .c { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.ov-donut .c i { font-style: normal; display: block; font-size: 11px; color: var(--text-mute); }
+.ov-donut .c b { font-family: var(--mono); font-size: 23px; font-weight: 700; letter-spacing: -.02em; }
+.ov-leg { display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; color: var(--text-dim); }
+.ov-leg i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 7px; }
+.ov-leg b { font-family: var(--mono); color: var(--text); margin-left: 6px; }
+
+.ov-top4 { display: flex; flex-direction: column; }
+.ov-t4 {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  padding: 11px 0; border-top: 1px solid var(--line-soft);
+}
+.ov-t4:first-child { border-top: 0; }
+.ov-rk {
+  width: 22px; height: 22px; border-radius: 7px; background: var(--panel-2); color: var(--text-dim);
+  font: 600 11px/22px var(--mono); text-align: center;
+}
+.ov-t4 .nm { font-size: 13.5px; font-weight: 600; }
+.ov-t4 .nm2 { display: block; font-size: 11.5px; color: var(--text-mute); margin-top: 2px; font-weight: 400; }
+.ov-t4 .v { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13.5px; font-weight: 600; color: var(--up); }
+.ov-t4 .v small { display: block; font-size: 11px; color: var(--text-mute); font-weight: 400; margin-top: 1px; }
+
+.ov-hs { display: flex; flex-direction: column; }
+.ov-hs .r {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  padding: 10px 0; border-top: 1px solid var(--line-soft);
+}
+.ov-hs .r:first-child { border-top: 0; }
+.ov-hs .nm { font-size: 13.5px; font-weight: 600; }
+.ov-hs .nm2 { display: block; font-size: 11px; color: var(--text-mute); margin-top: 2px; font-family: var(--mono); font-weight: 400; }
+.ov-hs .v { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13.5px; font-weight: 600; }
+.ov-hs .v small { display: block; font-size: 11px; color: var(--text-mute); font-weight: 400; margin-top: 1px; }
+
+.ov-src { font-size: 11px; line-height: 1.8; color: var(--text-mute); padding: 0 4px; }
+
+/* ---------------- 今日一句 + 结构速览 ---------------- */
+.ov-row3 { display: grid; grid-template-columns: 1.94fr 1fr; gap: 16px; align-items: stretch; }
+.ov-one { display: flex; flex-direction: column; }
+.ov-one .ov-ch { margin-bottom: 0; }
+.ov-one p { font-size: 17px; line-height: 1.8; font-weight: 500; letter-spacing: -.01em; margin: auto 0; }
+.ov-one p b { background: linear-gradient(transparent 62%, rgba(232, 200, 122, .55) 62%); font-weight: 700; }
+.ov-one .foot { font-size: 11.5px; color: var(--text-mute); }
+.ov-one p.muted { font-size: 14px; font-weight: 400; color: var(--text-mute); }
+.ov-dark { background: #12161d; border-radius: 22px; padding: 20px 22px; color: #efeade; box-shadow: 0 12px 28px -18px rgba(0, 0, 0, .35); }
+/* 这张卡在深浅两套主题下都是深底，所以标题要用「两套都亮」的固定浅色；
+   写 #0f141c 会被深色映射表反转成近黑，标题直接消失 */
+.ov-dark h2 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: #e6edf8; }
+.ov-kv {
+  display: flex; align-items: baseline; justify-content: space-between; padding: 12px 0;
+  border-top: 1px solid rgba(9, 12, 18, .08); font-size: 13px; color: #a8a294;
+}
+.ov-kv:first-of-type { border-top: 0; }
+.ov-kv b {
+  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 17px; color: #e8c87a;
+  font-weight: 700; letter-spacing: -.01em;
+}
+
+/* ---------------- 骨架 / 错误 ---------------- */
+.ov-skel { padding: 40px 8px; text-align: center; color: var(--text-mute); font-size: 13px; }
+.ov-err { padding: 14px 18px; border-radius: 14px; background: rgba(255, 84, 104, .08); color: var(--up); font-size: 13px; }
+
+/* ---------------- 断点 ---------------- */
+@media (max-width: 1599px) {
+  .ov-main { grid-template-columns: minmax(0, 1fr); max-width: 1100px; }
+  .ov-col { width: 100%; }
+}
+@media (max-width: 1099px) {
+  .ov-hero3 { grid-template-columns: minmax(0, 1fr); }
+  .ov-h3grid, .ov-row3 { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@media (max-width: 899px) {
+  .ov-head { flex-direction: column; gap: 12px; padding: 14px 12px 0; }
+  .ov-head h1 { font-size: 24px; }
+  .ov-head .sr { margin-left: 0; width: 100%; }
+  .ov-search { min-width: 0; flex: 1; }
+  .ov-main { padding: 0 12px; gap: 12px; }
+  .ov-card { padding: 16px 16px; border-radius: 18px; }
+  .ov-one p { font-size: 15px; }
+}
+
+/* ===== radar.css ===== */
+/* ============================================================
+   radar.css —— 妖股雷达页：与「市场全景」「个股分析」同一套卡片体系
+   只作用于 body.rd；令牌沿用 index.html 内联的 :root（--bg/--card/--line/--fg…）
+   ============================================================ */
+
+body.rd {
+  padding-top: 32px;
+  padding-right: 32px;
+  padding-bottom: 56px;
+  background: var(--bg);
+}
+@media (max-width: 899px) {
+  body.rd { padding-top: 14px; padding-right: 12px; padding-bottom: 40px; padding-left: 12px; }
+}
+
+/* 页内所有区块统一内容列（原顶部 .bar 已移除，导航在左侧栏） */
+body.rd .rd-head,
+body.rd .panel-top,
+body.rd .chips,
+body.rd main,
+body.rd .sf,
+body.rd footer {
+  max-width: 1620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------------- 标题行 ---------------- */
+.rd-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 6px; flex-wrap: wrap; }
+.rd-head h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.rd-sub {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  font-size: 12.5px; color: var(--muted); flex-wrap: wrap;
+}
+.rd-head .bar-meta { margin-left: auto; margin-top: 0; align-self: flex-end; }
+
+/* ---------------- 运行状态 / 筛选条件 ---------------- */
+body.rd .panel-top { padding: 0 0 12px; }
+body.rd .chips { padding: 0 0 14px; }
+
+/* ---------------- 卡片：从「分区带」改成白卡 ---------------- */
+body.rd .card {
+  background: var(--card);
+  border: 0;
+  border-top: 0;
+  border-radius: 22px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  min-width: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 12px 28px -18px rgba(0, 0, 0, .20);
+}
+body.rd .card > h2 { font-size: 15px; font-weight: 700; letter-spacing: -.01em; margin: 0 0 4px; }
+body.rd .cols { gap: 16px; }
+body.rd main { padding: 0; }
+
+/* 表头只留小灰字、不要底色（index.html 内联的 th 带 --card-3 米色带，
+   在白卡里会变成一条和卡片背景不一致的色块） */
+body.rd th {
+  background: transparent;
+  position: static;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+/* ---------------- 表格列距：让候选池 13 列整表放得下 ----------------
+   内联样式里 td/th 都是 8px 内边距，13 列共 208px，最后「状态」列会被挤出可视区；
+   收到 4px 后可省 ~104px，配合题材列限宽即可整表显示。 */
+body.rd table td,
+body.rd table th { padding: 8px 4px; }
+body.rd td.rr { max-width: 128px; }
+/* 首列贴卡片左边、末列贴右边，视觉上仍留一点气口 */
+body.rd table td:first-child,
+body.rd table th:first-child { padding-left: 2px; }
+body.rd table td:last-child,
+body.rd table th:last-child { padding-right: 2px; }
+
+/* ---------------- 底部板块资金矩阵 / 页脚 ---------------- */
+body.rd .sf { padding: 0; }
+body.rd .sf > .card { margin-bottom: 16px; }
+body.rd footer {
+  padding: 4px 2px 0;
+  border-top: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+@media (max-width: 899px) {
+  .rd-head h1 { font-size: 24px; }
+  .rd-head .bar-meta { margin-left: 0; }
+  body.rd .card { padding: 16px; border-radius: 18px; }
+}
+
+/* ===== review.css ===== */
+/* ============================================================
+   复盘页（/review）—— 结构对齐复盘设计稿：
+   1 一句话总收口 / 2 盘型环境 / 2.5 资金流证据 / 4 主线轮动 /
+   4.5 连板高度 / 4.6 连板梯队 / 6 四分层 / 10 次日观察与证伪 /
+   12 股票池更新 / 13 风险边界
+   ============================================================ */
+
+/* ---------------- 顶部条 ---------------- */
+.rv-topbar {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+}
+.rv-topbar-main { min-width: 0; }
+.rv-sys {
+  /* 低调化：不做"系统徽章"，只做灰色小标签 */
+  font-size: 10.5px; letter-spacing: 1.2px; color: var(--text-mute);
+  border: 0; background: none; padding: 0;
+}
+.rv-title { font-size: 19px; margin: 8px 0 0; letter-spacing: .4px; }
+.rv-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rv-tag {
+  font-size: 11.5px; color: var(--text-dim); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px;
+}
+.rv-tag.ghost { color: var(--text-mute); background: transparent; }
+.rv-tag.heat.hot { color: #0f141c; background: var(--up); border-color: transparent; }
+.rv-tag.heat.warm { color: #0f141c; background: var(--warn); border-color: transparent; }
+.rv-tag.heat.mid { color: var(--text); }
+.rv-tag.heat.cool { color: #0f141c; background: var(--down); border-color: transparent; }
+.rv-tag.heat.cold { color: #0f141c; background: #7fd8b8; border-color: transparent; }
+.rv-topbar-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.rv-select {
+  appearance: none; color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 999px;
+  font-size: 12.5px; padding: 7px 26px 7px 12px; max-width: 140px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-mute) 50%), linear-gradient(135deg, var(--text-mute) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 52%, calc(100% - 9px) 52%;
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+.rv-topbar-actions .btn-ghost { padding: 7px 14px; font-size: 12.5px; }
+
+/* ---------------- 区块骨架 ---------------- */
+.rv-flow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.rv-sec {
+  /* 分区带：透明底 + 顶部发丝线 */
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 16px 0 20px;
+}
+.rv-sec-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.rv-no {
+  font: 700 11px/1 var(--mono); color: var(--accent-2);
+  background: var(--accent-weak); border-radius: 6px; padding: 3px 6px;
+}
+.rv-sec-title { font-size: 14px; margin: 0; letter-spacing: .3px; }
+.rv-sec-hint { font-size: 11px; color: var(--text-mute); }
+.rv-skeleton { padding: 40px 8px; text-align: center; color: var(--text-mute); font-size: 13px; }
+.rv-empty { padding: 10px 2px; font-size: 12px; color: var(--text-mute); }
+.rv-warn {
+  padding: 9px 11px; border-radius: 10px; font-size: 12px; line-height: 1.65;
+  color: var(--warn); background: rgba(255, 176, 32, .1); border: 1px solid rgba(255, 176, 32, .3);
+}
+.rv-caliber, .rv-legend { margin: 9px 0 0; font-size: 10.5px; line-height: 1.7; color: var(--text-mute); }
+.rv-col-title {
+  font-size: 11.5px; color: var(--text-dim); letter-spacing: .4px; margin-bottom: 7px;
+  padding-bottom: 5px; border-bottom: 1px solid var(--line-soft);
+}
+.rv-col-title.up { color: var(--up); }
+.rv-col-title.down { color: var(--down); }
+.rv-col-title.mid { color: var(--text-dim); }
+.clickable { cursor: pointer; }
+.clickable:hover { background: var(--panel-3); }
+
+/* ---------------- 1 一句话 ---------------- */
+.rv-verdict {
+  margin: 0 0 10px; font-size: 14.5px; line-height: 1.75; color: var(--text); font-weight: 600;
+  padding: 11px 13px; border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.rv-points { margin: 0; padding-left: 18px; }
+.rv-points li { font-size: 12.5px; line-height: 1.85; color: var(--text-dim); }
+
+/* ---------------- 2 环境 ---------------- */
+.rv-env { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.rv-regime { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.rv-regime-name { font-size: 15px; font-weight: 650; color: var(--accent-2); }
+.rv-regime-flavor { font-size: 11.5px; color: var(--text-mute); }
+.rv-kvs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.rv-kv {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  background: var(--panel-2); border-radius: 9px; padding: 7px 9px;
+}
+.rv-kv .k { font-size: 11px; color: var(--text-mute); }
+.rv-kv .v { font: 650 12.5px/1.2 var(--mono); color: var(--text); }
+.rv-kv .v.up { color: var(--up); } .rv-kv .v.down { color: var(--down); }
+.rv-idx-head, .rv-idx-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 78px 68px; gap: 8px; align-items: center;
+  padding: 6px 8px; font-size: 12px; font-family: var(--mono);
+}
+.rv-idx-head { color: var(--text-mute); font-size: 10.5px; border-bottom: 1px solid var(--line-soft); font-family: var(--font); }
+.rv-idx-row { border-bottom: 1px solid var(--line-soft); }
+.rv-idx-row:last-child { border-bottom: none; }
+.rv-idx-row .n { font-family: var(--font); color: var(--text-dim); }
+.rv-idx-row .p, .rv-idx-row .c { text-align: right; }
+.rv-idx-head .p, .rv-idx-head .c { text-align: right; }
+.rv-idx-row .up, .rv-idx-row .c.up { color: var(--up); }
+.rv-idx-row .down, .rv-idx-row .c.down { color: var(--down); }
+
+/* ---------------- 2.5 资金 ---------------- */
+.rv-money { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.rv-tb-head, .rv-tb-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 62px 66px; gap: 6px; align-items: center;
+  padding: 6px 7px; font-size: 12px;
+}
+.rv-tb-head { color: var(--text-mute); font-size: 10.5px; border-bottom: 1px solid var(--line-soft); }
+.rv-tb-head span:nth-child(2), .rv-tb-head span:nth-child(3) { text-align: right; }
+.rv-tb-row { border-bottom: 1px solid var(--line-soft); border-radius: 6px; }
+.rv-tb-row:last-child { border-bottom: none; }
+.rv-tb-row > span:nth-child(2), .rv-tb-row > span:nth-child(3) { text-align: right; font-family: var(--mono); }
+.rv-tb-row .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-tb-row .nm small { color: var(--text-mute); font-size: 10.5px; margin-left: 5px; font-family: var(--mono); }
+.rv-tb-row .up { color: var(--up); } .rv-tb-row .down { color: var(--down); }
+
+/* ---------------- 4 轮动 ---------------- */
+.rv-rot { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.rv-rot-card {
+  background: var(--panel-2); border: 1px solid var(--line-soft);
+  border-radius: 12px; padding: 10px 11px;
+}
+.rv-rot-card.empty { opacity: .6; }
+.rv-rot-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.rv-rot-kind {
+  font-size: 10px; color: var(--text-mute); border: 1px solid var(--line);
+  border-radius: 5px; padding: 1px 5px;
+}
+.rv-rot-name { font-size: 13.5px; font-weight: 650; color: var(--text); }
+.rv-rot-meta { margin-left: auto; font-size: 10.5px; color: var(--text-mute); font-family: var(--mono); }
+.rv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rv-chip {
+  display: inline-flex; align-items: baseline; gap: 4px;
+  font-size: 11.5px; color: var(--text); background: var(--panel-3);
+  border-radius: 999px; padding: 3px 9px;
+}
+.rv-chip i { font-style: normal; font-size: 10px; color: var(--text-mute); }
+.rv-verdict-sm { margin: 8px 0 0; font-size: 11.5px; color: var(--accent-2); line-height: 1.6; }
+.rv-failed { margin-top: 12px; }
+.rv-failed-item {
+  display: grid; grid-template-columns: minmax(0, 1fr) 62px; gap: 8px; align-items: center;
+  padding: 7px 9px; background: var(--panel-2); border-radius: 9px; margin-bottom: 6px;
+}
+.rv-failed-item .nm { font-size: 12.5px; }
+.rv-failed-item > span:nth-child(2) { text-align: right; font-family: var(--mono); font-size: 12px; }
+.rv-failed-item .note { grid-column: 1 / -1; font-size: 10.5px; color: var(--text-mute); }
+.rv-failed-item .up { color: var(--up); } .rv-failed-item .down { color: var(--down); }
+
+/* ---------------- 4.5 高度 ---------------- */
+.rv-height-main { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.rv-height-name { font-size: 17px; font-weight: 700; }
+.rv-height-name small { font-size: 11px; color: var(--text-mute); font-family: var(--mono); margin-left: 6px; }
+.rv-height-board { font-size: 12px; color: var(--text-dim); }
+.rv-height-board b { font-size: 17px; color: var(--up); font-family: var(--mono); }
+.rv-height-pct { font: 650 13px/1 var(--mono); margin-left: auto; }
+.rv-height-pct.up { color: var(--up); } .rv-height-pct.down { color: var(--down); }
+.rv-height-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 10px; }
+.rv-height-reason { margin: 9px 0 0; font-size: 11.5px; color: var(--text-mute); line-height: 1.6; }
+
+/* ---------------- 6 分层 ---------------- */
+.rv-layer-head, .rv-layer-row {
+  grid-template-columns: 62px minmax(0, 1fr) 46px 46px 62px 52px;
+}
+.rv-layer-row .tag {
+  font-size: 10.5px; color: var(--accent-2); background: var(--accent-weak);
+  border-radius: 5px; padding: 2px 5px; text-align: center;
+}
+.rv-layer-row .nm { font-size: 12.5px; }
+
+/* ---------------- 10 次日 ---------------- */
+.rv-next { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.rv-list { margin: 0; padding-left: 18px; }
+.rv-list li { font-size: 12.5px; line-height: 1.85; color: var(--text-dim); }
+.rv-list.warn li { color: #ffb3bd; }
+
+/* ---------------- 12 股票池 ---------------- */
+.rv-pool { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.rv-pool-item {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px;
+  padding: 7px 9px; background: var(--panel-2); border-radius: 9px; margin-bottom: 6px;
+}
+.rv-pool-item .nm { font-size: 12.5px; }
+.rv-pool-item .meta { grid-column: 1 / -1; font-size: 10.5px; color: var(--text-mute); }
+.rv-pool-item > span:last-child { font-family: var(--mono); font-size: 12px; text-align: right; }
+.rv-pool-item .up { color: var(--up); } .rv-pool-item .down { color: var(--down); }
+
+/* ---------------- 13 风险 ---------------- */
+.rv-risk { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.rv-risk-level {
+  display: inline-flex; align-items: baseline; gap: 8px; flex: none;
+  border-radius: 12px; padding: 8px 12px; background: var(--panel-2);
+  border: 1px solid var(--line);
+}
+.rv-risk-level .lb { font-size: 10.5px; color: var(--text-mute); }
+.rv-risk-level .vl { font-size: 15px; font-weight: 700; }
+.rv-risk-level .sc { font-size: 10.5px; color: var(--text-mute); font-family: var(--mono); }
+.rv-risk-level.lv-低, .rv-risk-level.lv-中低 { border-color: rgba(22, 199, 132, .4); color: var(--down); }
+.rv-risk-level.lv-中 { border-color: rgba(255, 176, 32, .4); color: var(--warn); }
+.rv-risk-level.lv-中高, .rv-risk-level.lv-高 { border-color: rgba(255, 84, 104, .45); color: var(--up); }
+.rv-risk-text { flex: 1 1 240px; margin: 0; font-size: 12.5px; line-height: 1.8; color: var(--text-dim); }
+
+/* ---------------- 4.6 梯队 ---------------- */
+.rv-tiers { display: grid; gap: 7px; }
+.rv-tier { display: grid; grid-template-columns: 74px minmax(0, 1fr) 34px; gap: 8px; align-items: center; }
+.rv-tier .tl { font-size: 11.5px; color: var(--text-dim); }
+.rv-tier .tk { height: 15px; background: var(--panel-3); border-radius: 4px; overflow: hidden; }
+.rv-tier .tk i { display: block; height: 100%; border-radius: 4px; background: var(--up); }
+.rv-tier .tc { font-size: 11.5px; color: var(--text-mute); text-align: right; font-family: var(--mono); }
+
+/* ---------- 历史命中回顾 ---------- */
+.rv-hits-sum { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.rv-hits-chip {
+  padding: 5px 10px; border: 1px solid var(--line-soft); border-radius: 9px;
+  background: var(--panel-2); font-size: 11.5px; color: var(--text-dim);
+}
+.rv-hits-chip b { font-family: var(--mono); font-size: 12.5px; color: var(--text); margin-left: 3px; }
+.rv-hits-chip i { font-style: normal; color: var(--text-mute); margin-left: 4px; font-size: 10.5px; }
+
+.rv-hit-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 10px; }
+.rv-stat-tb, .rv-hit-tb {
+  display: grid; min-width: 560px; font-size: 11.5px;
+  border-top: 1px solid var(--line-soft);
+}
+.rv-stat-tb { grid-template-columns: minmax(140px, 1fr) repeat(6, minmax(56px, auto)); }
+.rv-hit-tb { grid-template-columns: 62px minmax(118px, 1fr) repeat(8, minmax(50px, auto)); min-width: 720px; }
+.rv-stat-tb > span, .rv-hit-tb > span {
+  padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono); white-space: nowrap; color: var(--text-dim);
+}
+.rv-stat-tb > span.nm, .rv-hit-tb > span.nm,
+.rv-hit-tb > span:first-child { text-align: left; font-family: var(--font); color: var(--text); }
+.rv-hit-tb > span.st { font-family: var(--font); color: var(--text-mute); }
+.rv-hit-tb > span.nm small { color: var(--text-mute); font-size: 10.5px; margin-left: 5px; font-family: var(--mono); }
+.rv-stat-tb > .hd, .rv-hit-tb > .hd {
+  color: var(--text-mute); font-size: 10.5px; font-weight: 400; background: var(--panel-2);
+}
+.rv-stat-tb > .up, .rv-hit-tb > .up { color: var(--up); }
+.rv-stat-tb > .down, .rv-hit-tb > .down { color: var(--down); }
+.rv-stat-tb > .flat, .rv-hit-tb > .flat { color: var(--text-mute); }
+.rv-hit-tb > span.nm .sus { color: var(--warn); margin-right: 3px; font-weight: 700; }
+.rv-hits-chip.warn { border-color: rgba(255, 176, 32, .45); color: var(--warn); }
+.rv-hits-chip.warn b { color: var(--warn); }
+.rv-hit-tb > span[data-code] { cursor: pointer; }
+.rv-hit-tb > span[data-code]:hover { color: var(--accent); }
+
+.rv-foot { margin: 14px 2px 0; font-size: 11px; line-height: 1.8; color: var(--text-mute); }
+
+/* ============================================================
+   宽屏
+   ============================================================ */
+@media (min-width: 900px) {
+  .rv-flow { gap: 16px; }
+  .rv-sec { padding: 16px 18px 18px; }
+  .rv-sec-title { font-size: 15px; }
+  .rv-topbar { padding: 18px 22px; }
+  .rv-title { font-size: 22px; }
+  .rv-env { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 22px; }
+  .rv-money { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .rv-rot { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rv-next { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rv-pool { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rv-height-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 1400px) {
+  .rv-money { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .rv-rot { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ============================================================
+   复盘页 v2：与市场全景 / 个股分析 / 妖股雷达 同一套卡片体系
+   ============================================================ */
+
+body.rv {
+  padding-top: 32px;
+  padding-right: 32px;
+  padding-bottom: 56px;
+  background: var(--bg);
+}
+@media (max-width: 899px) {
+  body.rv { padding-top: 14px; padding-right: 12px; padding-bottom: 40px; padding-left: 12px; }
+}
+body.rv #main { max-width: 1620px; margin: 0 auto; padding: 0; }
+
+/* ---------------- 页内标题行 ---------------- */
+.rv-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.rv-head h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.rv-sub {
+  display: flex; align-items: center; gap: 7px; margin-top: 8px;
+  font-size: 12.5px; color: var(--text-mute);
+}
+.rv-sub .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--down); flex: none; }
+.rv-head-r { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+body.rv .search-box {
+  margin: 0; width: min(320px, 30vw); max-width: none;
+  padding: 4px 6px 4px 14px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px;
+}
+body.rv .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
+body.rv .search-box input { height: 32px; font-size: 13px; }
+body.rv .search-box #searchBtn { border-radius: 999px; padding: 6px 16px; font-size: 12.5px; }
+body.rv .search-box .suggest { top: calc(100% + 6px); left: 0; right: 0; }
+
+/* ---------------- 白卡 ---------------- */
+body.rv .rv-topbar,
+body.rv .rv-sec {
+  background: var(--panel);
+  border: 0;
+  border-top: 0;
+  border-radius: 22px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 12px 28px -18px rgba(0, 0, 0, .20);
+}
+body.rv .rv-topbar { display: block; }
+body.rv .rv-topbar .rv-title { margin-top: 6px; }
+body.rv .rv-flow { gap: 16px; }
+body.rv .rv-hits { margin-bottom: 0; }
+
+/* 章节标题与其它页对齐 */
+body.rv .rv-sec-title { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+body.rv .rv-no { color: var(--accent-2); font-weight: 700; }
+body.rv .rv-sec-head { margin-bottom: 12px; }
+
+@media (max-width: 899px) {
+  .rv-head { flex-direction: column; gap: 12px; }
+  .rv-head h1 { font-size: 24px; }
+  .rv-head-r { margin-left: 0; width: 100%; }
+  body.rv .search-box { width: 100%; }
+  body.rv .rv-topbar,
+  body.rv .rv-sec { padding: 16px; border-radius: 18px; }
+}
 
 /* ===== 深色主题兜底：亮底深字，避免「深字压深底」看不清 ===== */
 .nav-btn.on,

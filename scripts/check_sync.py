@@ -29,6 +29,7 @@ RUNTIME_WEB = [
     "nav.css", "nav.js", "overview.html", "overview.css", "overview.js",
     "analysis.css",
     "radar.css",
+    "pages-dark.css",
     "stock.html", "stock.css", "stock.js", "stock_assets.py", "stock-dark.css",
     "review.html", "review.css", "review.js", "review_assets.py",
     "index.html", "index_html.py", "radar-dark.css",

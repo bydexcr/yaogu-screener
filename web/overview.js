@@ -50,9 +50,10 @@
       var h = (b.count || 0) / mx * innerH;
       var x = padL + i * step + (step - bw) / 2;
       var y = padT + innerH - h;
-      var fill = b.label === '0~3%' ? '#ddd6c4' : '#1e1d1a';
-      out += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) +
-        '" height="' + Math.max(h, 2).toFixed(1) + '" rx="3" fill="' + fill + '"/>' +
+      // 颜色交给 CSS（.ov-bar / .ov-bar-hi），深色主题的映射才能作用到柱子上
+      var cls = b.label === '0~3%' ? 'ov-bar ov-bar-hi' : 'ov-bar';
+      out += '<rect class="' + cls + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) +
+        '" width="' + bw.toFixed(1) + '" height="' + Math.max(h, 2).toFixed(1) + '" rx="3"/>' +
         '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 9).toFixed(1) + '" text-anchor="middle">' +
         (b.count || 0) + '</text>' +
         '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 24) + '" text-anchor="middle">' +

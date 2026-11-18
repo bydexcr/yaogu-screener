@@ -39,7 +39,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;cursor:pointe
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .logo{
   display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:10px;
-  background:var(--fg);border:1px solid var(--fg);color:#fff;
+  background:var(--fg);border:1px solid var(--fg);color:#0f141c;
   box-shadow:inset 0 1px 0 rgba(9, 12, 18, .06);
 }
 .brand-text h1{font-size:17px;font-weight:800;line-height:1.25;letter-spacing:-.01em}

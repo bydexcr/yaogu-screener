@@ -48,6 +48,11 @@ body.ov {
   border-radius: 22px; padding: 20px; min-height: 150px; display: flex; flex-direction: column;
   min-width: 0; container-type: inline-size;
 }
+/* 三张彩色卡片的底色（原来是内联 style，深色主题的映射改不到，挪到这里） */
+.ov-hc.ov-sage { background: #dde3d1; }
+.ov-hc.ov-amber { background: #f4d06b; }
+.ov-hc.ov-lav { background: #c9c5e7; }
+
 .ov-hc .top { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: #2e2b24; }
 .ov-hc .pill {
   padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, .62);
@@ -82,6 +87,9 @@ body.ov {
 .ov-seg span { padding: 5px 13px; border-radius: 999px; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
 .ov-seg span.on { background: var(--panel); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(28, 24, 16, .10); }
 .ov-chart { width: 100%; height: auto; display: block; }
+.ov-chart .ov-bar { fill: #1e1d1a; }
+.ov-chart .ov-bar-hi { fill: #ddd6c4; }
+
 .ov-chart text { font-family: var(--mono); font-size: 11.5px; fill: var(--text-mute); }
 .ov-concl { font-size: 12.5px; color: var(--text-dim); line-height: 1.75; margin-top: 6px; }
 .ov-concl b { font-weight: 700; color: var(--text); }
@@ -157,7 +165,9 @@ body.ov {
 .ov-one .foot { font-size: 11.5px; color: var(--text-mute); }
 .ov-one p.muted { font-size: 14px; font-weight: 400; color: var(--text-mute); }
 .ov-dark { background: #191816; border-radius: 22px; padding: 20px 22px; color: #efeade; box-shadow: 0 12px 28px -18px rgba(28, 24, 16, .35); }
-.ov-dark h2 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: #fff; }
+/* 这张卡在深浅两套主题下都是深底，所以标题要用「两套都亮」的固定浅色；
+   写 #fff 会被深色映射表反转成近黑，标题直接消失 */
+.ov-dark h2 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: #e6edf8; }
 .ov-kv {
   display: flex; align-items: baseline; justify-content: space-between; padding: 12px 0;
   border-top: 1px solid rgba(255, 255, 255, .08); font-size: 13px; color: #a8a294;

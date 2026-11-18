@@ -13,6 +13,7 @@ HTML = r"""<!DOCTYPE html>
 <link rel="stylesheet" href="/stock-dark.css" data-theme-dark media="not all">
 <link rel="stylesheet" href="/nav.css">
 <link rel="stylesheet" href="/analysis.css">
+<link rel="stylesheet" href="/pages-dark.css" data-theme-dark media="not all">
 </head>
 <body class="an">
 <aside class="side" id="appSide"></aside>
