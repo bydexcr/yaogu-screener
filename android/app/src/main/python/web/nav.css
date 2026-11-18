@@ -62,34 +62,49 @@
   body.has-side .bar { grid-template-columns: 260px minmax(0, 1fr); }
 }
 
-/* ---------------- 移动端：顶部横向条 ---------------- */
+/* ---------------- 移动端：顶部只留 logo 条，导航条沉到屏幕底部常驻 ---------------- */
 @media (max-width: 899px) {
   .side {
-    position: relative; border-radius: 0 0 20px 20px; padding: 12px 14px 10px;
+    position: relative; border-radius: 0 0 20px 20px; padding: 12px 14px 12px;
     flex-direction: column; gap: 10px;
-    /* 导航卡片是深色块，下面紧接页面大标题；不留白会贴在一起（实测 0px） */
+    /* logo 条是深色块，下面紧接页面大标题；不留白会贴在一起（实测 0px） */
     margin-bottom: 20px;
   }
-  .side-logo { padding: 0 0 2px; }
+  .side-logo { padding: 0; }
   .side-logo i { width: 30px; height: 30px; border-radius: 10px; font-size: 14px; }
   .side-logo b { font-size: 15px; }
   .side-who, .side-foot { display: none; }
-  .side-nav {
-    flex-direction: row; gap: 6px; overflow-x: auto; padding-bottom: 2px;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch;
-  }
-  .side-nav::-webkit-scrollbar { display: none; }
-  .side-nav a { padding: 7px 13px; font-size: 12.5px; border-radius: 999px; white-space: nowrap; }
-  .side-nav a.on::before { display: none; }
-  .side-nav .side-ic { width: 15px; height: 15px; }
-}
 
-/* 手机竖屏（<480）：6 个标签 + 图标 + 内边距排不下，
-   横滑会把文字切一半。这一档只留短文字标签，6 项刚好铺满不滚动。 */
-@media (max-width: 679px) {
-  .side-nav { justify-content: space-between; }
-  .side-nav a { padding: 8px 10px; font-size: 12.5px; gap: 0; }
-  .side-nav .side-ic { display: none; }
+  /* 底部常驻标签栏：图标在上、文字在下，6 项均分 */
+  .side-nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
+    display: flex; flex-direction: row; justify-content: space-around; align-items: stretch; gap: 0;
+    margin: 0;
+    padding: 7px 6px calc(7px + env(safe-area-inset-bottom, 0px));
+    background: #191816;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 26px -18px rgba(0, 0, 0, .55);
+    overflow: visible;
+  }
+  .side-nav a {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; padding: 5px 2px; border-radius: 12px;
+    font-size: 11px; line-height: 1.2; white-space: nowrap;
+    color: #a8a294;
+  }
+  .side-nav .side-ic { width: 19px; height: 19px; display: block; }
+  .side-nav a.on {
+    color: #efeade;
+    background: rgba(255, 255, 255, .10);
+  }
+  .side-nav a.on::before { display: none; }
+  .side-nav a:active { background: rgba(255, 255, 255, .06); }
+
+  /* 内容别被底栏盖住：底栏约 62px + 安全区，留 78px 气口。
+     选择器写成 html body.has-side.has-side 是为了压过 overview.css 里的
+     `body.ov.has-side { padding: 0 0 24px }`（权重 0,2,1；这里 0,2,2）。 */
+  html body.has-side.has-side { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ---------------- 设置面板 / 弹窗的焦点框 ----------------

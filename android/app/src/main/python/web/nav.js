@@ -40,7 +40,7 @@
 
   // 窄屏换短标签，避免横向溢出把文字切一半
   function fitLabels() {
-    var narrow = window.innerWidth < 680;   // 实测 6 个完整标签 + 图标要 ~625px 才排得下
+    var narrow = window.innerWidth < 900;   // 手机底部栏固定用短标签（6 项均分，长名会换行）
     var nodes = document.querySelectorAll('.side-nav a > span[data-full]');
     for (var i = 0; i < nodes.length; i++) {
       var n = nodes[i];
@@ -82,9 +82,12 @@
   fitLabels();
   window.addEventListener('resize', fitLabels);
 
+  // 手机底部栏是常驻均分布局，不再需要横向滚动定位；
+  // 只有真的溢出（极窄屏）时才把当前项滚进来。
   try {
+    var nav = host.querySelector('.side-nav');
     var cur = host.querySelector('.side-nav a.on');
-    if (cur && window.innerWidth < 900 && cur.scrollIntoView) {
+    if (nav && cur && nav.scrollWidth > nav.clientWidth + 1 && cur.scrollIntoView) {
       cur.scrollIntoView({ block: 'nearest', inline: 'center' });
     }
   } catch (e) { /* 老 WebView 不支持对象参数，忽略 */ }
