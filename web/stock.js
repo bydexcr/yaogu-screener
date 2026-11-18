@@ -1015,7 +1015,7 @@
   }
 
   function render(d) {
-    $("#marketView").hidden = true;
+    hideEmpty();
     $("#loadingState").hidden = true;
     $("#errorState").hidden = true;
     $("#result").hidden = false;
@@ -1045,312 +1045,25 @@
     if (typeof initCollapse === "function") initCollapse();
   }
 
-  /* ------------------------------ 首页：市场全景 ------------------------------ */
-  const fmtYi = (v) => (isNum(v) ? `${(v / 1e8).toFixed(v >= 1e10 ? 0 : 1)}亿` : '—');
+  /* 市场全景已独立成页（/），本页不再内嵌渲染；
+   showMarket 保留为"回到空态"的入口（浏览器回退、清空搜索时用） */
+function hideEmpty() {
+  const e = $("#emptyState");
+  if (e) e.hidden = true;
+}
 
-  function renderMarketHero(d) {
-    const b = d.breadth;
-    const l = d.limits;
-    if (!b) {
-      el('mkHero').innerHTML = '<div class="mk-skeleton">市场概览数据暂不可用</div>';
-      return;
-    }
-    const total = b.total || 1;
-    const upPct = (b.up / total) * 100;
-    const flatPct = (b.flat / total) * 100;
-    const downPct = (b.down / total) * 100;
-    const maxBucket = Math.max(...b.buckets.map((x) => x.count), 1);
-
-    el('mkHero').innerHTML = `
-      <div class="mk-hero-top">
-        <span class="mk-title">市场全景</span>
-        <span class="mk-date">交易日 ${esc(d.tradeDate || '—')} · 更新 ${new Date(d.generatedAt).toLocaleTimeString('zh-CN')}</span>
-        <button class="mk-refresh" id="mkRefresh">刷新</button>
-      </div>
-      <div class="mk-hero-body">
-        <div class="mk-breadth">
-          <div class="bk-num"><span class="up">${b.up}</span> <span style="font-size:14px;color:var(--text-mute)">涨</span> / <span class="down">${b.down}</span> <span style="font-size:14px;color:var(--text-mute)">跌</span></div>
-          <div class="bk-sub">全市场 ${b.total} 只 · 上涨占比 ${b.upRatio}% · 平盘 ${b.flat}</div>
-          <div class="bk-bar">
-            <i class="u" style="width:${upPct}%"></i>
-            <i class="f" style="width:${flatPct}%"></i>
-            <i class="d" style="width:${downPct}%"></i>
-          </div>
-          <div class="bk-sub" style="margin-top:10px">平均涨幅 <b class="${cls(b.avg)}">${pct(b.avg)}</b> · 中位数 <b class="${cls(b.median)}">${pct(b.median)}</b></div>
-        </div>
-
-        <div class="mk-dist">
-          ${b.buckets.map((x) => {
-    const h = Math.max(2, (x.count / maxBucket) * 78);
-    const color = x.label.includes('-') ? '#0d9b6c' : (x.label.includes('0~') || x.label.includes('3~') ? '#b7cbe8' : '#e11d33');
-    return `<div class="col" title="${esc(x.label)}：${x.count} 只">
-              <div class="cnt">${x.count}</div>
-              <div class="bar" style="height:${h}px;background:${color};opacity:${x.count ? 0.9 : 0.25}"></div>
-              <div class="lb">${esc(x.label)}</div>
-            </div>`;
-  }).join('')}
-        </div>
-
-        <div class="mk-kpis">
-          ${[
-            ['两市成交额', fmtYi(b.turnover), ''],
-            ['涨停家数', l ? `${l.limitUpCount}` : '—', l ? `跌停 ${l.limitDownCount}` : ''],
-            ['封板率', l && isNum(l.sealRate) ? `${l.sealRate}%` : '—', l ? `炸板 ${l.breakCount}` : ''],
-            ['最高连板', l && isNum(l.highestBoard) ? `${l.highestBoard} 板` : '—', l ? `${(l.up || []).filter((x) => (x.continueCount || 1) >= 3).length} 只 3 板以上` : ''],
-          ].map(([k, v, s]) => `<div class="mk-kpi"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ''}</div>`).join('')}
-        </div>
-      </div>`;
-
-    const btn = el('mkRefresh');
-    if (btn) btn.addEventListener('click', () => loadMarket(true));
-  }
-
-  function renderMarketSectors(d) {
-    const sectors = d.sectors;
-    const boards = (sectors && sectors.boards) || {};
-    const labels = (sectors && sectors.labels) || { l1: '一级行业', l2: '细分行业', concept: '概念板块' };
-    const all = boards[state.sectorKind] || [];
-    const kindTabs = [['l1', labels.l1], ['l2', labels.l2], ['concept', labels.concept]];
-    const sortTabs = [['change', '涨幅榜'], ['turnover', '成交额榜']];
-    if (!all.length) {
-      el('mkSectors').innerHTML = `${cardTitle('热门板块', '板块行情聚合自同花顺指数快照')}<p class="badge-note">板块数据暂不可用（或行业/概念索引仍在构建）。</p>`;
-      return;
-    }
-    const sorted = all.slice().sort((a, b) => (state.sectorSort === 'turnover'
-      ? (b.turnover || 0) - (a.turnover || 0)
-      : b.changePct - a.changePct));
-    const items = sorted.slice(0, 12);
-    const weakest = state.sectorSort === 'change'
-      ? ((sectors.bottoms && sectors.bottoms[state.sectorKind]) || [])
-      : [];
-
-    el('mkSectors').innerHTML = `${cardTitle('热门板块', `按${state.sectorSort === 'change' ? '涨幅' : '成交额'}排序 · 共 ${(sectors.totals && sectors.totals[state.sectorKind]) || all.length} 个${esc(labels[state.sectorKind] || '')} · 点击查看成分股`)}
-      <div class="mk-tabs">${kindTabs.map(([k, label]) => `<span class="mk-tab ${state.sectorKind === k ? 'on' : ''}" data-kind="${k}">${label}</span>`).join('')}
-        <span style="width:8px"></span>
-        ${sortTabs.map(([k, label]) => `<span class="mk-tab ${state.sectorSort === k ? 'on' : ''}" data-sort="${k}">${label}</span>`).join('')}
-      </div>
-      <div class="mk-sector-list">
-        ${items.map((s, i) => `<div class="mk-sector" data-code="${esc(s.code)}">
-          <div class="idx">${i + 1}</div>
-          <div>
-            <div class="nm">${esc(s.name)}<em>${s.memberCount} 只 · 涨 ${s.upCount}/跌 ${s.downCount}</em></div>
-            <div class="lead">${s.leader ? `领涨 ${esc(s.leader.name)} <span class="${cls(s.leader.changePct)}">${pct(s.leader.changePct)}</span>` : '—'}</div>
-          </div>
-          <div>
-            <div class="pct ${cls(s.changePct)}">${pct(s.changePct)}</div>
-            <div class="amt">${fmtYi(s.turnover)}</div>
-          </div>
-        </div>`).join('')}
-      </div>
-      ${weakest.length ? `<div class="badge-note">板块跌幅前列：${weakest.map((s) => `<span class="${cls(s.changePct)}">${esc(s.name)} ${pct(s.changePct)}</span>`).join(' · ')}</div>` : ''}
-      <div class="mk-detail" id="mkSectorDetail" hidden></div>`;
-
-    el('mkSectors').querySelectorAll('.mk-tab[data-kind]').forEach((n) => n.addEventListener('click', () => {
-      state.sectorKind = n.getAttribute('data-kind');
-      renderMarketSectors(state.market);
-    }));
-    el('mkSectors').querySelectorAll('.mk-tab[data-sort]').forEach((n) => n.addEventListener('click', () => {
-      state.sectorSort = n.getAttribute('data-sort');
-      renderMarketSectors(state.market);
-    }));
-    el('mkSectors').querySelectorAll('.mk-sector').forEach((n) => n.addEventListener('click', () => {
-      openSector(n.getAttribute('data-code'));
-    }));
-    if (state.sectorOpen) openSector(state.sectorOpen, true);
-  }
-
-  async function openSector(code, keepOpen) {
-    const box = el('mkSectorDetail');
-    if (!box) return;
-    if (!keepOpen && state.sectorOpen === code && !box.hidden) {
-      box.hidden = true;
-      state.sectorOpen = null;
-      return;
-    }
-    state.sectorOpen = code;
-    box.hidden = false;
-    box.innerHTML = '<p class="badge-note">正在加载板块成分股…</p>';
-    try {
-      const res = await fetch(`/api/market/sector?code=${encodeURIComponent(code)}`);
-      const d = await res.json();
-      if (!d.ok) throw new Error(errText(d, '加载失败'));
-      box.innerHTML = `
-        <div class="mk-detail-head">
-          <h4>${esc(d.name || code)}</h4>
-          <span class="sub">${d.memberCount} 只成分 · 涨 ${d.upCount} / 跌 ${d.downCount}</span>
-          <span class="close" id="mkDetailClose">收起</span>
-        </div>
-        <div class="table-wrap" style="max-height:280px;overflow:auto">
-          <table>
-            <thead><tr><th>名称</th><th>现价</th><th>涨跌幅</th><th>成交额</th></tr></thead>
-            <tbody>
-            ${d.members.slice(0, 40).map((m) => `<tr class="mk-stock-row" data-code="${esc(m.ticker)}" style="cursor:pointer">
-              <td>${esc(m.name)}</td>
-              <td>${n(m.lastPrice)}</td>
-              <td class="${cls(m.changePct)}">${pct(m.changePct)}</td>
-              <td>${fmtYi(m.turnover)}</td>
-            </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>`;
-      const close = el('mkDetailClose');
-      if (close) close.addEventListener('click', () => { box.hidden = true; state.sectorOpen = null; });
-      box.querySelectorAll('.mk-stock-row').forEach((row) => row.addEventListener('click', () => {
-        runAnalysis(row.getAttribute('data-code'), true);
-      }));
-    } catch (err) {
-      box.innerHTML = `<p class="badge-note">板块成分加载失败：${esc(err.message)}</p>`;
-    }
-  }
-
-  function renderMarketLimits(d) {
-    const l = d.limits;
-    if (!l) {
-      el('mkLimits').innerHTML = `${cardTitle('连板梯队')}<p class="badge-note">涨停池数据暂不可用。</p>`;
-      return;
-    }
-    const maxCount = Math.max(...(l.tiers || []).map((t) => t.count), 1);
-    el('mkLimits').innerHTML = `${cardTitle('连板梯队', `${esc(l.date || '')} · 涨停 ${l.limitUpCount} 家 / 跌停 ${l.limitDownCount} 家 / 炸板 ${l.breakCount} 家`)}
-      <div class="mk-tiers">
-        ${(l.tiers || []).map((t) => `<div class="mk-tier">
-          <div class="tl">${esc(t.label)}</div>
-          <div class="tb"><i style="width:${Math.max(2, (t.count / maxCount) * 100)}%"></i></div>
-          <div class="tc">${t.count}</div>
-        </div>`).join('')}
-      </div>
-      <div class="mk-kpis" style="margin-top:14px">
-        <div class="mk-kpi"><div class="k">封板率</div><div class="v">${isNum(l.sealRate) ? `${l.sealRate}%` : '—'}</div><div class="s">炸板率 ${isNum(l.breakRate) ? `${l.breakRate}%` : '—'}</div></div>
-        <div class="mk-kpi"><div class="k">最高连板</div><div class="v">${isNum(l.highestBoard) ? `${l.highestBoard} 板` : '—'}</div><div class="s">${l.up && l.up[0] ? esc(l.up[0].name) : ''}</div></div>
-      </div>
-      <div class="badge-note">梯队取自连板天梯（2 板及以上）与涨停池家数推算的首板数量。</div>`;
-  }
-
-  function renderMarketPools(d) {
-    const l = d.limits;
-    const mkStockList = (items, valueOf, subOf, emptyText, limit = 10) => (items && items.length ? `<div class="mk-list">
-        ${items.slice(0, limit).map((it, i) => `<div class="mk-item" data-code="${esc(it.ticker)}">
-          <div class="r">${i + 1}</div>
-          <div><div class="n">${esc(it.name)}</div><div class="t">${subOf(it)}</div></div>
-          <div class="v">${valueOf(it)}</div>
-        </div>`).join('')}
-      </div>` : `<p class="badge-note">${emptyText}</p>`);
-
-    el('mkUpPool').innerHTML = `${cardTitle('涨停板明细', l ? `共 ${l.limitUpCount} 家 · 按连板数与封单排序 · 点击进入个股分析` : '')}
-      ${l ? mkStockList(l.up, (it) => `<span class="${cls(it.changePct)}">${it.continueText || `${it.continueCount} 板`}</span>`,
-    (it) => `${esc(it.limitUpTime || '')}${it.sealMoney ? ` · 封单 ${fmtYi(it.sealMoney)}` : ''}${it.openTimes ? ` · 开板 ${it.openTimes} 次` : ''}${it.reason ? ` · ${esc(it.reason)}` : ''}`,
-    '今日无涨停股', 10) : '<p class="badge-note">数据不可用</p>'}`;
-
-    el('mkDownPool').innerHTML = `${cardTitle('跌停板', l ? `共 ${l.limitDownCount} 家` : '')}
-      ${l ? mkStockList(l.down, (it) => `<span class="${cls(it.changePct)}">${pct(it.changePct)}</span>`,
-    (it) => `${esc(it.lastLimitTime || it.firstLimitTime || '')}${isNum(it.turnoverRate) ? ` · 换手 ${plainPct(it.turnoverRate)}` : ''}`,
-    '今日无跌停股', 8) : '<p class="badge-note">数据不可用</p>'}`;
-
-    el('mkBreakPool').innerHTML = `${cardTitle('炸板股', l ? `共 ${l.breakCount} 家 · 按开板次数排序` : '')}
-      ${l ? mkStockList(l.break, (it) => `<span class="${cls(it.changePct)}">${pct(it.changePct)}</span>`,
-    (it) => `${isNum(it.openTimes) ? `开板 ${it.openTimes} 次` : ''}${it.lastSealTime ? ` · 最后封板 ${esc(it.lastSealTime)}` : ''}`,
-    '今日无炸板股', 8) : '<p class="badge-note">数据不可用</p>'}`;
-
-    ['mkUpPool', 'mkDownPool', 'mkBreakPool'].forEach((id) => {
-      el(id).querySelectorAll('.mk-item').forEach((n) => n.addEventListener('click', () => runAnalysis(n.getAttribute('data-code'), true)));
-    });
-  }
-
-  function renderMarketHot(d) {
-    const h = d.hot || {};
-    const cards = [];
-
-    cards.push({ title: '热股榜', sub: '同花顺热股榜（日榜）', items: (h.hot || []).map((x) => ({
-      code: x.ticker, name: x.name, sub: `热度 ${Number(x.heat || 0).toLocaleString('zh-CN')}`, value: `#${x.rank}`,
-    })) });
-
-    cards.push({ title: '飙升榜', sub: '关注度上升最快', items: (h.skyrocket || []).map((x) => ({
-      code: x.ticker, name: x.name, sub: `热度 ${Number(x.heat || 0).toLocaleString('zh-CN')}`, value: `#${x.rank}`,
-    })) });
-
-    cards.push({ title: '龙虎榜净买入', sub: h.date ? `${h.date} 席位净买额` : '', items: (h.dragonTiger || []).map((x) => ({
-      code: x.thscode, name: x.name, sub: `${x.rangeDays || 1} 日${x.limitReason ? ` · ${x.limitReason}` : ''}`, value: `<span class="${cls(x.netValue)}">${fmtYi(x.netValue)}</span>`,
-    })) });
-
-    cards.push({ title: '成交额榜', sub: '全市场资金关注度', items: (h.turnoverTop || []).map((x) => ({
-      code: x.ticker, name: x.name, sub: '', value: `<span class="${cls(x.changePct)}">${pct(x.changePct)}</span> <span style="color:var(--text-mute)">${fmtYi(x.turnover)}</span>`,
-    })) });
-
-    el('mkHot').innerHTML = cards.map((c) => `<section class="card">
-      ${cardTitle(c.title, c.sub)}
-      ${c.items.length ? `<div class="mk-list">${c.items.slice(0, 10).map((it, i) => `<div class="mk-item" data-code="${esc(it.code)}">
-        <div class="r">${i + 1}</div>
-        <div><div class="n">${esc(it.name)}</div>${it.sub ? `<div class="t">${it.sub}</div>` : ''}</div>
-        <div class="v">${it.value}</div>
-      </div>`).join('')}</div>` : '<p class="badge-note">暂无数据</p>'}
-    </section>`).join('');
-
-    el('mkHot').querySelectorAll('.mk-item').forEach((n) => n.addEventListener('click', () => {
-      runAnalysis(n.getAttribute('data-code'), true);
-    }));
-  }
-
-  function renderMarketFoot(d) {
-    const l = d.limits || {};
-    el('mkFoot').innerHTML = `
-      <div>数据来源：同花顺金融数据服务（hithink-finance）· 行情/板块指数快照 · 涨停池/跌停池/炸板池 · 连板天梯 · 热股榜/飙升榜 · 龙虎榜</div>
-      <div>涨跌分布按个股当日涨跌幅分档（±9.8% 为极端档，0% 计入 0~3% 档），涨停/跌停家数以交易所涨停池为准；主板 10%、创业板/科创板 20%、北交所 30%、ST 5%。</div>
-      <div>「领涨股」= 该板块成分股中当日涨幅最高者，成分来自同花顺行业/概念指数。点击任意股票名称可进入深度分析；以上均为数据描述，不构成投资建议。</div>`;
-  }
-
-  function renderMarket(d) {
-    state.market = d;
-    try {
-      renderMarketHero(d);
-      renderMarketSectors(d);
-      renderMarketLimits(d);
-      renderMarketPools(d);
-      renderMarketHot(d);
-      renderMarketFoot(d);
-    } catch (err) {
-      el('mkHero').innerHTML = `<div class="mk-skeleton">市场全景渲染失败：${esc(err.message)}</div>`;
-    }
-    // 顶部快捷标签：热股榜前三 + 固定样本
-    const hot = (d.hot && d.hot.hot) || [];
-    if (hot.length && $("#quickChips")) {
-      $("#quickChips").innerHTML = hot.slice(0, 4).map((h) => `<span class="chip" data-code="${esc(h.ticker)}">${esc(h.name)}</span>`).join('')
-        + '<span class="chip" data-code="600519">贵州茅台</span><span class="chip" data-code="300750">宁德时代</span>';
-      $("#quickChips").querySelectorAll('.chip').forEach((node) => {
-        node.addEventListener('click', () => runAnalysis(node.getAttribute('data-code'), true));
-      });
-    }
-  }
-
-  let marketLoading = false;
-  async function loadMarket(force) {
-    if (marketLoading) return;
-    marketLoading = true;
-    if (force && el('mkHero')) {
-      el('mkHero').innerHTML = '<div class="mk-skeleton">正在刷新市场全景…</div>';
-    }
-    try {
-      const params = new URLSearchParams({ kind: state.sectorKind, sortBy: state.sectorSort });
-      const res = await fetch(`/api/market?${params.toString()}`);
-      const d = await res.json();
-      if (!d.ok) throw new Error(errText(d, '市场数据加载失败'));
-      renderMarket(d);
-    } catch (err) {
-      if (el('mkHero')) el('mkHero').innerHTML = `<div class="mk-skeleton">市场全景加载失败：${esc(err.message)}<div style="margin-top:12px"><button class="btn-ghost" id="mkRetry">重试</button> <button class="btn-ghost" id="mkDiag">诊断</button></div><pre id="mkDiagOut" hidden style="margin-top:10px;white-space:pre-wrap;font-size:11px;line-height:1.6;opacity:.85"></pre></div>`;
-    } finally {
-      marketLoading = false;
-    }
-  }
-
-  function showMarket() {
-    $("#marketView").hidden = false;
-    $("#result").hidden = true;
-    $("#loadingState").hidden = true;
-    $("#errorState").hidden = true;
-    $("#backBar").hidden = true;
-    $("#searchInput").value = '';
-    if (!state.market) loadMarket();
-    window.scrollTo({ top: 0, behavior: 'auto' });
-    history.replaceState(null, '', location.pathname);
-  }
+function showMarket() {
+  const e = $("#emptyState");
+  if (e) e.hidden = false;
+  $("#result").hidden = true;
+  $("#loadingState").hidden = true;
+  $("#errorState").hidden = true;
+  $("#backBar").hidden = true;
+  $("#searchInput").value = '';
+  $("#statusText").textContent = '等待输入';
+  window.scrollTo({ top: 0, behavior: 'auto' });
+  history.replaceState(null, '', location.pathname);
+}
 
 /* ------------------------------ 手机端控制层 ------------------------------ */
   const STAGE_HINTS = [
@@ -1375,7 +1088,7 @@
 
   function showLoading(query) {
     state.loading = true;
-    $("#marketView").hidden = true;
+    hideEmpty();
     $("#result").hidden = true;
     $("#errorState").hidden = true;
     $("#backBar").hidden = true;
@@ -1399,9 +1112,9 @@
 
   function showError(message, query) {
     state.loading = false;
+    hideEmpty();
     clearInterval(timerId);
     clearInterval(hintId);
-    $("#marketView").hidden = true;
     $("#loadingState").hidden = true;
     $("#result").hidden = true;
     $("#errorState").hidden = false;
@@ -1589,13 +1302,7 @@
   function init() {
     bindSearch();
     bindExpandAll();
-    $("#backBtn").addEventListener('click', showMarket);
-    // 市场全景加载失败时注入的「重试」/「诊断」按钮（事件委托）
-    document.addEventListener('click', (e) => {
-      const id = e.target && e.target.id;
-      if (id === 'mkRetry') loadMarket(true);
-      if (id === 'mkDiag') showDiag();
-    });
+    $("#backBtn").addEventListener('click', () => { location.href = '/'; });
     window.addEventListener('popstate', (ev) => {
       const q = (ev.state && ev.state.q) || new URLSearchParams(location.search).get('q');
       if (q) {
@@ -1612,12 +1319,9 @@
       $("#searchInput").value = q;
       runAnalysis(q, true, { fromHistory: true });
     } else {
-      loadMarket();
+      showMarket();
     }
     setInterval(refreshStatus, 2000);
-    setInterval(() => {
-      if (!document.hidden && !$("#marketView").hidden && !state.loading) loadMarket();
-    }, 60 * 1000);
   }
 
   document.addEventListener('DOMContentLoaded', init);

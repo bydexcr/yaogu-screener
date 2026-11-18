@@ -9,50 +9,41 @@
 <link rel="stylesheet" href="/stock.css">
 <link rel="stylesheet" href="/stock-dark.css" data-theme-dark media="not all">
 <link rel="stylesheet" href="/nav.css">
+<link rel="stylesheet" href="/analysis.css">
 </head>
-<body>
+<body class="an">
 <aside class="side" id="appSide"></aside>
 
-<header class="appbar">
-  <div class="appbar-top">
-    <div class="brand">
-      <div class="brand-text">
-        <h1>大A小散</h1>
-        <p class="status-line"><span class="dot" id="statusBadge"></span><span id="statusText">数据加载中</span></p>
-      </div>
-    </div>
-  </div>
-  <div class="search-box" id="searchBox">
-    <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
-           placeholder="名称或代码" aria-label="股票搜索">
-    <button id="searchBtn" class="btn-primary" type="button">分析</button>
-    <div class="suggest" id="suggest" hidden></div>
-  </div>
-</header>
 
 <main id="main">
 
-  <!-- 首页：市场全景 -->
-  <section id="marketView">
-    <div class="mk-hero" id="mkHero"><div class="mk-skeleton">正在加载市场全景…</div></div>
-
-    <section class="card mk-full" id="mkSectors"></section>
-
-    <div class="mk-cards" id="mkCards">
-      <section class="card" id="mkLimits"></section>
-
-      <section class="card" id="mkUpPool"></section>
-
-      <section class="card" id="mkDownPool"></section>
-
-      <section class="card" id="mkBreakPool"></section>
+  <div class="an-head">
+    <div>
+      <h1>个股分析</h1>
+      <p class="an-sub"><span class="dot" id="statusBadge"></span><span id="statusText">等待输入</span></p>
     </div>
+    <div class="an-sr">
+    <div class="search-box" id="searchBox">
+      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
+             placeholder="名称或代码" aria-label="股票搜索">
+      <button id="searchBtn" class="btn-primary" type="button">分析</button>
+      <div class="suggest" id="suggest" hidden></div>
+    </div>
+    </div>
+  </div>
 
-    <div class="mk-hot-grid" id="mkHot"></div>
-
-    <div class="mk-foot" id="mkFoot"></div>
+  <section id="emptyState" class="an-empty">
+    <h2>输入名称或代码开始分析</h2>
+    <p>16 章深度解读：评分 / 财务 / 趋势 / 估值 / 资金 / 风险 / 同业…</p>
+    <div class="an-eg">
+      <a href="/stock?q=600000">600000 浦发银行</a>
+      <a href="/stock?q=000001">000001 平安银行</a>
+      <a href="/stock?q=600519">600519 贵州茅台</a>
+      <a href="/stock?q=300750">300750 宁德时代</a>
+    </div>
   </section>
+
 
   <!-- 加载中 -->
   <section id="loadingState" class="loading" hidden>
@@ -77,7 +68,7 @@
   <!-- 分析结果 -->
   <section id="result" hidden>
     <div id="backBar" class="back-bar" hidden>
-      <button id="backBtn" class="btn-ghost" type="button">← 返回市场全景</button>
+      <a id="backBtn" class="btn-ghost" href="/">← 市场全景</a>
       <button id="expandAll" class="btn-ghost" type="button">展开全部</button>
     </div>
 

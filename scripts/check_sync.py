@@ -27,6 +27,7 @@ RUNTIME_WEB = [
     "stock_data.py", "stock_analysis.py", "stock_market.py", "stock_review.py",
     "hit_log.py", "market_text.py",
     "nav.css", "nav.js", "overview.html", "overview.css", "overview.js",
+    "analysis.css",
     "stock.html", "stock.css", "stock.js", "stock_assets.py", "stock-dark.css",
     "review.html", "review.css", "review.js", "review_assets.py",
     "index.html", "index_html.py", "radar-dark.css",

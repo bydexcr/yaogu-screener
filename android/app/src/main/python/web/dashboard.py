@@ -128,6 +128,10 @@ def _load_nav_js() -> str:
     return _read_asset("nav.js", "NAV_JS", "web.nav_assets")
 
 
+def _load_analysis_css() -> str:
+    return _read_asset("analysis.css", "CSS", "web.analysis_assets")
+
+
 def _load_review_module():
     return _load_stock_module("stock_review")
 
@@ -413,6 +417,9 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path in ("/nav.js",):
             self._send(200, _load_nav_js().encode("utf-8"), "text/javascript; charset=utf-8")
+            return
+        if path in ("/analysis.css",):
+            self._send(200, _load_analysis_css().encode("utf-8"), "text/css; charset=utf-8")
             return
         if path in ("/stock.js",):
             self._send(200, _load_stock_js().encode("utf-8"), "text/javascript; charset=utf-8")
