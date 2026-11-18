@@ -14,31 +14,32 @@ HTML = r"""<!DOCTYPE html>
 <link rel="stylesheet" href="/stock-dark.css" data-theme-dark media="not all">
 <link rel="stylesheet" href="/nav.css">
 </head>
-<body>
+<body class="rv">
 <aside class="side" id="appSide"></aside>
 
-<header class="appbar">
-  <div class="appbar-top">
-    <div class="brand">
-      <div class="brand-text">
-        <h1>大A小散</h1>
-        <p class="status-line"><span class="dot" id="statusBadge"></span><span id="statusText">复盘加载中</span></p>
-      </div>
-    </div>
-  </div>
-  <div class="search-box" id="searchBox">
-    <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
-           placeholder="名称或代码" aria-label="股票搜索">
-    <button id="searchBtn" class="btn-primary" type="button">分析</button>
-    <div class="suggest" id="suggest" hidden></div>
-  </div>
-</header>
 
 <main id="main">
   <section id="reviewView">
 
-    <div class="rv-topbar">
+    <div class="rv-head">
+      <div>
+        <h1>复盘</h1>
+        <p class="rv-sub"><span class="dot" id="statusBadge"></span><span id="statusText">复盘加载中</span></p>
+      </div>
+      <div class="rv-head-r">
+        <div class="search-box" id="searchBox">
+      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
+             placeholder="名称或代码" aria-label="股票搜索">
+      <button id="searchBtn" class="btn-primary" type="button">分析</button>
+      <div class="suggest" id="suggest" hidden></div>
+    </div>
+        <select id="rvDateSelect" class="rv-select" aria-label="选择复盘日期"></select>
+        <button id="rvRefresh" class="btn-ghost" type="button">刷新</button>
+      </div>
+    </div>
+
+    <div class="rv-topbar card">
       <div class="rv-topbar-main">
         <span class="rv-sys" id="rvSys">AI 复盘系统</span>
         <h2 class="rv-title" id="rvTitle">— 正式收复盘</h2>
@@ -48,10 +49,6 @@ HTML = r"""<!DOCTYPE html>
           <span class="rv-tag" id="rvRisk">风险 —</span>
           <span class="rv-tag ghost" id="rvArchived" hidden>历史存档</span>
         </div>
-      </div>
-      <div class="rv-topbar-actions">
-        <select id="rvDateSelect" class="rv-select" aria-label="选择复盘日期"></select>
-        <button id="rvRefresh" class="btn-ghost" type="button">刷新</button>
       </div>
     </div>
 
@@ -378,6 +375,70 @@ CSS = r"""/* ============================================================
 @media (min-width: 1400px) {
   .rv-money { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .rv-rot { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ============================================================
+   复盘页 v2：与市场全景 / 个股分析 / 妖股雷达 同一套卡片体系
+   ============================================================ */
+
+body.rv {
+  padding-top: 32px;
+  padding-right: 32px;
+  padding-bottom: 56px;
+  background: var(--bg);
+}
+@media (max-width: 899px) {
+  body.rv { padding-top: 14px; padding-right: 12px; padding-bottom: 40px; padding-left: 12px; }
+}
+body.rv #main { max-width: 1620px; margin: 0 auto; padding: 0; }
+
+/* ---------------- 页内标题行 ---------------- */
+.rv-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.rv-head h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.rv-sub {
+  display: flex; align-items: center; gap: 7px; margin-top: 8px;
+  font-size: 12.5px; color: var(--text-mute);
+}
+.rv-sub .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--down); flex: none; }
+.rv-head-r { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+body.rv .search-box {
+  margin: 0; width: min(320px, 30vw); max-width: none;
+  padding: 4px 6px 4px 14px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px;
+}
+body.rv .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
+body.rv .search-box input { height: 32px; font-size: 13px; }
+body.rv .search-box #searchBtn { border-radius: 999px; padding: 6px 16px; font-size: 12.5px; }
+body.rv .search-box .suggest { top: calc(100% + 6px); left: 0; right: 0; }
+
+/* ---------------- 白卡 ---------------- */
+body.rv .rv-topbar,
+body.rv .rv-sec {
+  background: var(--panel);
+  border: 0;
+  border-top: 0;
+  border-radius: 22px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(28, 24, 16, .05), 0 12px 28px -18px rgba(28, 24, 16, .20);
+}
+body.rv .rv-topbar { display: block; }
+body.rv .rv-topbar .rv-title { margin-top: 6px; }
+body.rv .rv-flow { gap: 16px; }
+body.rv .rv-hits { margin-bottom: 0; }
+
+/* 章节标题与其它页对齐 */
+body.rv .rv-sec-title { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+body.rv .rv-no { color: var(--accent-2); font-weight: 700; }
+body.rv .rv-sec-head { margin-bottom: 12px; }
+
+@media (max-width: 899px) {
+  .rv-head { flex-direction: column; gap: 12px; }
+  .rv-head h1 { font-size: 24px; }
+  .rv-head-r { margin-left: 0; width: 100%; }
+  body.rv .search-box { width: 100%; }
+  body.rv .rv-topbar,
+  body.rv .rv-sec { padding: 16px; border-radius: 18px; }
 }
 """
 

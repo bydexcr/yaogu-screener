@@ -11,31 +11,32 @@
 <link rel="stylesheet" href="/stock-dark.css" data-theme-dark media="not all">
 <link rel="stylesheet" href="/nav.css">
 </head>
-<body>
+<body class="rv">
 <aside class="side" id="appSide"></aside>
 
-<header class="appbar">
-  <div class="appbar-top">
-    <div class="brand">
-      <div class="brand-text">
-        <h1>大A小散</h1>
-        <p class="status-line"><span class="dot" id="statusBadge"></span><span id="statusText">复盘加载中</span></p>
-      </div>
-    </div>
-  </div>
-  <div class="search-box" id="searchBox">
-    <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
-           placeholder="名称或代码" aria-label="股票搜索">
-    <button id="searchBtn" class="btn-primary" type="button">分析</button>
-    <div class="suggest" id="suggest" hidden></div>
-  </div>
-</header>
 
 <main id="main">
   <section id="reviewView">
 
-    <div class="rv-topbar">
+    <div class="rv-head">
+      <div>
+        <h1>复盘</h1>
+        <p class="rv-sub"><span class="dot" id="statusBadge"></span><span id="statusText">复盘加载中</span></p>
+      </div>
+      <div class="rv-head-r">
+        <div class="search-box" id="searchBox">
+      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
+             placeholder="名称或代码" aria-label="股票搜索">
+      <button id="searchBtn" class="btn-primary" type="button">分析</button>
+      <div class="suggest" id="suggest" hidden></div>
+    </div>
+        <select id="rvDateSelect" class="rv-select" aria-label="选择复盘日期"></select>
+        <button id="rvRefresh" class="btn-ghost" type="button">刷新</button>
+      </div>
+    </div>
+
+    <div class="rv-topbar card">
       <div class="rv-topbar-main">
         <span class="rv-sys" id="rvSys">AI 复盘系统</span>
         <h2 class="rv-title" id="rvTitle">— 正式收复盘</h2>
@@ -45,10 +46,6 @@
           <span class="rv-tag" id="rvRisk">风险 —</span>
           <span class="rv-tag ghost" id="rvArchived" hidden>历史存档</span>
         </div>
-      </div>
-      <div class="rv-topbar-actions">
-        <select id="rvDateSelect" class="rv-select" aria-label="选择复盘日期"></select>
-        <button id="rvRefresh" class="btn-ghost" type="button">刷新</button>
       </div>
     </div>
 

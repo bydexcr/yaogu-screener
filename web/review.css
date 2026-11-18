@@ -279,3 +279,67 @@
   .rv-money { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .rv-rot { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+
+/* ============================================================
+   复盘页 v2：与市场全景 / 个股分析 / 妖股雷达 同一套卡片体系
+   ============================================================ */
+
+body.rv {
+  padding-top: 32px;
+  padding-right: 32px;
+  padding-bottom: 56px;
+  background: var(--bg);
+}
+@media (max-width: 899px) {
+  body.rv { padding-top: 14px; padding-right: 12px; padding-bottom: 40px; padding-left: 12px; }
+}
+body.rv #main { max-width: 1620px; margin: 0 auto; padding: 0; }
+
+/* ---------------- 页内标题行 ---------------- */
+.rv-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.rv-head h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.rv-sub {
+  display: flex; align-items: center; gap: 7px; margin-top: 8px;
+  font-size: 12.5px; color: var(--text-mute);
+}
+.rv-sub .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--down); flex: none; }
+.rv-head-r { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+body.rv .search-box {
+  margin: 0; width: min(320px, 30vw); max-width: none;
+  padding: 4px 6px 4px 14px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px;
+}
+body.rv .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
+body.rv .search-box input { height: 32px; font-size: 13px; }
+body.rv .search-box #searchBtn { border-radius: 999px; padding: 6px 16px; font-size: 12.5px; }
+body.rv .search-box .suggest { top: calc(100% + 6px); left: 0; right: 0; }
+
+/* ---------------- 白卡 ---------------- */
+body.rv .rv-topbar,
+body.rv .rv-sec {
+  background: var(--panel);
+  border: 0;
+  border-top: 0;
+  border-radius: 22px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(28, 24, 16, .05), 0 12px 28px -18px rgba(28, 24, 16, .20);
+}
+body.rv .rv-topbar { display: block; }
+body.rv .rv-topbar .rv-title { margin-top: 6px; }
+body.rv .rv-flow { gap: 16px; }
+body.rv .rv-hits { margin-bottom: 0; }
+
+/* 章节标题与其它页对齐 */
+body.rv .rv-sec-title { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+body.rv .rv-no { color: var(--accent-2); font-weight: 700; }
+body.rv .rv-sec-head { margin-bottom: 12px; }
+
+@media (max-width: 899px) {
+  .rv-head { flex-direction: column; gap: 12px; }
+  .rv-head h1 { font-size: 24px; }
+  .rv-head-r { margin-left: 0; width: 100%; }
+  body.rv .search-box { width: 100%; }
+  body.rv .rv-topbar,
+  body.rv .rv-sec { padding: 16px; border-radius: 18px; }
+}
