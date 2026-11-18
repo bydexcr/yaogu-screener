@@ -10,6 +10,34 @@
         android:layout_height="match_parent"
         android:background="@color/bg" />
 
+    <!-- 启动遮罩：本地 Python 服务（8311）起来之前先盖住 WebView。
+         否则 Chromium 会先画出「网页无法打开 ERR_CONNECTION_REFUSED」再跳到正常页面。 -->
+    <LinearLayout
+        android:id="@+id/boot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bg"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp">
+
+        <ProgressBar
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:indeterminateTint="#8a7a52" />
+
+        <TextView
+            android:id="@+id/boot_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:text="正在启动本地行情服务…"
+            android:textColor="#828b96"
+            android:textSize="13sp" />
+    </LinearLayout>
+
     <!-- 设置入口已收进网页内的设置面板（经 JS 桥调起 SettingsActivity）。
          这个悬浮按钮是旧版「网页顶栏预留 50px 安全区」时代的产物，顶栏被侧栏取代后会压在
          深色卡片右上角，所以不再显示；保留视图是为了万一桥接失效可以一行切回来。 -->
