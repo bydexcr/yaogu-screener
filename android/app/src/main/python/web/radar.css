@@ -1,0 +1,78 @@
+/* ============================================================
+   radar.css —— 妖股雷达页：与「市场全景」「个股分析」同一套卡片体系
+   只作用于 body.rd；令牌沿用 index.html 内联的 :root（--bg/--card/--line/--fg…）
+   ============================================================ */
+
+body.rd {
+  padding-top: 32px;
+  padding-right: 32px;
+  padding-bottom: 56px;
+  background: var(--bg);
+}
+@media (max-width: 899px) {
+  body.rd { padding-top: 14px; padding-right: 12px; padding-bottom: 40px; padding-left: 12px; }
+}
+
+/* 页内所有区块统一内容列（原顶部 .bar 已移除，导航在左侧栏） */
+body.rd .rd-head,
+body.rd .panel-top,
+body.rd .chips,
+body.rd main,
+body.rd .sf,
+body.rd footer {
+  max-width: 1620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------------- 标题行 ---------------- */
+.rd-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 6px; flex-wrap: wrap; }
+.rd-head h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.rd-sub {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  font-size: 12.5px; color: var(--muted); flex-wrap: wrap;
+}
+.rd-head .bar-meta { margin-left: auto; margin-top: 0; align-self: flex-end; }
+
+/* ---------------- 运行状态 / 筛选条件 ---------------- */
+body.rd .panel-top { padding: 0 0 12px; }
+body.rd .chips { padding: 0 0 14px; }
+
+/* ---------------- 卡片：从「分区带」改成白卡 ---------------- */
+body.rd .card {
+  background: var(--card);
+  border: 0;
+  border-top: 0;
+  border-radius: 22px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  min-width: 0;
+  box-shadow: 0 1px 2px rgba(28, 24, 16, .05), 0 12px 28px -18px rgba(28, 24, 16, .20);
+}
+body.rd .card > h2 { font-size: 15px; font-weight: 700; letter-spacing: -.01em; margin: 0 0 4px; }
+body.rd .cols { gap: 16px; }
+body.rd main { padding: 0; }
+
+/* 表头只留小灰字、不要底色（index.html 内联的 th 带 --card-3 米色带，
+   在白卡里会变成一条和卡片背景不一致的色块） */
+body.rd th {
+  background: transparent;
+  position: static;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+/* ---------------- 底部板块资金矩阵 / 页脚 ---------------- */
+body.rd .sf { padding: 0; }
+body.rd .sf > .card { margin-bottom: 16px; }
+body.rd footer {
+  padding: 4px 2px 0;
+  border-top: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+@media (max-width: 899px) {
+  .rd-head h1 { font-size: 24px; }
+  .rd-head .bar-meta { margin-left: 0; }
+  body.rd .card { padding: 16px; border-radius: 18px; }
+}
