@@ -10,7 +10,9 @@ body.ov {
   padding-bottom: 32px;
 }
 @media (max-width: 899px) {
-  body.ov, body.ov.has-side { padding: 0 0 24px; }
+  /* 与个股分析/雷达/复盘一致：四边留白，顶部黑条才和其它三页同一个形状。
+     底部真正生效的是 nav.css 里更高的那条（底部导航栏留白 78px）。 */
+  body.ov, body.ov.has-side { padding: 14px 12px 40px; }
   .ov-side-host { display: block; }
 }
 

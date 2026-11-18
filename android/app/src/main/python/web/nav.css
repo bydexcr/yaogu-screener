@@ -65,7 +65,8 @@
 /* ---------------- 移动端：顶部只留 logo 条，导航条沉到屏幕底部常驻 ---------------- */
 @media (max-width: 899px) {
   .side {
-    position: relative; border-radius: 0 0 20px 20px; padding: 12px 14px 12px;
+    /* 四角同圆：手机端它是浮在内容上的卡片，不再是贴着屏幕顶边的横条 */
+    position: relative; border-radius: 20px; padding: 12px 14px 12px;
     flex-direction: column; gap: 10px;
     /* logo 条是深色块，下面紧接页面大标题；不留白会贴在一起（实测 0px） */
     margin-bottom: 20px;
@@ -100,6 +101,8 @@
   }
   .side-nav a.on::before { display: none; }
   .side-nav a:active { background: rgba(255, 255, 255, .06); }
+  /* 底部栏只放 5 项（去掉「历史」；桌面左侧栏仍保留） */
+  .side-nav a[data-key="/review#hits"] { display: none; }
 
   /* 内容别被底栏盖住：底栏约 62px + 安全区，留 78px 气口。
      选择器写成 html body.has-side.has-side 是为了压过 overview.css 里的
