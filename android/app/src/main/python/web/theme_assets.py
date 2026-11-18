@@ -1966,6 +1966,30 @@ body.ov {
 .ov-hs .v { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13.5px; font-weight: 600; }
 .ov-hs .v small { display: block; font-size: 11px; color: var(--text-mute); font-weight: 400; margin-top: 1px; }
 
+/* ---------------- 同花顺热榜 + 连板天梯（左栏并排） ---------------- */
+.ov-row-rank { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
+
+/* 连板天梯：左侧「4 连板」标签 + 右侧名单 */
+.ov-lad { display: flex; flex-direction: column; }
+.ov-lad-row {
+  display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: 10px;
+  padding: 9px 0; border-top: 1px solid var(--line-soft);
+}
+.ov-lad-row:first-child { border-top: 0; }
+.ov-lad-lv {
+  font: 600 11.5px/1.6 var(--mono); color: var(--text-mute); padding-top: 3px; white-space: nowrap;
+}
+.ov-lad-items { display: flex; flex-wrap: wrap; gap: 6px; }
+.ov-lad-nm {
+  padding: 3px 9px; border-radius: 999px; background: var(--panel-2);
+  font-size: 11.5px; color: var(--text-dim); white-space: nowrap;
+}
+.ov-lad-cnt { font: 600 12.5px/1.6 var(--mono); color: var(--text-dim); }
+
+/* ---------------- 同花顺热榜（左栏，两列排布） ---------------- */
+.ov-rank2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+.ov-rank2 .ov-hs { min-width: 0; }
+
 .ov-src { font-size: 11px; line-height: 1.8; color: var(--text-mute); padding: 0 4px; }
 
 /* ---------------- 今日一句（页面最下方，整行通栏） ---------------- */
@@ -1998,6 +2022,8 @@ body.ov {
   .ov-head .sr { margin-left: 0; width: 100%; }
   .ov-search { min-width: 0; flex: 1; }
   .ov-main { padding: 0 12px; gap: 12px; }
+  .ov-rank2 { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .ov-row-rank { grid-template-columns: minmax(0, 1fr); }
   .ov-card { padding: 16px 16px; border-radius: 18px; }
   .ov-one p { font-size: 15px; }
 }

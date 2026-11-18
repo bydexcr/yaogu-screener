@@ -221,6 +221,62 @@
     $('#ovHotNote').textContent = bits.join('；') + '。';
   }
 
+  /* ---------------------------------------------------------------- 同花顺热榜（人气榜前 12） */
+  function renderRank() {
+    var hot = (state.data || {}).hot || {};
+    var all = (hot.hot || []).slice(0, 12);
+    var box = $('#ovRank');
+    if (!box) return;
+    var hint = $('#ovRankHint');
+    if (!all.length) {
+      box.innerHTML = '<div class="ov-skel">暂无热榜数据</div>';
+      if (hint) hint.textContent = '暂无';
+      return;
+    }
+    // 两列分块（每列 6 行）：每列一个 .ov-hs，行首用 :first-child 去掉上边线
+    var half = Math.ceil(all.length / 2);
+    var cols = [all.slice(0, half), all.slice(half)].filter(function (c) { return c.length; });
+    var idx = 0;
+    box.innerHTML = cols.map(function (col) {
+      return '<div class="ov-hs">' + col.map(function (s) {
+        idx++;
+        return '<div class="r"><span class="ov-rk">' + (idx < 10 ? '0' : '') + idx + '</span>' +
+          '<span><span class="nm">' + esc(s.name) + '</span>' +
+          '<span class="nm2">' + esc(s.ticker || s.thscode || '') + ' · 人气第 ' +
+          Math.round(s.rank || 0) + '</span></span>' +
+          '<span class="v">' + big(s.heat) + '<small>热度</small></span></div>';
+      }).join('') + '</div>';
+    }).join('');
+    if (hint) hint.textContent = '人气榜前 ' + all.length;
+  }
+
+  /* ---------------------------------------------------------------- 连板天梯 */
+  function renderTier() {
+    var lim = (state.data || {}).limits || {};
+    var tiers = lim.tiers || [];
+    var box = $('#ovTier');
+    var hint = $('#ovTierHint');
+    if (!box) return;
+    var pre = isEmptyMarket(state.data || {});
+    if (!tiers.length) {
+      box.innerHTML = '<div class="ov-skel">' + (pre ? '盘前暂无连板数据' : '暂无连板数据') + '</div>';
+      if (hint) hint.textContent = '—';
+      return;
+    }
+    // 高板在上更像"天梯"
+    var rows = tiers.slice().sort(function (a, b) { return (b.level || 0) - (a.level || 0); });
+    box.innerHTML = rows.map(function (t) {
+      var names = (t.items || []).map(function (s) {
+        return '<span class="ov-lad-nm">' + esc(s.name) + '</span>';
+      }).join('');
+      var right = names ||
+        '<span class="ov-lad-cnt">' + (t.count || 0) + ' 只</span>';
+      return '<div class="ov-lad-row"><span class="ov-lad-lv">' + esc(t.label || (t.level + ' 板')) +
+        '</span><span class="ov-lad-items">' + right + '</span></div>';
+    }).join('');
+    if (hint) hint.textContent = '最高 ' + Math.round(lim.highestBoard || 0) + ' 板';
+  }
+
   function renderTail(d) {
     var lim = d.limits || {}, pre = isEmptyMarket(d);
     var one = (d.copy || {}).oneSentence;
@@ -240,7 +296,7 @@
   function render(d) {
     state.data = d;
     renderHead(d); renderDist(d); renderSectors(d); renderSeal(d);
-    renderHot(); renderTail(d);
+    renderHot(); renderRank(); renderTier(); renderTail(d);
   }
 
   function showError(msg) {
@@ -274,6 +330,8 @@
         s.classList.toggle('on', s === e.target);
       });
       renderHot();
+    renderRank();
+    renderTier();
     });
     var go = function () {
       var v = (document.getElementById('ovSearch').value || '').trim();
