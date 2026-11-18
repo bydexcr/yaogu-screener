@@ -731,7 +731,8 @@ body.rd footer {
   border-top: 1px solid var(--line-soft);
 }
 .rv-stat-tb { grid-template-columns: minmax(140px, 1fr) repeat(6, minmax(56px, auto)); }
-.rv-hit-tb { grid-template-columns: 62px minmax(118px, 1fr) repeat(8, minmax(50px, auto)); min-width: 720px; }
+.rv-hit-tb { grid-template-columns: 62px minmax(118px, 1fr) repeat(9, minmax(50px, auto)); min-width: 790px; }
+    /* 列数 = T日 名称 开盘涨 买入价 r0 止损口径 T+1开 r1 r2 r3 状态 = 11 列 */
 .rv-stat-tb > span, .rv-hit-tb > span {
   padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--line-soft);
   font-family: var(--mono); white-space: nowrap; color: var(--text-dim);

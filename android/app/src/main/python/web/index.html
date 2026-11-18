@@ -367,7 +367,7 @@ footer{
       <div class="rd-sub">
         <span class="badge" id="phase">-</span>
         <span class="badge" id="src">-</span>
-        <span class="tick">T-1 条件筛出候选，T 日低开 5%~8% 触发命中</span>
+        <span class="tick">T-1 条件筛出候选，T 日低开 −10%~−3% 触发命中</span>
       </div>
     </div>
   </div>
@@ -392,22 +392,22 @@ footer{
   </div>
 
   <div class="chips">
-    <span class="chip">T-1 涨停或 &gt;8%</span><span class="chip">T-1 缩量</span>
-    <span class="chip">30 日新高</span><span class="chip">T-1 成交额 ≥ 5 亿</span>
-    <span class="chip">T 日低开 5%~8%</span><span class="chip dim">剔除 ST / 北交所</span>
+    <span class="chip">T-1 涨幅 &gt;8%</span><span class="chip">仅主板</span>
+    <span class="chip">T-1 成交额 ≥ 10 亿</span><span class="chip">T 日低开 −10%~−3%</span>
+    <span class="chip dim">缩量 / 30 日新高 → 仅参与评分</span><span class="chip dim">剔除 ST / 北交所</span>
     <span class="chip" id="senti" style="display:none"></span>
   </div>
 
   <main>
     <div class="cols">
       <div class="card" id="hitcard">
-        <h2>低开命中时间线 <span class="tick">T 日低开 5%~8%</span></h2>
+        <h2>低开命中时间线 <span class="tick">T 日低开 −10%~−3%</span></h2>
         <div id="timeline"><div class="empty">暂无命中</div></div>
 
         <div class="subhead">承接 / 走弱动态 <span class="tick">承接 = 收复开盘价；走弱 = 较开盘再跌 3% 或逼近昨收 −9%</span></div>
         <div id="evs"></div>
 
-        <div class="subhead">深水低吸命中 <span class="tick">T 日低开 7~10%，比主栏更深，可单独跟踪</span></div>
+        <div class="subhead">深水低吸命中 <span class="tick">T 日低开 −15%~−10%，比主栏更深，可单独跟踪</span></div>
         <div id="deeps"></div>
         <div class="err" id="errs"></div>
       </div>
@@ -539,7 +539,7 @@ function _pct(v){ return (v===null||v===undefined)?"-":((v>=0?"+":"")+Number(v).
 function showCand(code){
   const c=CAND[code]; if(!c) return;
   const zp=c.zone||"";
-  const zoneTxt = zp==="main"?"★低开(5~8%)" : zp==="deep"?"深水(7~10%)" : "未命中";
+  const zoneTxt = zp==="main"?"★低开命中" : zp==="deep"?"深水" : "未命中";
   const sigTxt = c.sig==="confirm"?"承接" : c.sig==="broken"?"走弱" : (c.hit?"★低开":"-");
   const rows=[
     ["代码", esc(c.thscode)],
@@ -823,7 +823,7 @@ async function refresh(){
       $("#timeline").innerHTML=`<div class="empty">
         <div><b>今日暂无命中</b>　候选 ${esc(String(st.pool_size ?? "—"))} 只 / 低开命中 0　·　最近扫描 ${esc(upd)}</div>
         <div style="font-size:11px;margin-top:4px">判定区间：T 日开盘较昨收低开 ${esc(String(lo))}%~${esc(String(hi))}%；候选池里出现落在该区间的开盘价即触发。</div>
-        <div style="font-size:11px;margin-top:2px">示例：昨收 10.00 → 触发需开盘落在 9.20 ~ 9.50。</div>
+        <div style="font-size:11px;margin-top:2px">示例：昨收 10.00 → 触发需开盘落在 ${(10*(1+lo/100)).toFixed(2)} ~ ${(10*(1+hi/100)).toFixed(2)}。</div>
       </div>`;
     }
     const evs=(st.events||[]).filter(e=>e.type==="confirm"||e.type==="broken").slice(0,12);

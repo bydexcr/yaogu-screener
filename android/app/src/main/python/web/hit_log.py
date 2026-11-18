@@ -9,6 +9,7 @@ hit_log.py —— 历史命中回顾（这套低吸策略最近到底准不准�
 收益口径与离线 backtest.py **完全一致**（两边数字可以直接对照）：
   买入价 = T 日开盘价（09:25 集合竞价成交的那一笔）
   r0 = T 日收盘 / 买入价 - 1      dd = T 日最低 / 买入价 - 1
+r0_stop = 当日最低触及 -3% 时按 -3% 计，否则等于 r0（日内止损口径，主指标）
   rk = T+k 日收盘 / 买入价 - 1    o1 = T+1 日开盘 / 买入价 - 1（次日高开还是低开）
 
 价格统一取**前复权**日线；日志里记的原始开盘价只用于展示，不参与计算
@@ -28,7 +29,8 @@ from typing import Dict, List, Optional, Tuple
 
 MAX_HITS = 200
 SUSPECT_PCT = 1.0        # 日志开盘涨幅与真实开盘涨幅差超过 1 个百分点 → 标"疑似假命中"
-SCHEMA = 2               # 结果结构版本：改字段就 +1，否则会读到旧结构的缓存
+STOP_PCT = -3.0          # 日内止损线(%)：当日最低触及即离场
+SCHEMA = 3               # 结果结构版本：改字段就 +1，否则会读到旧结构的缓存
 BAR_TIMEOUT_CACHE_TTL = 600          # 结果缓存 10 分钟（命中日志本身是低频数据）
 WORKERS = 5
 
@@ -220,7 +222,8 @@ def summarize(hits: List[dict], bars_by_code: Dict[str, List[dict]], horizon: in
         bars = bars_by_code.get(h["thscode"]) or []
         idx = next((i for i, b in enumerate(bars) if b.get("date") == h["date"]), None)
         row = dict(h)
-        row.update({"buy": None, "r0": None, "dd": None, "o1": None,
+        row.update({"buy": None, "r0": None, "r0_stop": None, "stopped": False,
+                    "dd": None, "o1": None,
                     "prev_close": None, "gap_real": None, "suspect": False,
                     "status": "missing"})
         if idx is not None:
@@ -242,6 +245,13 @@ def summarize(hits: List[dict], bars_by_code: Dict[str, List[dict]], horizon: in
                 row["r0"] = _r2((_f(bar.get("close")) / buy - 1) * 100)
                 low = _f(bar.get("low"))
                 row["dd"] = _r2((low / buy - 1) * 100) if low is not None else None
+                # 日内口径（-STOP_PCT 止损）：当日最低触及止损位就按止损价离场，否则持到收盘
+                if row["dd"] is not None and row["dd"] <= STOP_PCT:
+                    row["r0_stop"] = _r2(STOP_PCT)
+                    row["stopped"] = True
+                else:
+                    row["r0_stop"] = row["r0"]
+                    row["stopped"] = False
                 if fwd:
                     o = _f(fwd[0].get("open"))
                     row["o1"] = _r2((o / buy - 1) * 100) if o is not None else None
@@ -252,17 +262,18 @@ def summarize(hits: List[dict], bars_by_code: Dict[str, List[dict]], horizon: in
                         row["r%d" % k] = _r2((c / buy - 1) * 100) if c is not None else None
         rows.append(row)
 
-    keys = ["r0", "dd", "o1"] + ["r%d" % k for k in range(1, horizon + 1)]
+    # r0 / r0_stop 是「日内口径」的主指标；o1 与 r1..r3 保留作参考
+    keys = ["r0", "r0_stop", "dd", "o1"] + ["r%d" % k for k in range(1, horizon + 1)]
     stats = {k: _stats([r.get(k) for r in rows]) for k in keys}
 
     groups = []
-    for zone, label in (("main", "低开命中（主栏 5%~8%）"), ("deep", "深水低吸（7%~10%）")):
+    for zone, label in (("main", "低开命中（主栏）"), ("deep", "深水低吸（副栏）")):
         sub = [r for r in rows if r.get("zone") == zone]
         if not sub:
             continue
         groups.append({
             "key": zone, "label": label, "n": len(sub),
-            "stats": {k: _stats([r.get(k) for r in sub]) for k in ("r0", "o1", "r1")},
+            "stats": {k: _stats([r.get(k) for r in sub]) for k in ("r0", "r0_stop", "dd", "r1")},
         })
 
     coverage = {

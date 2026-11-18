@@ -215,6 +215,65 @@ def test_c3_requires_new_high():
     assert eval_stock(bars) is None
 
 
+def test_only_main_board_rejects_gem():
+    """only_main_board=True：创业板(300)同样的形态也要被剔除，主板照常通过。"""
+    cfg = {**CFG, "only_main_board": True}
+    for code, expect in (("300001.SZ", None), ("600001.SH", "pass")):
+        bars = make_bars()
+        bars[-1].close = 11.0
+        bars[-1].volume = 1_000_000.0
+        bars[-1].amount = 600_000_000.0
+        got = eval_stock(bars, thscode=code, cfg=cfg)
+        if expect is None:
+            assert got is None
+        else:
+            assert got is not None and got.board == "main"
+
+
+def test_only_main_board_off_keeps_gem():
+    bars = make_bars()
+    bars[-1].close = 11.0
+    bars[-1].volume = 1_000_000.0
+    bars[-1].amount = 600_000_000.0
+    assert eval_stock(bars, thscode="300001.SZ", cfg={**CFG, "only_main_board": False}) is not None
+
+
+def _no_new_high_bars():
+    bars = make_bars()
+    bars[20].close = 10.6                      # 历史最高收盘 10.6
+    bars[-2].close = 9.4
+    bars[-1].close = 10.5                      # +11.7%，但没创 30 日新高
+    bars[-1].volume = 1_000_000.0
+    bars[-1].amount = 600_000_000.0
+    return bars
+
+
+def test_require_new_high_false_accepts_non_new_high():
+    """require_new_high=False：未创 30 日新高也能进候选（降级为评分项）。"""
+    cand = eval_stock(_no_new_high_bars(), cfg={**CFG, "require_new_high": False})
+    assert cand is not None
+    assert cand.high30_margin_pct <= 0
+
+
+def test_require_new_high_true_rejects_non_new_high():
+    assert eval_stock(_no_new_high_bars(), cfg={**CFG, "require_new_high": True}) is None
+
+
+def test_score_rewards_new_high():
+    """创 30 日新高仍进评分：同条件下新高候选分数至少高 5 分。"""
+    cfg = {**CFG, "require_new_high": False}
+    hi_bars = make_bars()
+    hi_bars[-1].close = 11.0
+    hi_bars[-1].volume = 1_000_000.0
+    hi_bars[-1].amount = 600_000_000.0
+    hi = eval_stock(hi_bars, cfg=cfg)
+    lo = eval_stock(_no_new_high_bars(), cfg=cfg)
+    assert hi is not None and lo is not None
+    S._score_candidates([hi])
+    S._score_candidates([lo])
+    assert hi.score >= lo.score + 5.0
+
+
 def test_c4_requires_min_amount():
     bars = make_bars()
     bars[-1].close = 11.0

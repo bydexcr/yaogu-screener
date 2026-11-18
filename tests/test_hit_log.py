@@ -100,6 +100,39 @@ def test_summarize_matches_backtest_formula():
     assert coverage == {"total": 1, "done": 1, "pending": 0, "missing": 0, "suspect": 0}
 
 
+def test_r0_stop_uses_stop_loss_when_low_breaks_it():
+    """当日最低触及 -3%：止损口径按 -3% 计，即使收盘是赚的。"""
+    bars = _bars([
+        ("2026-10-22", 10.0, 10.9, 9.4, 10.5),      # 最低 9.4 → -6%，触发止损；收盘 +5%
+        ("2026-10-23", 10.8, 11.0, 10.6, 10.9),
+        ("2026-10-26", 11.0, 11.2, 10.7, 11.1),
+        ("2026-10-27", 11.2, 11.3, 10.9, 10.0),
+    ])
+    rows, stats, _, _ = HL.summarize([_hit("2026-10-22", "600000.SH")],
+                                     {"600000.SH": bars}, horizon=3)
+    r = rows[0]
+    assert r["r0"] == 5.0
+    assert r["stopped"] is True
+    assert r["r0_stop"] == -3.0
+    assert stats["r0_stop"]["mean"] == -3.0
+    assert stats["r0_stop"]["win"] == 0.0
+
+
+def test_r0_stop_equals_r0_when_stop_not_hit():
+    """未触及 -3%：止损口径等于 r0。"""
+    bars = _bars([
+        ("2026-10-22", 10.0, 10.6, 9.8, 10.4),      # 最低 9.8 → -2%，未触发
+        ("2026-10-23", 10.5, 10.7, 10.3, 10.6),
+        ("2026-10-26", 10.6, 10.8, 10.5, 10.7),
+        ("2026-10-27", 10.7, 10.9, 10.6, 10.8),
+    ])
+    rows, stats, _, _ = HL.summarize([_hit("2026-10-22", "600000.SH")],
+                                     {"600000.SH": bars}, horizon=3)
+    r = rows[0]
+    assert r["stopped"] is False
+    assert r["r0_stop"] == r["r0"]
+
+
 def test_summarize_marks_pending_and_excludes_from_win_rate():
     """T+3 还没到：状态 pending，r3 为 None，且不进胜率统计（不能把"还没发生"算成亏）。"""
     bars = _bars([

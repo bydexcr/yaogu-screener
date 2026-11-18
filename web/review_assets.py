@@ -341,7 +341,8 @@ CSS = r"""/* ============================================================
   border-top: 1px solid var(--line-soft);
 }
 .rv-stat-tb { grid-template-columns: minmax(140px, 1fr) repeat(6, minmax(56px, auto)); }
-.rv-hit-tb { grid-template-columns: 62px minmax(118px, 1fr) repeat(8, minmax(50px, auto)); min-width: 720px; }
+.rv-hit-tb { grid-template-columns: 62px minmax(118px, 1fr) repeat(9, minmax(50px, auto)); min-width: 790px; }
+    /* 列数 = T日 名称 开盘涨 买入价 r0 止损口径 T+1开 r1 r2 r3 状态 = 11 列 */
 .rv-stat-tb > span, .rv-hit-tb > span {
   padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--line-soft);
   font-family: var(--mono); white-space: nowrap; color: var(--text-dim);
@@ -867,6 +868,7 @@ JS = r"""(function () {
       <span>${fpct(r.open_pct, 1)}</span>
       <span>${n2(r.buy)}</span>
       <span class="${cls(r.r0)}">${fpct(r.r0)}</span>
+      <span class="${cls(r.r0_stop)}"${r.stopped ? ' title="当日最低触及 -3%，按止损价离场"' : ''}>${fpct(r.r0_stop)}${r.stopped ? '<b class="sus">≈</b>' : ''}</span>
       <span class="${cls(r.o1)}">${fpct(r.o1)}</span>
       <span class="${cls(r.r1)}">${fpct(r.r1)}</span>
       <span class="${cls(r.r2)}">${fpct(r.r2)}</span>
@@ -893,12 +895,14 @@ JS = r"""(function () {
 
     const cov = d.coverage || {};
     const s = d.stats || {};
-    const r1 = s.r1;
+    // 口径：T 日开→收 是主指标（离线 walk-forward 显示 T+3 在样本外多为负，只作参考）
+    const r0 = s.r0, r0s = s.r0_stop;
     if (hint) hint.textContent = `近 ${d.days} 天 · 命中 ${rows.length} 次`;
     const chips = [
       `<span class="rv-hits-chip">命中<b>${rows.length}</b><i>次</i></span>`,
-      r1 ? `<span class="rv-hits-chip">T+1 胜率<b>${r1.win}%</b><i>(n=${r1.n})</i></span>` : '',
-      r1 ? `<span class="rv-hits-chip">T+1 均值<b class="${cls(r1.mean)}">${fpct(r1.mean)}</b></span>` : '',
+      r0 ? `<span class="rv-hits-chip">日内胜率<b>${r0.win}%</b><i>(n=${r0.n})</i></span>` : '',
+      r0 ? `<span class="rv-hits-chip">日内均值<b class="${cls(r0.mean)}">${fpct(r0.mean)}</b></span>` : '',
+      r0s ? `<span class="rv-hits-chip">-3% 止损口径<b class="${cls(r0s.mean)}">${fpct(r0s.mean)}</b><i>胜率 ${r0s.win}%</i></span>` : '',
       `<span class="rv-hits-chip">已验证<b>${cov.done || 0}</b>`,
       cov.pending ? `<i>待验证 ${cov.pending}</i></span>` : '</span>',
       cov.missing ? `<span class="rv-hits-chip">无日线<b>${cov.missing}</b></span>` : '',
@@ -908,27 +912,33 @@ JS = r"""(function () {
     const statHead = `<span class="hd">指标</span><span class="hd">n</span><span class="hd">均值</span>
       <span class="hd">中位</span><span class="hd">胜率</span><span class="hd">最差</span><span class="hd">最好</span>`;
     const statBody = [
-      statRow('T 日 开盘→收盘 r0', s.r0),
+      statRow('T 日 开→收（日内主指标）', s.r0),
+      statRow('T 日 -3% 止损口径', s.r0_stop),
       statRow('T 日 最大回撤 dd', s.dd, { noWin: true }),
-      statRow('T+1 开盘 o1', s.o1),
-      ...[1, 2, 3, 4, 5].filter((k) => d.horizon >= k).map((k) => statRow(`T+${k} 收盘 r${k}`, s['r' + k])),
+      statRow('T+1 开盘 o1（次日跳空）', s.o1),
+      ...[1, 2, 3, 4, 5].filter((k) => d.horizon >= k)
+        .map((k) => statRow(`T+${k} 收盘 r${k}（参考）`, s['r' + k])),
     ].join('');
 
     const hitHead = `<span class="hd">T 日</span><span class="hd">名称</span><span class="hd">开盘涨</span>
-      <span class="hd">买入价</span><span class="hd">r0</span><span class="hd">T+1开</span>
+      <span class="hd">买入价</span><span class="hd">r0</span><span class="hd">止损口径</span><span class="hd">T+1开</span>
       <span class="hd">r1</span><span class="hd">r2</span><span class="hd">r3</span><span class="hd">状态</span>`;
     const hitBody = rows.slice(0, 60).map(hitRow).join('');
 
-    const groups = (d.groups || []).filter((g) => g.stats && g.stats.r1);
-    const groupLine = groups.map((g) =>
-      `<span class="rv-hits-chip">${esc(g.label)}<b>n=${g.n}</b><i>T+1 ${fpct(g.stats.r1.mean)} · 胜率 ${g.stats.r1.win}%</i></span>`
-    ).join('');
+    const groups = (d.groups || []).filter((g) => g.stats && g.stats.r0);
+    const groupLine = groups.map((g) => {
+      const a = g.stats.r0, b = g.stats.r0_stop;
+      return `<span class="rv-hits-chip">${esc(g.label)}<b>n=${g.n}</b>` +
+        `<i>日内 ${fpct(a.mean)} · 胜率 ${a.win}%${b ? ` · 止损口径 ${fpct(b.mean)}` : ''}</i></span>`;
+    }).join('');
 
     box.innerHTML = `<div class="rv-hits-sum">${chips}${groupLine}</div>
       <div class="rv-hit-scroll"><div class="rv-stat-tb">${statHead}${statBody}</div></div>
       <div class="rv-hit-scroll"><div class="rv-hit-tb">${hitHead}${hitBody}</div></div>
       <p class="rv-caliber">口径与离线 backtest.py 一致：买入价 = T 日开盘（09:25 集合竞价），
-        价格取前复权日线；r{k} = T+k 收盘 / 买入价 − 1。样本 ${cov.total} 笔
+        价格取前复权日线。<b>主指标是 T 日开→收</b>（r0）与 <b>-3% 止损口径</b>
+        （当日最低触及 -3% 即按 -3% 离场，标 ≈）；r{k} = T+k 收盘 / 买入价 − 1 仅作参考
+        —— 离线 walk-forward 显示 T+3 在样本外方向不稳定。样本 ${cov.total} 笔
         （已验证 ${cov.done} · 待验证 ${cov.pending} · 无日线 ${cov.missing}），
         ${rows.length < 5 ? '样本不足 5 笔，胜率仅供参考。' : '仅统计已发生的交易日。'}
         ${cov.suspect ? `其中 ${cov.suspect} 笔标了 ⚠：日志里的开盘涨幅（09:25 快照）与当日真实开盘价不一致，

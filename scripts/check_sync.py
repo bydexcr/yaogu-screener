@@ -68,12 +68,22 @@ def main() -> int:
             problems.append("APK 副本缺失: android/.../web/%s" % name)
 
     for src_dir, dst_dir, label in ((ROOT / "mobile", APK_MOBILE, "mobile"),):
-        for p in sorted(src_dir.glob("*.py")):
+        # *.json 也要查：config_mobile.json 里的策略参数一直是漏同步的
+        for p in sorted(src_dir.glob("*.py")) + sorted(src_dir.glob("*.json")):
             dst = dst_dir / p.name
             if not dst.exists():
                 problems.append("%s 副本缺失: %s" % (label, p.name))
             elif sha(p) != sha(dst):
                 problems.append("%s 内容不一致: %s" % (label, p.name))
+
+    # APK python 根目录还有一份 config_mobile.json（App 以它为工作目录）
+    cfg_src = ROOT / "mobile" / "config_mobile.json"
+    cfg_dst = APK_PY / "config_mobile.json"
+    if cfg_src.exists():
+        if not cfg_dst.exists():
+            problems.append("config_mobile.json 未同步到 android/.../python/")
+        elif sha(cfg_src) != sha(cfg_dst):
+            problems.append("config_mobile.json 内容不一致")
 
     st_src, st_dst = ROOT / "strategy.py", APK_PY / "strategy.py"
     if not st_dst.exists():

@@ -4,12 +4,20 @@ strategy.py —— 妖股低吸选股策略核心（纯逻辑，无 IO）
 
 条件（T 为当前交易日，T-1/T-2 为往前数第 1/2 个交易日）：
   C1  T-1 涨停 或 涨幅 > t1_gain_min_pct%(默认 8.0)
-  C2  T-1 成交量 < T-2 成交量
-  C3  T-1 收盘价创出 high_ndays(默认 30) 日新高
+  C2  [可选] T-1 成交量 < T-2 成交量，由 t1_volume_lt_t2 控制（默认 True）
+  C3  [可选] T-1 收盘价创出 high_ndays(默认 30) 日新高，由 require_new_high 控制
+      （默认 True：纯函数层保持旧行为；实际引擎配置已关闭，改为评分项）
   C4  T-1 成交额 >= t1_amount_min_yi 亿元(默认 5.0)
   C5  T 日开盘涨跌幅 ∈ t_open_pct_range(默认 [-8, -5]，即低开 5%~8%)
 
-过滤：剔除 ST / 北交所
+过滤：剔除 ST / 北交所；only_main_board 为 True 时只留主板。
+
+【2026-11 策略调整】离线 walk-forward（250 个交易日 / 31007 条 C1 样本）显示：
+  · 低开窗口 -10~-3% 的样本外胜率比 -8~-5% 高约 7pp，深低开(<=-5%)反而最差
+  · 仅主板 优于含双创（双创在低吸里胜率 <36%）
+  · 缩量 / 30 日新高 在不同折里被选进又被剔除，稳定性差 → 降级为评分项
+  因此引擎配置改为：关闭 C2/C3 硬过滤、只做主版、成交额 >=10 亿、低开 -10~-3%。
+  纯函数层保留开关，便于回测对照组。
 """
 from __future__ import annotations
 
@@ -153,6 +161,9 @@ def _score_candidates(cands: Sequence[Candidate]) -> None:
         shrink = 1.0 - min(max(c.volume_ratio, 0.0), 1.0)   # 缩得越狠分越高
         s += shrink * 40.0
         s += min(max(c.t1_amount_yi - 5.0, 0.0) / 10.0, 1.0) * 10.0   # 5亿起步，超15亿满分
+        # T-1 创 30 日新高：不再做硬过滤，但仍是资金延续性的正面信号，进评分
+        if c.high30_margin_pct > 0:
+            s += 6.0
         if c.limit_up_time:
             hm = c.limit_up_time
             if hm <= "09:35":
@@ -208,6 +219,10 @@ def evaluate_stock(bars: Sequence[DailyBar], thscode: str, name: str,
     min_gain = float(cfg_strategy.get("t1_gain_min_pct", 8.0))
     amount_min = float(cfg_strategy.get("t1_amount_min_yi", 5.0)) * 1e8
     vol_lt = bool(cfg_strategy.get("t1_volume_lt_t2", True))
+    need_high = bool(cfg_strategy.get("require_new_high", True))
+    main_only = bool(cfg_strategy.get("only_main_board", False))
+    if main_only and board_key(thscode) != "main":
+        return None
 
     if len(bars) <= high_ndays:
         return None
@@ -239,9 +254,9 @@ def evaluate_stock(bars: Sequence[DailyBar], thscode: str, name: str,
     if vol_lt and not (b1.volume < b2.volume):
         return None
 
-    # C3: T-1 收盘创 N 日新高
+    # C3: T-1 收盘创 N 日新高（require_new_high=False 时只算评分，不做过滤）
     prev_closes = [b.close for b in bars[i1 - high_ndays: i1]]
-    if not is_new_high(b1.close, prev_closes):
+    if need_high and not is_new_high(b1.close, prev_closes):
         return None
 
     # C4: T-1 成交额 >= 阈值
