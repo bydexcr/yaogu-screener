@@ -17,16 +17,20 @@ body.ov {
 }
 
 .ov-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 396px;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
-  align-items: start;
+  /* 纵向 flex 的 align-items 是「横向」对齐：写成 start 会把每行压成内容宽度，
+     搜索框也就靠不到右边。这里必须 stretch（默认值），让每行铺满内容列。 */
+  align-items: stretch;
   max-width: 1620px;
+  margin: 0 auto;
 }
 .ov-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
 /* ---------------- 标题区 ---------------- */
-.ov-head { display: flex; align-items: flex-start; gap: 20px; padding: 6px 4px 2px; }
+.ov-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 6px 4px 2px; }
+.ov-head .sr { margin-left: auto; }
 .ov-head h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
 .ov-head p { font-size: 12.5px; color: var(--text-mute); margin-top: 6px; }
 .ov-head .sr { margin-left: auto; display: flex; gap: 10px; align-items: center; }
@@ -45,7 +49,13 @@ body.ov {
 }
 
 /* ---------------- 三张彩色 hero ---------------- */
-.ov-hero3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ov-hero4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+/* 封板率卡进入顶部行后要更紧凑：环形图缩到 132，图例贴右侧 */
+.ov-seal { display: flex; flex-direction: column; }
+.ov-seal .ov-ch { margin-bottom: 6px; }
+.ov-seal .ov-donut { gap: 12px; flex: 1; align-items: center; }
+.ov-seal .ov-donut .ring svg { width: 132px; height: 132px; }
+.ov-seal .ov-leg { font-size: 11.5px; }
 .ov-hc {
   border-radius: 22px; padding: 20px; min-height: 150px; display: flex; flex-direction: column;
   min-width: 0; container-type: inline-size;
@@ -157,7 +167,7 @@ body.ov {
 .ov-hs .v small { display: block; font-size: 11px; color: var(--text-mute); font-weight: 400; margin-top: 1px; }
 
 /* ---------------- 同花顺热榜 + 连板天梯（左栏并排） ---------------- */
-.ov-row-rank { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
+.ov-row-rank { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; align-items: start; }
 
 /* 连板天梯：左侧「4 连板」标签 + 右侧名单 */
 .ov-lad { display: flex; flex-direction: column; }
@@ -178,15 +188,16 @@ body.ov {
 
 /* ---------------- 同花顺热榜（左栏，两列排布） ---------------- */
 .ov-rank2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+.ov-row-rank .ov-hs .r { padding: 7px 0; }
+.ov-row-rank .ov-hs .nm { font-size: 12.5px; }
+.ov-row-rank .ov-hs .nm2 { font-size: 10.5px; }
+.ov-row-rank .ov-hs .v { font-size: 12.5px; }
 .ov-rank2 .ov-hs { min-width: 0; }
 
 .ov-src { font-size: 11px; line-height: 1.8; color: var(--text-mute); padding: 0 4px; }
 
-/* ---------------- 今日一句（页面最下方，整行通栏） ---------------- */
-.ov-row2 { display: grid; grid-template-columns: 1.32fr 1fr; gap: 16px; }
-/* 两栏都是 .ov-main 的 grid item；这两块排在右栏之后，跨满整行 */
-.ov-main > .ov-one,
-.ov-main > .ov-src { grid-column: 1 / -1; }
+/* ---------------- 两栏区（左侧图 + 板块 / 右侧 Top 榜） ---------------- */
+.ov-cols { display: grid; grid-template-columns: minmax(0, 1fr) 396px; gap: 16px; align-items: start; }
 .ov-one { display: flex; flex-direction: column; }
 .ov-one .ov-ch { margin-bottom: 0; }
 .ov-one p { font-size: 17px; line-height: 1.8; font-weight: 500; letter-spacing: -.01em; margin: auto 0; }
@@ -199,12 +210,14 @@ body.ov {
 
 /* ---------------- 断点 ---------------- */
 @media (max-width: 1599px) {
-  .ov-main { grid-template-columns: minmax(0, 1fr); max-width: 1100px; }
-  .ov-col { width: 100%; }
+  .ov-main { max-width: 1180px; }
+  .ov-cols { grid-template-columns: minmax(0, 1fr) 340px; }
+}
+@media (max-width: 1299px) {
+  .ov-hero4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 1099px) {
-  .ov-hero3 { grid-template-columns: minmax(0, 1fr); }
-  .ov-h3grid, .ov-row2 { grid-template-columns: minmax(0, 1fr) !important; }
+  .ov-cols, .ov-row-rank { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 899px) {
   .ov-head { flex-direction: column; gap: 12px; padding: 0 12px; }   /* 顶部留白由 .side 的 margin-bottom 统一给 */
@@ -212,8 +225,8 @@ body.ov {
   .ov-head .sr { margin-left: 0; width: 100%; }
   .ov-search { min-width: 0; flex: 1; }
   .ov-main { padding: 0 12px; gap: 12px; }
+  .ov-hero4 { grid-template-columns: minmax(0, 1fr); }
   .ov-rank2 { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .ov-row-rank { grid-template-columns: minmax(0, 1fr); }
   .ov-card { padding: 16px 16px; border-radius: 18px; }
   .ov-one p { font-size: 15px; }
 }

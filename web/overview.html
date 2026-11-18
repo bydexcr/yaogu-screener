@@ -17,40 +17,47 @@
 <aside class="side" id="appSide"></aside>
 
 <div class="ov-main">
-  <div class="ov-col">
 
-    <div class="ov-head">
-      <div>
-        <h1>市场全景</h1>
-        <p id="ovMeta">正在加载…</p>
-      </div>
-      <div class="sr">
-        <div class="ov-search">⌕ <input id="ovSearch" type="search" autocomplete="off" spellcheck="false"
-              placeholder="名称或代码" aria-label="股票搜索"></div>
-        <button class="ov-btn-dark" id="ovGo" type="button">分析</button>
+  <div class="ov-head">
+    <div>
+      <h1>市场全景</h1>
+      <p id="ovMeta">正在加载…</p>
+    </div>
+    <div class="sr">
+      <div class="ov-search">⌕ <input id="ovSearch" type="search" autocomplete="off" spellcheck="false"
+            placeholder="名称或代码" aria-label="股票搜索"></div>
+      <button class="ov-btn-dark" id="ovGo" type="button">分析</button>
+    </div>
+  </div>
+
+  <div class="ov-hero4">
+    <div class="ov-hc ov-sage">
+      <div class="top">涨跌家数 <span class="pill" id="ovPillTotal">全市场</span></div>
+      <div class="big" id="ovUpDown">—</div>
+      <div class="sub" id="ovUpDownSub">—</div>
+    </div>
+    <div class="ov-hc ov-amber">
+      <div class="top">两市成交额 <span class="pill" id="ovPillAmt">—</span></div>
+      <div class="big" id="ovAmt">—</div>
+      <div class="sub" style="display:flex;align-items:center" id="ovAmtSub">沪 + 深合计
+        <a class="link" href="/radar">看资金流</a></div>
+    </div>
+    <div class="ov-hc ov-lav">
+      <div class="top">涨停结构 <span class="pill" id="ovPillMood">—</span></div>
+      <div class="big" id="ovLimit">—</div>
+      <div class="sub" id="ovLimitSub">—</div>
+    </div>
+    <div class="ov-card ov-seal">
+      <div class="ov-ch"><h2>封板率</h2><span class="hint" id="ovSealHint">—</span></div>
+      <div class="ov-donut">
+        <div class="ring" id="ovDonut"></div>
+        <div class="ov-leg" id="ovLeg"></div>
       </div>
     </div>
+  </div>
 
-    <div class="ov-hero3">
-      <div class="ov-hc ov-sage">
-        <div class="top">涨跌家数 <span class="pill" id="ovPillTotal">全市场</span></div>
-        <div class="big" id="ovUpDown">—</div>
-        <div class="sub" id="ovUpDownSub">—</div>
-      </div>
-      <div class="ov-hc ov-amber">
-        <div class="top">两市成交额 <span class="pill" id="ovPillAmt">—</span></div>
-        <div class="big" id="ovAmt">—</div>
-        <div class="sub" style="display:flex;align-items:center" id="ovAmtSub">沪 + 深合计
-          <a class="link" href="/radar">看资金流</a></div>
-      </div>
-      <div class="ov-hc ov-lav">
-        <div class="top">涨停结构 <span class="pill" id="ovPillMood">—</span></div>
-        <div class="big" id="ovLimit">—</div>
-        <div class="sub" id="ovLimitSub">—</div>
-      </div>
-    </div>
-
-    <div class="ov-row2">
+  <div class="ov-cols">
+    <div class="ov-col">
       <div class="ov-card">
         <div class="ov-ch"><h2>涨跌分布</h2><span class="hint">按涨跌幅分 8 桶</span>
           <div class="ov-seg"><span class="on">家数</span><span>占比</span></div></div>
@@ -68,45 +75,34 @@
         <p class="ov-struct" id="ovStruct"></p>
         <div class="ov-chips" id="ovChips"></div>
       </div>
-
     </div>
 
-      <div class="ov-row-rank">
+    <div class="ov-col">
       <div class="ov-card">
-        <div class="ov-ch"><h2>同花顺热榜</h2><span class="hint" id="ovRankHint">—</span></div>
-        <div class="ov-rank2" id="ovRank"></div>
+        <div class="ov-ch"><h2>板块涨幅 Top</h2><span class="hint" id="ovTopHint">—</span></div>
+        <div class="ov-top4" id="ovTop4"></div>
       </div>
 
       <div class="ov-card">
-        <div class="ov-ch"><h2>连板天梯</h2><span class="hint" id="ovTierHint">—</span></div>
-        <div class="ov-lad" id="ovTier"></div>
+        <div class="ov-ch"><h2>热门个股 Top</h2>
+          <div class="ov-seg" id="ovHotSeg"><span class="on" data-t="hot">热股榜</span><span data-t="amt">成交额</span><span data-t="lhb">龙虎榜</span></div></div>
+        <div class="ov-hs" id="ovHot"></div>
+        <p class="ov-struct" id="ovHotNote"></p>
       </div>
-      </div>
-
+    </div>
   </div>
 
-  <div class="ov-col">
+  <div class="ov-row-rank">
     <div class="ov-card">
-      <div class="ov-ch"><h2>封板率</h2><span class="hint" id="ovSealHint">—</span></div>
-      <div class="ov-donut">
-        <div class="ring" id="ovDonut"></div>
-        <div class="ov-leg" id="ovLeg"></div>
-      </div>
+      <div class="ov-ch"><h2>同花顺热榜</h2><span class="hint" id="ovRankHint">—</span></div>
+      <div class="ov-rank2" id="ovRank"></div>
     </div>
 
     <div class="ov-card">
-      <div class="ov-ch"><h2>板块涨幅 Top</h2><span class="hint" id="ovTopHint">—</span></div>
-      <div class="ov-top4" id="ovTop4"></div>
+      <div class="ov-ch"><h2>连板天梯</h2><span class="hint" id="ovTierHint">—</span></div>
+      <div class="ov-lad" id="ovTier"></div>
     </div>
-
-    <div class="ov-card">
-      <div class="ov-ch"><h2>热门个股 Top</h2>
-        <div class="ov-seg" id="ovHotSeg"><span class="on" data-t="hot">热股榜</span><span data-t="amt">成交额</span><span data-t="lhb">龙虎榜</span></div></div>
-      <div class="ov-hs" id="ovHot"></div>
-      <p class="ov-struct" id="ovHotNote"></p>
-    </div>
-
-    </div>
+  </div>
 
   <div class="ov-card ov-one">
     <div class="ov-ch"><h2>今日一句</h2></div>

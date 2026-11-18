@@ -45,9 +45,11 @@
     var host = document.getElementById('ovBars');   // 注意：本文件里 el 是错误处理里的局部变量，不是工具函数
     var avail = host ? host.clientWidth : 0;
     var W = avail > 280 ? Math.min(avail, 920) : 920;
-    var H = Math.round(W * (W >= 700 ? 470 / 920 : 0.62));   // 窄屏略矮一点，别占满一屏
-    if (H < 260) H = 260;
-    var padL = 10, padB = 44, padT = 42, padR = 10;
+    // 压矮：原来 470/920≈0.51，降到 0.30，并给上下限（宽屏不再占掉半屏高度）
+    var H = Math.round(W * (W >= 700 ? 0.26 : 0.44));
+    if (H > 290) H = 290;
+    if (H < 190) H = 190;
+    var padL = 10, padB = 38, padT = 30, padR = 10;   // padT 收紧，图表上方不留大片空白
     var innerW = W - padL - padR, innerH = H - padT - padB;
     var mx = 0;
     buckets.forEach(function (b) { mx = Math.max(mx, b.count || 0); });
