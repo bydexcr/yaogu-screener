@@ -88,7 +88,13 @@ body.ov {
 
 /* ---------------- 热门板块表 ---------------- */
 .ov-pt { width: 100%; border-collapse: collapse; }
-.ov-pt th { font-size: 11px; color: var(--text-mute); font-weight: 500; text-align: right; padding: 0 0 8px; }
+/* 表头只留小灰字、不要底色：stock.css 的 thead th 带 --panel-3 米色带，
+   在这里会变成一条和卡片背景不一致的色块 */
+.ov-pt th {
+  font-size: 11px; color: var(--text-mute); font-weight: 500; text-align: right;
+  padding: 0 0 10px; background: transparent; position: static;
+  border-bottom: 1px solid var(--line-soft);
+}
 .ov-pt th:first-child { text-align: left; }
 .ov-pt td {
   padding: 11px 0; border-top: 1px solid var(--line-soft); text-align: right;
