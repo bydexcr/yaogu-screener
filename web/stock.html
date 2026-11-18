@@ -22,14 +22,15 @@
       <h1>个股分析</h1>
       <p class="an-sub"><span class="dot" id="statusBadge"></span><span id="statusText">等待输入</span></p>
     </div>
-    <div class="an-sr">
+  </div>
+
+  <div class="an-search">
     <div class="search-box" id="searchBox">
       <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16.2 16.2L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       <input id="searchInput" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
              placeholder="名称或代码" aria-label="股票搜索">
       <button id="searchBtn" class="btn-primary" type="button">分析</button>
       <div class="suggest" id="suggest" hidden></div>
-    </div>
     </div>
   </div>
 
@@ -68,7 +69,7 @@
   <!-- 分析结果 -->
   <section id="result" hidden>
     <div id="backBar" class="back-bar" hidden>
-      <a id="backBtn" class="btn-ghost" href="/">← 市场全景</a>
+      <a id="backBtn" class="btn-ghost" href="/stock">← 返回个股分析首页</a>
       <button id="expandAll" class="btn-ghost" type="button">展开全部</button>
     </div>
 
