@@ -95,6 +95,88 @@
   outline-offset: 2px;
 }
 
+/* ============================================================
+   设置面板（四页共用，唯一定义）
+   ------------------------------------------------------------
+   历史包袱：面板样式原先分散在 stock.css（三页）与妖股雷达页的内联样式里，
+   而两处细节并不一致（.seg button.on 一处蓝字蓝边、一处蓝色下划线），
+   雷达页还漏掉了按钮的 .btn-ghost，导致「关闭」按钮显示成浏览器默认方块。
+   现在统一到这里：四页都加载 nav.css，令牌用带回退的写法兼容两套命名。
+   ============================================================ */
+.settings-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 32, 51, .38);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.settings-mask[hidden] { display: none; }
+/* 深色下遮罩要更沉一点，否则白卡一进来整片发灰 */
+html[data-theme="dark"] .settings-mask { background: rgba(0, 0, 0, .62); }
+
+.settings-sheet {
+  width: min(420px, 100%);
+  padding: 18px 18px 16px;
+  background: var(--card, var(--panel, #fff));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 30px 70px -40px rgba(15, 32, 51, .6);
+}
+.settings-sheet h3 { margin: 0 0 4px; font-size: 15px; }
+.settings-sheet .sub {
+  margin: 0 0 12px; font-size: 11.5px;
+  color: var(--muted, var(--text-mute, #828b96));
+}
+/* 妖股雷达页给所有 .sub 加了一颗前置小圆点（卡片副标题的设计），
+   面板的说明行也被带上了 —— 面板是四页共用组件，这里复位，四处才完全一致 */
+.settings-sheet .sub::before { content: none; }
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--line-soft);
+}
+.settings-row .lbl { font-size: 13px; color: var(--fg, var(--text, #14181d)); }
+.settings-row .hint {
+  margin-top: 2px; font-size: 11px;
+  color: var(--muted, var(--text-mute, #828b96));
+}
+
+.seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line-soft);
+}
+.seg button {
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dim, var(--text-dim, #4c545e));
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color .15s, background .15s, border-color .15s;
+}
+.seg button svg { vertical-align: -2px; margin-right: 4px; }
+.seg button.on {
+  color: #1d4ed8;
+  font-weight: 650;
+  background: var(--card, var(--panel, #fff));
+  border-color: rgba(37, 99, 235, .34);
+}
+
+.settings-foot { display: flex; justify-content: flex-end; margin-top: 14px; }
+
 /* ---------------- 设置面板里的按钮（四页共用） ----------------
    设置面板是四个页面共用的组件，但它的样式分散在 stock.css（三页）与
    index.html 的内联样式（妖股雷达页）里，而 `.btn-ghost` 只在 stock.css 定义过——
