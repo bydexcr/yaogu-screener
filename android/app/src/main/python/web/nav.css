@@ -94,3 +94,28 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* ---------------- 设置面板里的按钮（四页共用） ----------------
+   设置面板是四个页面共用的组件，但它的样式分散在 stock.css（三页）与
+   index.html 的内联样式（妖股雷达页）里，而 `.btn-ghost` 只在 stock.css 定义过——
+   于是妖股雷达页的「关闭」按钮没有样式，直接显示浏览器默认的方块边框。
+   这里用带兜底的令牌把它补齐：雷达页用 --card-2/--dim，其余页用 --panel-2/--text-dim。 */
+.settings-sheet .btn-ghost {
+  border: 1px solid var(--line, #ddd8cf);
+  background: var(--card-2, var(--panel-2, #f4f1eb));
+  color: var(--dim, var(--text-dim, #4c545e));
+  font-size: 12.5px;
+  line-height: 1.4;
+  padding: 8px 14px;
+  border-radius: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.settings-sheet .btn-ghost:hover {
+  color: var(--fg, var(--text, #14181d));
+  border-color: var(--accent, #1e4fbf);
+}
+.settings-sheet .btn-ghost:active {
+  background: var(--card-3, var(--panel-3, #e9e5dc));
+}
