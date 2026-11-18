@@ -61,6 +61,18 @@ body.rd th {
   border-bottom: 1px solid var(--line-soft);
 }
 
+/* ---------------- 表格列距：让候选池 13 列整表放得下 ----------------
+   内联样式里 td/th 都是 8px 内边距，13 列共 208px，最后「状态」列会被挤出可视区；
+   收到 4px 后可省 ~104px，配合题材列限宽即可整表显示。 */
+body.rd table td,
+body.rd table th { padding: 8px 4px; }
+body.rd td.rr { max-width: 128px; }
+/* 首列贴卡片左边、末列贴右边，视觉上仍留一点气口 */
+body.rd table td:first-child,
+body.rd table th:first-child { padding-left: 2px; }
+body.rd table td:last-child,
+body.rd table th:last-child { padding-right: 2px; }
+
 /* ---------------- 底部板块资金矩阵 / 页脚 ---------------- */
 body.rd .sf { padding: 0; }
 body.rd .sf > .card { margin-bottom: 16px; }
