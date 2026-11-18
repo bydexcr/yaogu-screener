@@ -1995,7 +1995,7 @@ body.ov {
   .ov-h3grid, .ov-row3, .ov-row2 { grid-template-columns: minmax(0, 1fr) !important; }
 }
 @media (max-width: 899px) {
-  .ov-head { flex-direction: column; gap: 12px; padding: 14px 12px 0; }
+  .ov-head { flex-direction: column; gap: 12px; padding: 0 12px; }   /* 顶部留白由 .side 的 margin-bottom 统一给 */
   .ov-head h1 { font-size: 24px; }
   .ov-head .sr { margin-left: 0; width: 100%; }
   .ov-search { min-width: 0; flex: 1; }

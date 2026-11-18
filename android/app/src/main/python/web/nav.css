@@ -67,6 +67,8 @@
   .side {
     position: relative; border-radius: 0 0 20px 20px; padding: 12px 14px 10px;
     flex-direction: column; gap: 10px;
+    /* 导航卡片是深色块，下面紧接页面大标题；不留白会贴在一起（实测 0px） */
+    margin-bottom: 20px;
   }
   .side-logo { padding: 0 0 2px; }
   .side-logo i { width: 30px; height: 30px; border-radius: 10px; font-size: 14px; }
