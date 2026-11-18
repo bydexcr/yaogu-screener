@@ -9,7 +9,6 @@ body.ov {
   padding-right: 32px;
   padding-bottom: 32px;
 }
-body.ov.has-side { padding-left: 332px; }
 @media (max-width: 899px) {
   body.ov, body.ov.has-side { padding: 0 0 24px; }
   .ov-side-host { display: block; }

@@ -309,7 +309,9 @@ def dashboard() -> Dict[str, Any]:
         warnings.append("板块成分索引来自 %s，正在后台更新到今日，板块领涨股可能稍旧。" % mstat["date"])
     return {
         "ok": True,
-        "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+        # 带 +08:00 偏移：前端 new Date() 与字符串切片都能拿到本地时间
+        # （原先只写 UTC，页面上的"生成于"会比本地时间差 8 小时）
+        "generatedAt": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).isoformat(),
         "tradeDate": date,
         "breadth": sd.cached("mk:breadth", 60, breadth),
         "limits": sd.cached("mk:limits", 60, limit_board),

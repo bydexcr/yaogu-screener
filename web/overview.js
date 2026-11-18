@@ -197,10 +197,15 @@
         '<span class="v">' + s.v + '<small>' + s.unit + '</small></span></div>';
     }).join('') : '<div class="ov-skel">暂无数据</div>';
 
+    // 跨榜对照：缺哪一榜就只说有的，别输出「—（—）」这种空括号
     var amt0 = ((hot.turnoverTop || [])[0] || {}), lhb0 = ((hot.dragonTiger || [])[0] || {});
-    $('#ovHotNote').textContent = '人气榜前 ' + list.length + '；成交额榜首位 ' + (amt0.name || '—') +
-      '（' + big(amt0.turnover) + '），龙虎榜净买首位 ' + (lhb0.name || '—') +
-      '（' + (isNum(lhb0.netValue) ? (lhb0.netValue > 0 ? '+' : '') + big(lhb0.netValue) : '—') + '）。';
+    var bits = ['人气榜前 ' + list.length];
+    if (amt0.name) bits.push('成交额榜首位 ' + amt0.name + '（' + big(amt0.turnover) + '）');
+    if (lhb0.name && isNum(lhb0.netValue)) {
+      bits.push('龙虎榜净买首位 ' + lhb0.name +
+        '（' + (lhb0.netValue > 0 ? '+' : '') + big(lhb0.netValue) + '）');
+    }
+    $('#ovHotNote').textContent = bits.join('；') + '。';
   }
 
   function renderTail(d) {

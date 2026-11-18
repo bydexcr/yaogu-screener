@@ -51,7 +51,8 @@
 
 /* ---------------- 桌面：固定左侧 ---------------- */
 @media (min-width: 900px) {
-  body.has-side { padding-left: 332px; }
+  /* 32(左边距) + 300(栏宽) + 24(与主区的间隙) —— 间隙不能省，否则深色栏贴着内容 */
+  body.has-side { padding-left: 356px; }
   body.has-side .side {
     position: fixed; left: 32px; top: 32px; bottom: 32px; width: 300px; z-index: 90;
     box-shadow: 0 20px 40px -30px rgba(25, 24, 22, .7);
