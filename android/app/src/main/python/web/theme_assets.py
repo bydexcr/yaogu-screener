@@ -1977,7 +1977,8 @@ body.ov {
 .ov-hs .v small { display: block; font-size: 11px; color: var(--text-mute); font-weight: 400; margin-top: 1px; }
 
 /* ---------------- 同花顺热榜 + 连板天梯（左栏并排） ---------------- */
-.ov-row-rank { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; align-items: start; }
+/* 同花顺热榜 + 今日一句（今日一句在热榜右侧，正文垂直居中） */
+.ov-row-rank { display: grid; grid-template-columns: 1.75fr 1fr; gap: 16px; align-items: start; }
 
 /* 连板天梯：左侧「4 连板」标签 + 右侧名单 */
 .ov-lad { display: flex; flex-direction: column; }
@@ -2008,9 +2009,13 @@ body.ov {
 
 /* ---------------- 两栏区（左侧图 + 板块 / 右侧 Top 榜） ---------------- */
 .ov-cols { display: grid; grid-template-columns: minmax(0, 1fr) 396px; gap: 16px; align-items: start; }
+/* 左栏底部：热门板块靠左收缩，连板天梯在它右边 */
+.ov-pair { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
 .ov-one { display: flex; flex-direction: column; }
 .ov-one .ov-ch { margin-bottom: 0; }
 .ov-one p { font-size: 17px; line-height: 1.8; font-weight: 500; letter-spacing: -.01em; margin: auto 0; }
+.ov-row-rank .ov-one p { font-size: 14.5px; line-height: 1.75; }
+.ov-row-rank .ov-one { height: 100%; }
 .ov-one p b { background: linear-gradient(transparent 62%, rgba(232, 200, 122, .55) 62%); font-weight: 700; }
 .ov-one .foot { font-size: 11.5px; color: var(--text-mute); }
 .ov-one p.muted { font-size: 14px; font-weight: 400; color: var(--text-mute); }
@@ -2026,8 +2031,12 @@ body.ov {
 @media (max-width: 1299px) {
   .ov-hero4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+@media (max-width: 1399px) {
+  /* 内容列 < ~1000 时不再切左右两栏，否则左栏被压到 456 以下 */
+  .ov-cols { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 1099px) {
-  .ov-cols, .ov-row-rank { grid-template-columns: minmax(0, 1fr); }
+  .ov-pair, .ov-row-rank { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 899px) {
   .ov-head { flex-direction: column; gap: 12px; padding: 0 12px; }   /* 顶部留白由 .side 的 margin-bottom 统一给 */

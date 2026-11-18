@@ -65,16 +65,24 @@
         <p class="ov-concl" id="ovDist"></p>
       </div>
 
+      <div class="ov-pair">
+        <div class="ov-card">
+          <div class="ov-ch"><h2>热门板块</h2><span class="hint" id="ovSectorHint">—</span>
+            <div class="ov-seg"><span class="on">涨幅</span><span>成交额</span></div></div>
+          <table class="ov-pt">
+            <thead><tr><th>板块</th><th>领涨股</th><th>涨跌幅</th><th>成交额</th></tr></thead>
+            <tbody id="ovSectorBody"><tr><td colspan="4" class="ov-skel">加载中…</td></tr></tbody>
+          </table>
+          <p class="ov-struct" id="ovStruct"></p>
+          <div class="ov-chips" id="ovChips"></div>
+        </div>
+
       <div class="ov-card">
-        <div class="ov-ch"><h2>热门板块</h2><span class="hint" id="ovSectorHint">—</span>
-          <div class="ov-seg"><span class="on">涨幅</span><span>成交额</span></div></div>
-        <table class="ov-pt">
-          <thead><tr><th>板块</th><th>领涨股</th><th>涨跌幅</th><th>成交额</th></tr></thead>
-          <tbody id="ovSectorBody"><tr><td colspan="4" class="ov-skel">加载中…</td></tr></tbody>
-        </table>
-        <p class="ov-struct" id="ovStruct"></p>
-        <div class="ov-chips" id="ovChips"></div>
+        <div class="ov-ch"><h2>连板天梯</h2><span class="hint" id="ovTierHint">—</span></div>
+        <div class="ov-lad" id="ovTier"></div>
       </div>
+      </div>
+
     </div>
 
     <div class="ov-col">
@@ -98,17 +106,14 @@
       <div class="ov-rank2" id="ovRank"></div>
     </div>
 
-    <div class="ov-card">
-      <div class="ov-ch"><h2>连板天梯</h2><span class="hint" id="ovTierHint">—</span></div>
-      <div class="ov-lad" id="ovTier"></div>
+
+    <div class="ov-card ov-one">
+      <div class="ov-ch"><h2>今日一句</h2></div>
+      <p id="ovOne">—</p>
+      <div class="foot">规则生成，可逐条对标上方指标核对</div>
     </div>
   </div>
 
-  <div class="ov-card ov-one">
-    <div class="ov-ch"><h2>今日一句</h2></div>
-    <p id="ovOne">—</p>
-    <div class="foot">规则生成，可逐条对标上方指标核对</div>
-  </div>
 
   <div class="ov-src" id="ovSrc">数据源 同花顺金融数据服务</div>
 </div>
