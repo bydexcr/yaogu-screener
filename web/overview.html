@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light" id="metaColorScheme">
+<meta name="theme-color" content="#f7f5f1" id="metaThemeColor">
+<title>大A小散 · 市场全景</title>
+<link rel="stylesheet" href="/stock.css">
+<link rel="stylesheet" href="/stock-dark.css" data-theme-dark media="not all">
+<link rel="stylesheet" href="/nav.css">
+<link rel="stylesheet" href="/overview.css">
+</head>
+<body class="ov">
+
+<aside class="side" id="appSide"></aside>
+
+<div class="ov-main">
+  <div class="ov-col">
+
+    <div class="ov-head">
+      <div>
+        <h1>市场全景</h1>
+        <p id="ovMeta">正在加载…</p>
+      </div>
+      <div class="sr">
+        <div class="ov-search">⌕ <input id="ovSearch" type="search" autocomplete="off" spellcheck="false"
+              placeholder="名称或代码" aria-label="股票搜索"></div>
+        <button class="ov-btn-dark" id="ovGo" type="button">分析</button>
+      </div>
+    </div>
+
+    <div class="ov-hero3">
+      <div class="ov-hc" style="background:#dde3d1">
+        <div class="top">涨跌家数 <span class="pill" id="ovPillTotal">全市场</span></div>
+        <div class="big" id="ovUpDown">—</div>
+        <div class="sub" id="ovUpDownSub">—</div>
+      </div>
+      <div class="ov-hc" style="background:#f4d06b">
+        <div class="top">两市成交额 <span class="pill" id="ovPillAmt">—</span></div>
+        <div class="big" id="ovAmt">—</div>
+        <div class="sub" style="display:flex;align-items:center" id="ovAmtSub">沪 + 深合计
+          <a class="link" href="/radar">看资金流</a></div>
+      </div>
+      <div class="ov-hc" style="background:#c9c5e7">
+        <div class="top">涨停结构 <span class="pill" id="ovPillMood">—</span></div>
+        <div class="big" id="ovLimit">—</div>
+        <div class="sub" id="ovLimitSub">—</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.32fr 1fr;gap:16px">
+      <div class="ov-card">
+        <div class="ov-ch"><h2>涨跌分布</h2><span class="hint">按涨跌幅分 8 桶</span>
+          <div class="ov-seg"><span class="on">家数</span><span>占比</span></div></div>
+        <div id="ovBars"><div class="ov-skel">加载中…</div></div>
+        <p class="ov-concl" id="ovDist"></p>
+      </div>
+
+      <div class="ov-card">
+        <div class="ov-ch"><h2>热门板块</h2><span class="hint" id="ovSectorHint">—</span>
+          <div class="ov-seg"><span class="on">涨幅</span><span>成交额</span></div></div>
+        <table class="ov-pt">
+          <thead><tr><th>板块</th><th>领涨股</th><th>涨跌幅</th><th>成交额</th></tr></thead>
+          <tbody id="ovSectorBody"><tr><td colspan="4" class="ov-skel">加载中…</td></tr></tbody>
+        </table>
+        <p class="ov-struct" id="ovStruct"></p>
+        <div class="ov-chips" id="ovChips"></div>
+      </div>
+    </div>
+
+    <div class="ov-row3">
+      <div class="ov-card ov-one">
+        <div class="ov-ch"><h2>今日一句</h2></div>
+        <p id="ovOne">—</p>
+        <div class="foot">规则生成，可逐条对标上方指标核对</div>
+      </div>
+      <div class="ov-dark">
+        <h2>结构速览</h2>
+        <div id="ovBrief"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ov-col">
+    <div class="ov-card">
+      <div class="ov-ch"><h2>封板率</h2><span class="hint" id="ovSealHint">—</span></div>
+      <div class="ov-donut">
+        <div class="ring" id="ovDonut"></div>
+        <div class="ov-leg" id="ovLeg"></div>
+      </div>
+    </div>
+
+    <div class="ov-card">
+      <div class="ov-ch"><h2>板块涨幅 Top</h2><span class="hint" id="ovTopHint">—</span></div>
+      <div class="ov-top4" id="ovTop4"></div>
+    </div>
+
+    <div class="ov-card">
+      <div class="ov-ch"><h2>热门个股 Top</h2>
+        <div class="ov-seg" id="ovHotSeg"><span class="on" data-t="hot">热股榜</span><span data-t="amt">成交额</span><span data-t="lhb">龙虎榜</span></div></div>
+      <div class="ov-hs" id="ovHot"></div>
+      <p class="ov-struct" id="ovHotNote"></p>
+    </div>
+
+    <div class="ov-src" id="ovSrc">数据源 同花顺金融数据服务</div>
+  </div>
+</div>
+
+<script src="/nav.js"></script>
+<script src="/overview.js"></script>
+<script src="/theme.js"></script>
+</body>
+</html>

@@ -106,6 +106,28 @@ def _load_radar_dark() -> str:
     return _read_asset("radar-dark.css", "RADAR_DARK", "web.theme_assets")
 
 
+# ---------------- 市场全景页 + 左侧导航 ----------------
+def _load_overview_html() -> str:
+    html = _read_asset("overview.html", "HTML", "web.overview_assets")
+    return html or "<h1>overview.html 缺失</h1>"
+
+
+def _load_overview_css() -> str:
+    return _read_asset("overview.css", "CSS", "web.overview_assets")
+
+
+def _load_overview_js() -> str:
+    return _read_asset("overview.js", "JS", "web.overview_assets")
+
+
+def _load_nav_css() -> str:
+    return _read_asset("nav.css", "NAV_CSS", "web.nav_assets")
+
+
+def _load_nav_js() -> str:
+    return _read_asset("nav.js", "NAV_JS", "web.nav_assets")
+
+
 def _load_review_module():
     return _load_stock_module("stock_review")
 
@@ -160,6 +182,20 @@ def api_hits(days: int = 30) -> dict:
     """历史命中回顾：读引擎落盘的命中日志，按前复权日线算入场后收益。"""
     hit_log = _load_stock_module("hit_log")
     return hit_log.build(days=days)
+
+
+def api_overview() -> dict:
+    """市场全景：/api/market 的全量数据 + 服务端生成的派生文案（今日一句/结构句等）。"""
+    stock_market = _load_stock_module("stock_market")
+    d = stock_market.dashboard()
+    try:
+        market_text = _load_stock_module("market_text")
+        d["copy"] = market_text.summarize(d)
+    except BaseException as e:  # noqa: BLE001 - 文案挂了不能拖垮整页数字
+        d["copy"] = {}
+        _ERRORS.append({"at": __import__("time").strftime("%H:%M:%S"),
+                        "error": "market_text: %s" % e})
+    return d
 
 
 def api_diag() -> dict:
@@ -333,6 +369,9 @@ class _Handler(BaseHTTPRequestHandler):
                 days = 30
             self._json(self._safe(api_hits, days))
             return
+        if path.startswith("/api/overview"):
+            self._json(self._safe(api_overview))
+            return
         if path.startswith("/api/review/dates"):
             self._json(self._safe(api_review_dates))
             return
@@ -363,6 +402,18 @@ class _Handler(BaseHTTPRequestHandler):
         if path in ("/stock.css",):
             self._send(200, _load_stock_css().encode("utf-8"), "text/css; charset=utf-8")
             return
+        if path in ("/overview.css",):
+            self._send(200, _load_overview_css().encode("utf-8"), "text/css; charset=utf-8")
+            return
+        if path in ("/overview.js",):
+            self._send(200, _load_overview_js().encode("utf-8"), "text/javascript; charset=utf-8")
+            return
+        if path in ("/nav.css",):
+            self._send(200, _load_nav_css().encode("utf-8"), "text/css; charset=utf-8")
+            return
+        if path in ("/nav.js",):
+            self._send(200, _load_nav_js().encode("utf-8"), "text/javascript; charset=utf-8")
+            return
         if path in ("/stock.js",):
             self._send(200, _load_stock_js().encode("utf-8"), "text/javascript; charset=utf-8")
             return
@@ -381,7 +432,16 @@ class _Handler(BaseHTTPRequestHandler):
         if path in ("/radar-dark.css",):
             self._send(200, _load_radar_dark().encode("utf-8"), "text/css; charset=utf-8")
             return
-        if path in ("/", "/index.html", "/stock"):
+        if path in ("/overview", "/overview.html"):
+            self._send(200, _load_overview_html().encode("utf-8"), "text/html; charset=utf-8")
+            return
+        if path == "/":
+            # 落地页＝市场全景；带 ?q= 时仍然进个股分析（老链接与 ?q= 分享保持可用）
+            q = (qs.get("q", [""])[0] or "").strip()
+            html = _load_stock_html() if q else _load_overview_html()
+            self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
+            return
+        if path in ("/index.html", "/stock"):
             self._send(200, _load_stock_html().encode("utf-8"), "text/html; charset=utf-8")
             return
         if path == "/radar":

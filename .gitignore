@@ -52,3 +52,6 @@ desktop.ini
 # ---- 个股分析页：板块成分索引落盘缓存（运行时生成，按日可重建） ----
 stock_membership_*.json
 **/stock_membership_*.json
+
+# ---- pytest 临时目录（在仓库根跑测试时会生成，别提交） ----
+pytest-of-*/

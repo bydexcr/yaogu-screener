@@ -1,0 +1,187 @@
+/* ============================================================
+   overview.css —— 市场全景页（左栏 + 主力区 + 右栏）
+   令牌沿用 stock.css 的 :root；本文件只加页面级版式
+   ============================================================ */
+
+body.ov {
+  background: var(--bg);
+  padding-top: 32px;
+  padding-right: 32px;
+  padding-bottom: 32px;
+}
+body.ov.has-side { padding-left: 332px; }
+@media (max-width: 899px) {
+  body.ov, body.ov.has-side { padding: 0 0 24px; }
+  .ov-side-host { display: block; }
+}
+
+.ov-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 396px;
+  gap: 16px;
+  align-items: start;
+  max-width: 1620px;
+}
+.ov-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* ---------------- 标题区 ---------------- */
+.ov-head { display: flex; align-items: flex-start; gap: 20px; padding: 6px 4px 2px; }
+.ov-head h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.ov-head p { font-size: 12.5px; color: var(--text-mute); margin-top: 6px; }
+.ov-head .sr { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+.ov-search {
+  display: flex; align-items: center; gap: 9px; min-width: 300px; padding: 11px 16px;
+  border-radius: 999px; background: var(--panel); border: 1px solid var(--line);
+  color: var(--text-mute); font-size: 13.5px;
+}
+.ov-search input {
+  border: 0; outline: 0; background: transparent; font: inherit; color: var(--text);
+  width: 100%; min-width: 0;
+}
+.ov-btn-dark {
+  padding: 11px 26px; border-radius: 999px; background: #1b1a17; color: #fff; font-size: 14px;
+  font-weight: 600; border: 0; cursor: pointer; font-family: inherit;
+}
+
+/* ---------------- 三张彩色 hero ---------------- */
+.ov-hero3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ov-hc {
+  border-radius: 22px; padding: 20px; min-height: 150px; display: flex; flex-direction: column;
+  min-width: 0; container-type: inline-size;
+}
+.ov-hc .top { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: #2e2b24; }
+.ov-hc .pill {
+  padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, .62);
+  font-size: 11.5px; font-weight: 500; color: #4a453b;
+}
+.ov-hc .big {
+  font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.05em;
+  font-size: clamp(24px, 1.9vw, 36px); font-weight: 700; line-height: 1.15; margin: 10px 0 0;
+  white-space: nowrap;
+}
+@supports (container-type: inline-size) {
+  .ov-hc .big { font-size: clamp(19px, 11cqw, 36px); }
+}
+.ov-hc .big small { font-size: .44em; font-weight: 600; letter-spacing: 0; margin: 0 2px; }
+.ov-hc .sub { margin-top: auto; padding-top: 10px; font-size: 12px; color: #4a453b; opacity: .85; }
+.ov-hc .sub em { font-style: normal; font-weight: 600; }
+.ov-hc .link {
+  margin-left: auto; padding: 6px 14px; border-radius: 999px; background: #fff; color: #2e2b24;
+  font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap;
+}
+
+/* ---------------- 通用卡 ---------------- */
+.ov-card {
+  background: var(--panel); border-radius: 22px; padding: 20px 22px;
+  box-shadow: 0 1px 2px rgba(28, 24, 16, .05), 0 12px 28px -18px rgba(28, 24, 16, .22);
+  min-width: 0;
+}
+.ov-ch { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.ov-ch h2 { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+.ov-ch .hint { font-size: 11.5px; color: var(--text-mute); }
+.ov-seg { margin-left: auto; display: flex; gap: 2px; padding: 3px; background: var(--panel-2); border-radius: 999px; }
+.ov-seg span { padding: 5px 13px; border-radius: 999px; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+.ov-seg span.on { background: var(--panel); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(28, 24, 16, .10); }
+.ov-chart { width: 100%; height: auto; display: block; }
+.ov-chart text { font-family: var(--mono); font-size: 11.5px; fill: var(--text-mute); }
+.ov-concl { font-size: 12.5px; color: var(--text-dim); line-height: 1.75; margin-top: 6px; }
+.ov-concl b { font-weight: 700; color: var(--text); }
+
+/* ---------------- 热门板块表 ---------------- */
+.ov-pt { width: 100%; border-collapse: collapse; }
+.ov-pt th { font-size: 11px; color: var(--text-mute); font-weight: 500; text-align: right; padding: 0 0 8px; }
+.ov-pt th:first-child { text-align: left; }
+.ov-pt td {
+  padding: 11px 0; border-top: 1px solid var(--line-soft); text-align: right;
+  font-size: 13px; font-family: var(--mono); font-variant-numeric: tabular-nums;
+}
+.ov-pt td:first-child { text-align: left; font-family: var(--font); }
+.ov-pt td.ld { text-align: left; font-size: 12.5px; color: var(--text-dim); white-space: nowrap; }
+.ov-pt .nm { font-size: 14px; font-weight: 600; display: block; }
+.ov-pt .nm2 { font-size: 11.5px; color: var(--text-mute); margin-top: 2px; }
+.ov-pt .ld i { font-style: normal; color: var(--up); margin-left: 4px; }
+.ov-struct { font-size: 12.5px; color: var(--text-dim); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+.ov-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.ov-chip { padding: 5px 12px; border-radius: 999px; background: var(--panel-2); font-size: 11.5px; color: var(--text-dim); }
+.ov-chip b { font-family: var(--mono); font-weight: 700; color: var(--text); margin-left: 4px; }
+
+/* ---------------- 右栏 ---------------- */
+.ov-donut { display: flex; align-items: center; gap: 16px; }
+.ov-donut .ring { position: relative; flex: none; }
+.ov-donut .c { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.ov-donut .c i { font-style: normal; display: block; font-size: 11px; color: var(--text-mute); }
+.ov-donut .c b { font-family: var(--mono); font-size: 23px; font-weight: 700; letter-spacing: -.02em; }
+.ov-leg { display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; color: var(--text-dim); }
+.ov-leg i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 7px; }
+.ov-leg b { font-family: var(--mono); color: var(--text); margin-left: 6px; }
+
+.ov-top4 { display: flex; flex-direction: column; }
+.ov-t4 {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  padding: 11px 0; border-top: 1px solid var(--line-soft);
+}
+.ov-t4:first-child { border-top: 0; }
+.ov-rk {
+  width: 22px; height: 22px; border-radius: 7px; background: var(--panel-2); color: var(--text-dim);
+  font: 600 11px/22px var(--mono); text-align: center;
+}
+.ov-t4 .nm { font-size: 13.5px; font-weight: 600; }
+.ov-t4 .nm2 { display: block; font-size: 11.5px; color: var(--text-mute); margin-top: 2px; font-weight: 400; }
+.ov-t4 .v { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13.5px; font-weight: 600; color: var(--up); }
+.ov-t4 .v small { display: block; font-size: 11px; color: var(--text-mute); font-weight: 400; margin-top: 1px; }
+
+.ov-hs { display: flex; flex-direction: column; }
+.ov-hs .r {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  padding: 10px 0; border-top: 1px solid var(--line-soft);
+}
+.ov-hs .r:first-child { border-top: 0; }
+.ov-hs .nm { font-size: 13.5px; font-weight: 600; }
+.ov-hs .nm2 { display: block; font-size: 11px; color: var(--text-mute); margin-top: 2px; font-family: var(--mono); font-weight: 400; }
+.ov-hs .v { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13.5px; font-weight: 600; }
+.ov-hs .v small { display: block; font-size: 11px; color: var(--text-mute); font-weight: 400; margin-top: 1px; }
+
+.ov-src { font-size: 11px; line-height: 1.8; color: var(--text-mute); padding: 0 4px; }
+
+/* ---------------- 今日一句 + 结构速览 ---------------- */
+.ov-row3 { display: grid; grid-template-columns: 1.94fr 1fr; gap: 16px; align-items: stretch; }
+.ov-one { display: flex; flex-direction: column; }
+.ov-one .ov-ch { margin-bottom: 0; }
+.ov-one p { font-size: 17px; line-height: 1.8; font-weight: 500; letter-spacing: -.01em; margin: auto 0; }
+.ov-one p b { background: linear-gradient(transparent 62%, rgba(232, 200, 122, .55) 62%); font-weight: 700; }
+.ov-one .foot { font-size: 11.5px; color: var(--text-mute); }
+.ov-one p.muted { font-size: 14px; font-weight: 400; color: var(--text-mute); }
+.ov-dark { background: #191816; border-radius: 22px; padding: 20px 22px; color: #efeade; box-shadow: 0 12px 28px -18px rgba(28, 24, 16, .35); }
+.ov-dark h2 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: #fff; }
+.ov-kv {
+  display: flex; align-items: baseline; justify-content: space-between; padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, .08); font-size: 13px; color: #a8a294;
+}
+.ov-kv:first-of-type { border-top: 0; }
+.ov-kv b {
+  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 17px; color: #e8c87a;
+  font-weight: 700; letter-spacing: -.01em;
+}
+
+/* ---------------- 骨架 / 错误 ---------------- */
+.ov-skel { padding: 40px 8px; text-align: center; color: var(--text-mute); font-size: 13px; }
+.ov-err { padding: 14px 18px; border-radius: 14px; background: rgba(225, 29, 51, .08); color: var(--up); font-size: 13px; }
+
+/* ---------------- 断点 ---------------- */
+@media (max-width: 1599px) {
+  .ov-main { grid-template-columns: minmax(0, 1fr); max-width: 1100px; }
+  .ov-col { width: 100%; }
+}
+@media (max-width: 1099px) {
+  .ov-hero3 { grid-template-columns: minmax(0, 1fr); }
+  .ov-h3grid, .ov-row3 { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@media (max-width: 899px) {
+  .ov-head { flex-direction: column; gap: 12px; padding: 14px 12px 0; }
+  .ov-head h1 { font-size: 24px; }
+  .ov-head .sr { margin-left: 0; width: 100%; }
+  .ov-search { min-width: 0; flex: 1; }
+  .ov-main { padding: 0 12px; gap: 12px; }
+  .ov-card { padding: 16px 16px; border-radius: 18px; }
+  .ov-one p { font-size: 15px; }
+}

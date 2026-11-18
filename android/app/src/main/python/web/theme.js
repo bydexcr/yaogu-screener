@@ -61,6 +61,7 @@
   }
 
   window.__theme = { set: set, get: stored, isDark: function () { return stored() === DARK; } };
+  window.__openSheet = function (open) { openSheet(open); };   // 供侧栏「设置」调用
 
   // ---------------- 设置面板 ----------------
   // 焦点陷阱：设置面板与雷达页的候选详情弹窗共用（Tab 在弹窗内循环，不跑到背后的页面）
