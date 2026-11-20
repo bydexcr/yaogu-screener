@@ -74,6 +74,47 @@ def test_short_history_is_skipped_silently(monkeypatch, tmp_path, capsys):
     assert "种子缺日K 0 只" in capsys.readouterr().out
 
 
+def test_empty_cache_is_ignored(monkeypatch, tmp_path):
+    """空池缓存不可信（T-1 数据没发布时会写下空文件）→ 必须忽略并重建。"""
+    cache = tmp_path / "pool_2025-06-03.json"
+    cache.write_text(json.dumps({"t1_date": "2025-06-03", "candidates": []}), encoding="utf-8")
+    fake = FakeApi()
+    _run(monkeypatch, tmp_path, fake)
+    assert fake.calls, "读到空缓存就直接返回了，没有重建"
+
+
+def test_empty_pool_is_not_cached(monkeypatch, tmp_path):
+    """候选为 0 时不写缓存，否则当天再也恢复不了。"""
+    _run(monkeypatch, tmp_path, FakeApi())
+    assert not (tmp_path / "pool_2025-06-03.json").exists()
+
+
+def test_diag_reports_no_seed_when_pools_empty(monkeypatch, tmp_path):
+    """T-1 涨停池/炸板池都为空时，diag 应标 no_seed（供页面说明原因）。"""
+    class EmptyApi(FakeApi):
+        def limit_up_pool(self, d):
+            return []
+        def limit_break_pool(self, d):
+            return []
+    diag = {}
+    monkeypatch.setattr(PM, "api", EmptyApi())
+    pool = PM.build_pool("2025-06-03", "2025-06-04", {}, tmp_path, diag=diag)
+    assert pool == []
+    assert diag["reason"] == "no_seed" and diag["seeds"] == 0
+
+
+def test_diag_reports_api_error(monkeypatch, tmp_path):
+    """涨停池接口报错不该冒泡，diag 标 api_error。"""
+    class BoomApi(FakeApi):
+        def limit_up_pool(self, d):
+            raise RuntimeError("429 限流")
+    diag = {}
+    monkeypatch.setattr(PM, "api", BoomApi())
+    pool = PM.build_pool("2025-06-03", "2025-06-04", {}, tmp_path, diag=diag)
+    assert pool == []
+    assert diag["reason"] == "api_error"
+
+
 def test_bad_pool_workers_env_is_tolerated(monkeypatch, tmp_path):
     """POOL_WORKERS 写错不该让整次扫描崩掉。"""
     monkeypatch.setenv("POOL_WORKERS", "not-a-number")

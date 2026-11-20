@@ -873,7 +873,7 @@ async function refresh(){
     }
     // 候选表
     const cs=st.candidates||[];
-    if(!cs.length){ $("#cand").innerHTML='<tr><td colspan="13"><div class="empty">当前无候选股（T-1条件未命中）</div></td></tr>'; return; }
+    if(!cs.length){ var pn=(st.pool_note||'当前无候选股（T-1条件未命中）'); $("#cand").innerHTML='<tr><td colspan="13"><div class="empty">'+pn+'</div></td></tr>'; return; }
     $("#cand").innerHTML=cs.map(c=>{
       CAND[c.thscode]=c;   // 供点击弹窗读取
       const zp=c.zone||"";

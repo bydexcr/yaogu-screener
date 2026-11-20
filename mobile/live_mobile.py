@@ -42,6 +42,9 @@ GREEN = "\033[92m"; RED = "\033[91m"; YELLOW = "\033[93m"; CYAN = "\033[96m"
 BOLD = "\033[1m"; DIM = "\033[2m"; RESET = "\033[0m"
 
 
+POOL_RETRY_SEC = 60.0        # 空候选池的重建节流间隔（秒）
+
+
 def now_local() -> dt.datetime:
     return dt.datetime.now(TZ)
 
@@ -106,12 +109,21 @@ class MobileEngine:
     def ensure_pool(self, force=False):
         if self.pool and self.pool_key == self.t1_date and not force:
             return True
+        # 空池不是"今天的结论"，多半是 T-1 数据还没发布：节流重试，别每 30s 打一次接口
+        if not self.pool and self.pool_key == self.t1_date and not force:
+            if time.time() - getattr(self, "_pool_retry_ts", 0.0) < POOL_RETRY_SEC:
+                return True
         print(f"[日期] T={self.t_date}  T-1={self.t1_date}  T-2={self.t2_date}", flush=True)
+        diag: dict = {}
         self.pool = pm.build_pool(self.t1_date, self.t2_date, self.strat,
                                   self.data_dir, force=force,
                                   exclude_st=bool(self.cfg.get("exclude_st", True)),
-                                  exclude_bj=bool(self.cfg.get("exclude_bj", True)))
+                                  exclude_bj=bool(self.cfg.get("exclude_bj", True)),
+                                  diag=diag)
+        self.pool_diag = diag
         self.pool_key = self.t1_date
+        if not self.pool:
+            self._pool_retry_ts = time.time()
         self.watch, self.hits, self.deep_hits, self.events = {}, [], [], []
         # App 重启/当日中断后，恢复当天已记录的命中（供盘中时间线与盘后复盘）
         try:
@@ -314,6 +326,10 @@ class MobileEngine:
             "data_ready": self.data_ready,
             "t_date": self.t_date, "t1_date": self.t1_date, "t2_date": self.t2_date,
             "pool_size": len(self.pool), "interval": self.cfg.get("interval_seconds", 30),
+            # 空池时说清楚原因，别把"数据没到"说成"条件未命中"
+            "pool_note": self._pool_note(),
+            "pool_seeds": (getattr(self, "pool_diag", {}) or {}).get("seeds", 0),
+            "pool_missing": (getattr(self, "pool_diag", {}) or {}).get("missing", 0),
             # 当前相位的真实节奏（集合竞价 10s / 连续竞价 interval / 收盘后 300s），
             # 前端按它决定下一次轮询，而不是写死 3 秒
             "next_refresh": getattr(self, "next_refresh", None) or self.cfg.get("interval_seconds", 30),
@@ -336,6 +352,24 @@ class MobileEngine:
             "errors": res.get("errors", []),
             "candidates": res.get("candidates", [c.to_dict() for c in self.pool]),
         }
+
+    def _pool_note(self) -> str:
+        """空候选池的原因说明（有候选时为空串）。"""
+        if self.pool:
+            return ""
+        diag = getattr(self, "pool_diag", {}) or {}
+        reason = diag.get("reason")
+        seeds = int(diag.get("seeds") or 0)
+        missing = int(diag.get("missing") or 0)
+        if reason == "api_error":
+            return "T-1 涨停池/炸板池接口暂时取不到，稍后自动重试"
+        if reason == "no_seed":
+            return "T-1(%s) 涨停池/炸板池暂无数据，可能是数据尚未发布，稍后自动重试" % self.t1_date
+        if reason == "no_bars":
+            return "T-1 涨停池有 %d 只，但日K 全部取不到（%d 只失败），稍后自动重试" % (seeds, missing)
+        if seeds:
+            return "T-1 条件未命中：%d 只种子里没有同时满足涨幅/主板/成交额/新高的" % seeds
+        return "候选池尚未生成，稍后自动重试"
 
     def state_json(self) -> str:
         return json.dumps(self.state, ensure_ascii=False, default=str)

@@ -58,21 +58,39 @@ def _bars_to_daily(items: List[dict], until_date: str) -> List[DailyBar]:
 
 def build_pool(t1_date: str, t2_date: str, strat: dict, cache_dir: Path,
                force: bool = False, exclude_st: bool = True,
-               exclude_bj: bool = True) -> List[Candidate]:
-    """构建并缓存候选池；返回 Candidate 列表（按评分降序）。"""
+               exclude_bj: bool = True, diag: Optional[Dict[str, object]] = None) -> List[Candidate]:
+    """构建并缓存候选池；返回 Candidate 列表（按评分降序）。
+
+    diag（可选出参）：写入 seeds / missing / reason，供上层把"为什么 0 只"讲清楚。
+      reason: ok / no_seed（T-1 涨停池+炸板池为空）/ api_error / no_bars
+    """
+    d = diag if diag is not None else {}
+    d.setdefault("seeds", 0)
+    d.setdefault("missing", 0)
+    d.setdefault("reason", "ok")
+
     cache = cache_dir / f"pool_{t1_date}.json"
     if not force and cache.exists():
         try:
             data = json.loads(cache.read_text(encoding="utf-8"))
-            if data.get("t1_date") == t1_date:
-                print(f"[缓存] 候选池 {len(data.get('candidates', []))} 只来自 {cache.name}", flush=True)
-                return [Candidate(**e) for e in data["candidates"]]
+            cands = data.get("candidates") or []
+            # 空池缓存不可信：可能是 T-1 涨停池还没发布时写下的，读到就重建（自愈）
+            if data.get("t1_date") == t1_date and cands:
+                print(f"[缓存] 候选池 {len(cands)} 只来自 {cache.name}", flush=True)
+                return [Candidate(**e) for e in cands]
+            if data.get("t1_date") == t1_date and not cands:
+                print(f"[缓存] {cache.name} 是空池（可能上次 T-1 数据未就绪），忽略并重建", flush=True)
         except Exception:
             pass
 
     print("[扫描] 拉取 T-1 涨停池 / 炸板池…", flush=True)
-    lu_items = api.limit_up_pool(t1_date)
-    bk_items = api.limit_break_pool(t1_date)
+    try:
+        lu_items = api.limit_up_pool(t1_date)
+        bk_items = api.limit_break_pool(t1_date)
+    except Exception as e:      # 接口失败/限流：不要冒泡成整轮失败，如实报告
+        print(f"[扫描] 涨停池/炸板池获取失败: {type(e).__name__}: {e}", flush=True)
+        d["reason"] = "api_error"
+        return []
     lu_map = _lu_map(lu_items)
 
     seeds: Dict[str, dict] = {}
@@ -84,6 +102,12 @@ def build_pool(t1_date: str, t2_date: str, strat: dict, cache_dir: Path,
         code = it.get("thscode")
         if code and code not in seeds:
             seeds[code] = {"name": it.get("name") or code, "is_st": False}
+    d["seeds"] = len(seeds)
+    if not seeds:
+        # T-1 涨停池/炸板池都是空的：多半是数据还没发布，下一轮重试
+        print(f"[种子] 涨停池 0 + 炸板池 0 → T-1({t1_date}) 数据可能尚未发布", flush=True)
+        d["reason"] = "no_seed"
+        return []
     print(f"[种子] 涨停池 {len(lu_items)} + 炸板池 {len(bk_items)} -> 去重 {len(seeds)} 只，逐只拉日K…", flush=True)
 
     end_ms = api.to_ms(t1_date) + 20 * 3600 * 1000     # T-1 收盘后
@@ -132,7 +156,13 @@ def build_pool(t1_date: str, t2_date: str, strat: dict, cache_dir: Path,
     # 并发抓取后顺序不定，排序用 thscode 兜底，保证同样输入永远同样输出
     pool.sort(key=lambda c: (-c.score, -c.t1_pct, c.thscode))
 
-    # 缓存
+    # 缓存：空池不落盘，避免把"数据没到"固化成当天的空结果
+    d["missing"] = missing
+    if not pool:
+        d["reason"] = "no_bars" if missing else "ok"
+        print(f"[结果] 候选 0 只 (T-1={t1_date}, 种子缺日K {missing} 只)，不写缓存，下轮重试",
+              flush=True)
+        return []
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps({"t1_date": t1_date,
                                  "candidates": [c.to_dict() for c in pool]},
