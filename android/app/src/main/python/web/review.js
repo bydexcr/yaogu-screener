@@ -287,7 +287,7 @@
       const code = n.getAttribute('data-code');
       if (!code) return;
       n.classList.add('clickable');
-      n.addEventListener('click', () => { location.href = '/?q=' + encodeURIComponent(code); });
+      n.addEventListener('click', () => { location.href = '/stock?q=' + encodeURIComponent(code); });
     });
 
     const mainName = ((d.rotation || {}).main || {}).name;
@@ -351,7 +351,7 @@
     const close = () => { box.hidden = true; items = []; };
     const submit = (q) => {
       const v = (q || input.value || '').trim();
-      if (v) location.href = '/?q=' + encodeURIComponent(v);
+      if (v) location.href = '/stock?q=' + encodeURIComponent(v);
     };
     let timer;
     input.addEventListener('input', () => {
@@ -503,7 +503,7 @@
         const code = n.getAttribute('data-code');
         if (!code) return;
         n.classList.add('clickable');
-        n.addEventListener('click', () => { location.href = '/?q=' + encodeURIComponent(code); });
+        n.addEventListener('click', () => { location.href = '/stock?q=' + encodeURIComponent(code); });
       });
     } catch (err) {
       box.innerHTML = `<div class="rv-empty">历史命中加载失败：${esc(err.message || '网络错误')}</div>`;
