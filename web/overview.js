@@ -118,7 +118,9 @@
     var a = amtParts(b.turnover);
     $('#ovPillAmt').textContent = Math.round((b.turnover || 0) / 1e8) + ' 亿';
     $('#ovAmt').innerHTML = pre ? '—' : a[0] + ' <small>' + a[1] + '</small>';
-    $('#ovAmtSub').innerHTML = '沪 + 深合计 · 覆盖 ' + (b.total || 0) + ' 只<a class="link" href="/radar">看资金流</a>';
+    // 注意：这一行会覆盖 HTML 里的静态链接，改链接要同步改这里
+    $('#ovAmtSub').innerHTML = '沪 + 深合计 · 覆盖 ' + (b.total || 0) +
+      ' 只<a class="link" href="#ovFlow">看资金流 ↓</a>';
 
     $('#ovPillMood').textContent = copy.mood || '—';
     $('#ovLimit').innerHTML = pre ? '—'
