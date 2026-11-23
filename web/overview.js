@@ -27,7 +27,7 @@
   };
   var upDown = function (v) { return !isNum(v) ? '' : (v > 0 ? 'up' : (v < 0 ? 'down' : '')); };
 
-  var state = { data: null, hot: 'hot' };
+  var state = { data: null, hot: 'hot', sf: null };
 
   /* 盘前/未开盘：breadth 各桶全 0 —— 这时候不要摆一排 0，直接说"盘前" */
   function isEmptyMarket(d) {
@@ -279,6 +279,73 @@
     if (hint) hint.textContent = '最高 ' + Math.round(lim.highestBoard || 0) + ' 板';
   }
 
+  /* ---------------------------------------------------------------- 板块资金流 */
+  function flowRow(it, positive) {
+    var net = (it.net || 0) / 1e8;
+    var nm = (it.names || []).slice(0, 3).join('、');
+    var sub = (it.stocks ? it.stocks + ' 只' : '') +
+      (it.days ? ' · ' + it.days + ' 日' : '') +
+      (nm ? ' · ' + nm : '');
+    return '<div class="ov-flow-row"><span><span class="nm">' + esc(it.concept || '—') +
+      '</span><span class="sub">' + esc(sub) + '</span></span>' +
+      '<span class="v ' + (positive ? 'up' : 'down') + '">' +
+      (net > 0 ? '+' : '') + net.toFixed(2) + ' 亿</span></div>';
+  }
+
+  function renderFlow() {
+    var box = document.getElementById('ovFlow');
+    if (!box) return;
+    var sf = (state.sf || {}).sector_flow;
+    var hint = document.getElementById('ovFlowHint');
+    var inBox = document.getElementById('ovFlowIn');
+    var outBox = document.getElementById('ovFlowOut');
+    var chips = document.getElementById('ovFlowChips');
+    var note = document.getElementById('ovFlowNote');
+
+    if (!sf || !sf.enabled) {
+      if (hint) hint.textContent = '未启用';
+      inBox.innerHTML = outBox.innerHTML = '<div class="ov-skel">当前引擎未提供板块资金流</div>';
+      if (chips) chips.innerHTML = '';
+      if (note) note.textContent = '板块资金流由 PC 引擎计算（手机端为单一数据源，可能不提供）。';
+      return;
+    }
+
+    var cf = sf.concept_flow || {};
+    var st = sf.stats || {};
+    var em = sf.emotion || {};
+    var inl = (cf.inflow || []).slice(0, 5);
+    var outl = (cf.outflow || []).slice(0, 5);
+
+    if (hint) {
+      hint.textContent = '龙虎榜口径 · 锚定 ' + (sf.trade_date || '—') +
+        ' · 扫描 ' + (sf.scan_count || 0) + ' 板块' +
+        (cf.concept_count ? ' · 概念 ' + cf.concept_count : '');
+    }
+    inBox.innerHTML = inl.length ? inl.map(function (x) { return flowRow(x, true); }).join('')
+      : '<div class="ov-skel">今日无净流入板块</div>';
+    outBox.innerHTML = outl.length ? outl.map(function (x) { return flowRow(x, false); }).join('')
+      : '<div class="ov-skel">今日无净流出板块</div>';
+
+    var rs = sf.resonance || {};
+    var q = function (k) { return (rs[k] || []).length; };
+    var bits = [];
+    bits.push('<span class="ov-chip">共振流入<b>' + q('q1') + '</b></span>');
+    bits.push('<span class="ov-chip">资金先行<b>' + q('q2') + '</b></span>');
+    bits.push('<span class="ov-chip">上涨派发<b>' + q('q3') + '</b></span>');
+    bits.push('<span class="ov-chip">资金撤离<b>' + q('q4') + '</b></span>');
+    bits.push('<span class="ov-chip">潜伏<b>' + (st.ambush || 0) + '</b></span>');
+    bits.push('<span class="ov-chip">弱势<b>' + (st.weak || 0) + '</b></span>');
+    if (isNum(em.limit_up)) bits.push('<span class="ov-chip">涨停<b>' + em.limit_up + '</b></span>');
+    if (isNum(em.limit_break)) bits.push('<span class="ov-chip">炸板<b>' + em.limit_break + '</b></span>');
+    if (isNum(em.limit_down)) bits.push('<span class="ov-chip">跌停<b>' + em.limit_down + '</b></span>');
+    if (chips) chips.innerHTML = bits.join('');
+
+    if (note) {
+      note.textContent = '口径：概念/板块的龙虎榜净买入额（按成分股汇总），不是主力资金净流入；' +
+        '「资金先行」= 龙虎榜净买入但板块未涨。更新 ' + (sf.updated || '—') + '。';
+    }
+  }
+
   function renderTail(d) {
     var lim = d.limits || {}, pre = isEmptyMarket(d);
     var one = (d.copy || {}).oneSentence;
@@ -312,7 +379,20 @@
     if (m) m.textContent = '加载失败';
   }
 
+  async function loadState() {
+    // 资金流只在 /api/state 里（与妖股雷达页同源），单独拉一次，失败不影响全景主体
+    try {
+      var r = await fetch('/api/state', { cache: 'no-store' });
+      var s = await r.json();
+      state.sf = s || {};
+    } catch (e) {
+      state.sf = {};
+    }
+    renderFlow();
+  }
+
   async function load() {
+    loadState();
     try {
       var r = await fetch('/api/overview', { cache: 'no-store' });
       var d = await r.json();
@@ -321,6 +401,16 @@
     } catch (e) {
       showError(e.message || '未知错误');
     }
+    jumpToHash();
+  }
+
+  // 深链接 /#ovFlow：数据渲染后页面会变高，浏览器最初的锚点跳转就落不到位置，
+  // 这里在渲染完成后重新定位一次
+  function jumpToHash() {
+    if (!location.hash) return;
+    var el;
+    try { el = document.querySelector(location.hash); } catch (e) { return; }
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
   }
 
   function init() {
@@ -345,6 +435,8 @@
     });
     load();
   }
+
+  window.addEventListener('hashchange', jumpToHash);
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

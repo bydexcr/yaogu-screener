@@ -40,7 +40,7 @@
       <div class="top">两市成交额 <span class="pill" id="ovPillAmt">—</span></div>
       <div class="big" id="ovAmt">—</div>
       <div class="sub" style="display:flex;align-items:center" id="ovAmtSub">沪 + 深合计
-        <a class="link" href="/radar">看资金流</a></div>
+        <a class="link" href="#ovFlow">看资金流 ↓</a></div>
     </div>
     <div class="ov-hc ov-lav">
       <div class="top">涨停结构 <span class="pill" id="ovPillMood">—</span></div>
@@ -98,6 +98,22 @@
         <p class="ov-struct" id="ovHotNote"></p>
       </div>
     </div>
+  </div>
+
+  <div class="ov-card" id="ovFlow">
+    <div class="ov-ch"><h2>板块资金流</h2><span class="hint" id="ovFlowHint">—</span></div>
+    <div class="ov-flow2">
+      <div>
+        <div class="ov-flow-cap up">龙虎榜净流入 TOP5</div>
+        <div class="ov-flow-list" id="ovFlowIn"><div class="ov-skel">加载中…</div></div>
+      </div>
+      <div>
+        <div class="ov-flow-cap down">龙虎榜净流出 TOP5</div>
+        <div class="ov-flow-list" id="ovFlowOut"><div class="ov-skel">加载中…</div></div>
+      </div>
+    </div>
+    <div class="ov-chips" id="ovFlowChips"></div>
+    <p class="ov-struct" id="ovFlowNote"></p>
   </div>
 
   <div class="ov-row-rank">

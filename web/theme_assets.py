@@ -1976,6 +1976,28 @@ body.ov {
 .ov-hs .v { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13.5px; font-weight: 600; }
 .ov-hs .v small { display: block; font-size: 11px; color: var(--text-mute); font-weight: 400; margin-top: 1px; }
 
+/* ---------------- 板块资金流 ---------------- */
+#ovFlow { scroll-margin-top: 16px; }
+.ov-flow2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 30px; }
+.ov-flow-cap { font-size: 11.5px; color: var(--text-mute); padding-bottom: 6px; }
+.ov-flow-cap.up { color: var(--up); }
+.ov-flow-cap.down { color: var(--down); }
+.ov-flow-list { display: flex; flex-direction: column; }
+.ov-flow-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px;
+  align-items: baseline; padding: 7px 0; border-top: 1px solid var(--line-soft);
+}
+.ov-flow-row:first-child { border-top: 0; }
+.ov-flow-row .nm { font-size: 12.5px; font-weight: 600; }
+.ov-flow-row .sub {
+  display: block; font-size: 10.5px; color: var(--text-mute); margin-top: 2px;
+  font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ov-flow-row .v {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 12.5px; font-weight: 700; white-space: nowrap;
+}
+
 /* ---------------- 同花顺热榜 + 连板天梯（左栏并排） ---------------- */
 /* 同花顺热榜 + 今日一句（今日一句在热榜右侧，正文垂直居中） */
 .ov-row-rank { display: grid; grid-template-columns: 1.75fr 1fr; gap: 16px; align-items: start; }
@@ -2045,6 +2067,7 @@ body.ov {
   .ov-search { min-width: 0; flex: 1; }
   .ov-main { padding: 0 12px; gap: 12px; }
   .ov-hero4 { grid-template-columns: minmax(0, 1fr); }
+  .ov-flow2 { grid-template-columns: minmax(0, 1fr); gap: 8px 0; }
   .ov-rank2 { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .ov-card { padding: 16px 16px; border-radius: 18px; }
   .ov-one p { font-size: 15px; }
