@@ -249,6 +249,7 @@ body.wl {
   border-bottom: 1px solid var(--line-soft);
 }
 .wl-thead .r { text-align: right; }
+.wl-thead .c { text-align: center; }
 
 /* ---------------------------------------------------------------- 手机端：卡片式 */
 @media (max-width: 899px) {

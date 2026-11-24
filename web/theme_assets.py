@@ -2518,6 +2518,70 @@ body.rv .rv-sec-head { margin-bottom: 12px; }
   body.rv .rv-sec { padding: 16px; border-radius: 18px; }
 }
 
+/* ============================================================================
+   持仓深度分析（复盘页 · 15:00 后生成）
+   ========================================================================== */
+.rv-hold-list { display: flex; flex-direction: column; gap: 12px; }
+.rv-hold-row {
+  padding: 13px 15px; border: 1px solid var(--line-soft); border-radius: 14px;
+  background: var(--panel);
+}
+.rv-hold-row.err { border-color: rgba(255, 84, 104, .35); }
+.rv-hold-h { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.rv-hold-h b { font-size: 14.5px; font-weight: 700; }
+.rv-hold-h b[data-code] { cursor: pointer; }
+.rv-hold-h b[data-code]:hover { color: var(--accent); }
+.rv-hold-h small { font-size: 11px; color: var(--text-mute); font-family: var(--mono); }
+.rv-hold-grade {
+  font-size: 10.5px; padding: 1px 7px; border-radius: 999px;
+  background: var(--panel-3); color: var(--text-dim);
+}
+.rv-hold-pnl { margin-left: auto; font: 700 14px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.rv-hold-pnl.up { color: var(--up); } .rv-hold-pnl.down { color: var(--down); }
+
+.rv-hold-px {
+  display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  margin-top: 7px; font-size: 11.5px; color: var(--text-mute);
+}
+.rv-hold-px b { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); margin-left: 3px; }
+.rv-hold-px b.up { color: var(--up); } .rv-hold-px b.down { color: var(--down); }
+.rv-hold-sc-wrap { display: flex; gap: 8px; margin-left: auto; }
+.rv-hold-sc {
+  font-size: 10.5px; color: var(--text-mute);
+  padding: 1px 7px; border-radius: 999px; background: var(--panel-2);
+}
+.rv-hold-sc b { font-family: var(--mono); color: var(--text); font-weight: 700; margin-left: 3px; }
+
+.rv-hold-obs { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.rv-hold-obs li { display: flex; align-items: baseline; gap: 7px; font-size: 12px; line-height: 1.65; color: var(--text-dim); }
+.rv-hold-obs li i { font-style: normal; font-size: 10px; width: 14px; flex: 0 0 14px; text-align: center; opacity: .85; }
+.rv-hold-obs li.good i { color: var(--down); }
+.rv-hold-obs li.bad i { color: var(--up); }
+.rv-hold-obs li.warn i { color: var(--warn); }
+.rv-hold-obs li.info i { color: var(--text-mute); }
+
+.rv-hold-levels {
+  display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px;
+  padding-top: 9px; border-top: 1px dashed var(--line-soft);
+  font-size: 11px; color: var(--text-mute);
+}
+.rv-hold-levels span { display: inline-flex; align-items: baseline; gap: 5px; }
+.rv-hold-levels i { font-style: normal; }
+.rv-hold-levels b { font-family: var(--mono); color: var(--text-dim); }
+
+.rv-hold-risk { margin-top: 9px; font-size: 11.5px; color: var(--text-mute); }
+.rv-hold-risk b { color: var(--up); font-weight: 600; margin-right: 6px; }
+.rv-hold-risk ul { margin: 4px 0 0; padding-left: 18px; line-height: 1.7; }
+.rv-hold-dim { color: var(--text-mute); font-size: 11.5px; }
+.rv-hold-err { color: var(--up); font-size: 12px; margin-top: 6px; }
+
+@media (max-width: 899px) {
+  .rv-hold-h b { font-size: 13.5px; }
+  .rv-hold-pnl { font-size: 13px; }
+  .rv-hold-sc-wrap { margin-left: 0; width: 100%; }
+  .rv-hold-levels { gap: 12px; }
+}
+
 /* ===== 深色主题兜底：亮底深字，避免「深字压深底」看不清 ===== */
 .nav-btn.on,
 .seg button.on {

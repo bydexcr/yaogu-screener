@@ -57,6 +57,15 @@ HTML = r"""<!DOCTYPE html>
       <div class="rv-skeleton">正在生成复盘…</div>
     </div>
 
+    <section class="rv-sec rv-holdings" id="rvHoldings" hidden>
+      <header class="rv-sec-head">
+        <span class="rv-no">◆</span>
+        <h3 class="rv-sec-title">持仓深度分析</h3>
+        <span class="rv-sec-hint" id="rvHoldHint">自选里「已持有 + 已填成本价」的股票，15:00 收盘后生成</span>
+      </header>
+      <div class="rv-sec-body" id="rvHoldBody"><div class="rv-skeleton">加载中…</div></div>
+    </section>
+
     <section class="rv-sec rv-hits" id="rvHits">
       <header class="rv-sec-head">
         <span class="rv-no">★</span>
@@ -448,6 +457,70 @@ body.rv .rv-sec-head { margin-bottom: 12px; }
   body.rv .search-box { width: 100%; }
   body.rv .rv-topbar,
   body.rv .rv-sec { padding: 16px; border-radius: 18px; }
+}
+
+/* ============================================================================
+   持仓深度分析（复盘页 · 15:00 后生成）
+   ========================================================================== */
+.rv-hold-list { display: flex; flex-direction: column; gap: 12px; }
+.rv-hold-row {
+  padding: 13px 15px; border: 1px solid var(--line-soft); border-radius: 14px;
+  background: var(--panel);
+}
+.rv-hold-row.err { border-color: rgba(225, 29, 51, .35); }
+.rv-hold-h { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.rv-hold-h b { font-size: 14.5px; font-weight: 700; }
+.rv-hold-h b[data-code] { cursor: pointer; }
+.rv-hold-h b[data-code]:hover { color: var(--accent); }
+.rv-hold-h small { font-size: 11px; color: var(--text-mute); font-family: var(--mono); }
+.rv-hold-grade {
+  font-size: 10.5px; padding: 1px 7px; border-radius: 999px;
+  background: var(--panel-3); color: var(--text-dim);
+}
+.rv-hold-pnl { margin-left: auto; font: 700 14px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.rv-hold-pnl.up { color: var(--up); } .rv-hold-pnl.down { color: var(--down); }
+
+.rv-hold-px {
+  display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  margin-top: 7px; font-size: 11.5px; color: var(--text-mute);
+}
+.rv-hold-px b { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); margin-left: 3px; }
+.rv-hold-px b.up { color: var(--up); } .rv-hold-px b.down { color: var(--down); }
+.rv-hold-sc-wrap { display: flex; gap: 8px; margin-left: auto; }
+.rv-hold-sc {
+  font-size: 10.5px; color: var(--text-mute);
+  padding: 1px 7px; border-radius: 999px; background: var(--panel-2);
+}
+.rv-hold-sc b { font-family: var(--mono); color: var(--text); font-weight: 700; margin-left: 3px; }
+
+.rv-hold-obs { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.rv-hold-obs li { display: flex; align-items: baseline; gap: 7px; font-size: 12px; line-height: 1.65; color: var(--text-dim); }
+.rv-hold-obs li i { font-style: normal; font-size: 10px; width: 14px; flex: 0 0 14px; text-align: center; opacity: .85; }
+.rv-hold-obs li.good i { color: var(--down); }
+.rv-hold-obs li.bad i { color: var(--up); }
+.rv-hold-obs li.warn i { color: var(--warn); }
+.rv-hold-obs li.info i { color: var(--text-mute); }
+
+.rv-hold-levels {
+  display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px;
+  padding-top: 9px; border-top: 1px dashed var(--line-soft);
+  font-size: 11px; color: var(--text-mute);
+}
+.rv-hold-levels span { display: inline-flex; align-items: baseline; gap: 5px; }
+.rv-hold-levels i { font-style: normal; }
+.rv-hold-levels b { font-family: var(--mono); color: var(--text-dim); }
+
+.rv-hold-risk { margin-top: 9px; font-size: 11.5px; color: var(--text-mute); }
+.rv-hold-risk b { color: var(--up); font-weight: 600; margin-right: 6px; }
+.rv-hold-risk ul { margin: 4px 0 0; padding-left: 18px; line-height: 1.7; }
+.rv-hold-dim { color: var(--text-mute); font-size: 11.5px; }
+.rv-hold-err { color: var(--up); font-size: 12px; margin-top: 6px; }
+
+@media (max-width: 899px) {
+  .rv-hold-h b { font-size: 13.5px; }
+  .rv-hold-pnl { font-size: 13px; }
+  .rv-hold-sc-wrap { margin-left: 0; width: 100%; }
+  .rv-hold-levels { gap: 12px; }
 }
 """
 
@@ -945,6 +1018,101 @@ JS = r"""(function () {
           收益一律按真实开盘价计算。` : ''}</p>`;
   }
 
+  /* ---------------------------------------------------------------- 持仓深度分析（15:00 后） */
+  const obIcon = { good: '▲', bad: '▼', warn: '!', info: '·' };
+
+  function holdCard(it) {
+    if (!it || it.error) {
+      return `<div class="rv-hold-row err"><div class="rv-hold-h"><b>${esc((it && (it.name || it.thscode)) || '?')}</b></div>
+        <div class="rv-hold-err">分析失败：${esc((it && it.error) || '未知错误')}</div></div>`;
+    }
+    const s = it.scores || {};
+    const ma = it.ma || {};
+    const obs = (it.observations || []).map((o) =>
+      `<li class="ob ${esc(o.tone)}"><i>${obIcon[o.tone] || '·'}</i><span>${esc(o.text)}</span></li>`).join('');
+    const scoreBox = [
+      ['综合', s.overall], ['趋势', s.trend], ['资金', s.capital]
+    ].map(([k, v]) => `<span class="rv-hold-sc">${k}<b>${isNum(v) ? v.toFixed(0) : '—'}</b></span>`).join('');
+    const head = `<div class="rv-hold-h">
+        <b data-code="${esc(it.thscode)}">${esc(it.name)}</b>
+        <small>${esc(it.thscode)}</small>
+        <span class="rv-hold-grade">${esc(it.grade || '')}</span>
+        <span class="rv-hold-pnl ${cls(it.pnl_pct)}">${fpct(it.pnl_pct)}</span>
+      </div>
+      <div class="rv-hold-px">
+        <span>成本 <b>${n2(it.cost)}</b></span>
+        <span>现价 <b class="${cls(it.pct)}">${n2(it.last)}</b></span>
+        <span>当日 <b class="${cls(it.pct)}">${fpct(it.pct)}</b></span>
+        <span class="rv-hold-sc-wrap">${scoreBox}</span>
+      </div>`;
+
+    const levels = [
+      ['MA20', ma.ma20], ['MA60', ma.ma60], ['20日支撑', ma.support20], ['20日压力', ma.resistance20]
+    ].map(([k, v]) => `<span><i>${k}</i><b>${n2(v)}</b></span>`).join('');
+
+    const risks = (it.risks || []).map((x) => `<li>${esc(x)}</li>`).join('');
+
+    return `<div class="rv-hold-row">
+      ${head}
+      <ul class="rv-hold-obs">${obs}</ul>
+      <div class="rv-hold-levels">${levels}</div>
+      ${risks ? `<div class="rv-hold-risk"><b>风险提示</b><ul>${risks}</ul></div>` : ''}
+    </div>`;
+  }
+
+  function renderHoldings(d) {
+    const box = el('rvHoldings');
+    const body = el('rvHoldBody');
+    const hint = el('rvHoldHint');
+    if (!box || !body) return;
+    if (!d || d.ok === false) {
+      box.hidden = false;
+      body.innerHTML = `<div class="rv-empty">持仓分析加载失败：${esc((d && d.error) || '未知错误')}</div>`;
+      return;
+    }
+    if (!d.available) {
+      box.hidden = false;
+      if (hint) hint.textContent = d.reason || '15:00 收盘后生成';
+      body.innerHTML = `<div class="rv-empty">${esc(d.reason || '15:00 收盘后生成')}
+        ${d.count ? `<br><span class="rv-hold-dim">（自选里有 ${d.count} 只「已持有 + 已填成本价」，收盘后自动分析）</span>` : ''}</div>`;
+      return;
+    }
+    if (!d.count) {
+      box.hidden = false;
+      if (hint) hint.textContent = '';
+      body.innerHTML = `<div class="rv-empty">${esc(d.reason || '自选股里还没有「已持有 + 已填成本价」的股票')}
+        <br><span class="rv-hold-dim">去「自选股」页把持有的股票标上「持有」并填入成本价即可</span></div>`;
+      return;
+    }
+    const sm = d.summary || {};
+    box.hidden = false;
+    if (hint) hint.textContent = `锚定 ${d.trade_date || '—'} · 生成于 ${d.generated_at || '—'}`;
+    const chips = [
+      `<span class="rv-hits-chip">持仓<b>${sm.held || 0}</b><i>只</i></span>`,
+      isNum(sm.weighted_pnl) ? `<span class="rv-hits-chip">加权浮盈<b class="${cls(sm.weighted_pnl)}">${fpct(sm.weighted_pnl)}</b><i>按成本加权</i></span>` : '',
+      sm.best ? `<span class="rv-hits-chip">最好<b class="up">${esc(sm.best.name)} ${fpct(sm.best.pnl)}</b></span>` : '',
+      sm.worst ? `<span class="rv-hits-chip">最差<b class="down">${esc(sm.worst.name)} ${fpct(sm.worst.pnl)}</b></span>` : '',
+      sm.attention ? `<span class="rv-hits-chip warn">需关注<b>${sm.attention}</b><i>亏损/风险项/跌破20日线</i></span>` : '',
+      sm.errors ? `<span class="rv-hits-chip warn">分析失败<b>${sm.errors}</b></span>` : '',
+    ].join('');
+    body.innerHTML = `<div class="rv-hits-sum">${chips}</div>
+      <div class="rv-hold-list">${(d.items || []).map(holdCard).join('')}</div>
+      <p class="rv-caliber">口径：成本价与持有状态来自「自选股」页；技术位/量能/风险矩阵取自个股分析引擎的前复权日线；
+        所有条目只是对已发生数据的规则化描述，<b>不构成投资建议</b>。</p>`;
+  }
+
+  async function loadHoldings() {
+    const box = el('rvHoldings');
+    if (!box) return;
+    try {
+      const res = await fetch('/api/holdings', { cache: 'no-store' });
+      const d = await res.json();
+      renderHoldings(d);
+    } catch (e) {
+      renderHoldings({ ok: false, error: e.message || '请求失败' });
+    }
+  }
+
   async function loadHits() {
     const box = el('rvHitsBody');
     if (!box) return;
@@ -966,6 +1134,7 @@ JS = r"""(function () {
   function init() {
     bindSearch();
     loadHits();
+  loadHoldings();
     el('rvRefresh').addEventListener('click', () => { state.retry = 0; loadReview(currentDate(), true); });
     loadDates();
     loadReview('', false);
