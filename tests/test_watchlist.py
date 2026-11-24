@@ -104,6 +104,51 @@ def test_note_is_truncated():
     assert len(W.items()[0]["note"]) == 120
 
 
+def test_add_defaults_to_not_held():
+    W.add("600519", "贵州茅台")
+    it = W.items()[0]
+    assert it["held"] is False
+    assert it["cost"] is None
+
+
+def test_set_hold_with_cost():
+    W.add("600519", "贵州茅台")
+    assert W.set_hold("600519", True, "1500.5")["ok"] is True
+    it = W.items()[0]
+    assert it["held"] is True
+    assert it["cost"] == 1500.5
+
+
+def test_set_hold_rejects_bad_cost():
+    W.add("600519")
+    assert "不是数字" in W.set_hold("600519", True, "abc")["error"]
+    assert "大于 0" in W.set_hold("600519", True, "0")["error"]
+    assert "大于 0" in W.set_hold("600519", True, "-3")["error"]
+    assert "看起来不对" in W.set_hold("600519", True, "999999")["error"]
+    # 校验失败不能落库
+    assert W.items()[0]["held"] is False
+
+
+def test_set_hold_allows_empty_cost():
+    """先标持有、成本待补：合法（页面上成本框留空）。"""
+    W.add("600519")
+    assert W.set_hold("600519", True)["ok"] is True
+    it = W.items()[0]
+    assert it["held"] is True and it["cost"] is None
+
+
+def test_unhold_clears_cost():
+    W.add("600519")
+    W.set_hold("600519", True, "1500")
+    assert W.set_hold("600519", False)["ok"] is True
+    it = W.items()[0]
+    assert it["held"] is False and it["cost"] is None
+
+
+def test_set_hold_unknown_code():
+    assert W.set_hold("600519", True, "10")["ok"] is False
+
+
 def test_reorder_moves_and_keeps_others():
     for c in ("600519", "000001", "300750"):
         W.add(c)
@@ -161,7 +206,7 @@ def test_export_csv_has_bom_and_header():
     text = W.export_csv()
     assert text.startswith("\ufeff")
     lines = text.lstrip("\ufeff").splitlines()
-    assert lines[0] == "thscode,name,added_at,note"
+    assert lines[0] == "thscode,name,added_at,note,held,cost"
     assert lines[1].startswith("600519.SH,贵州茅台,")
 
 

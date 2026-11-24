@@ -151,7 +151,8 @@ def add(code: str, name: str = "") -> Dict[str, object]:
     if len(cur) >= MAX_ITEMS:
         return {"ok": False, "error": f"自选股最多 {MAX_ITEMS} 只"}
     cur.append({"thscode": thscode, "name": (name or "").strip() or thscode.split(".")[0],
-                "added_at": time.strftime("%Y-%m-%d %H:%M:%S"), "note": ""})
+                "added_at": time.strftime("%Y-%m-%d %H:%M:%S"), "note": "",
+                "held": False, "cost": None})
     _save(data)
     return {"ok": True, "added": True, "items": cur}
 
@@ -192,6 +193,36 @@ def set_note(code: str, note: str) -> Dict[str, object]:
     for it in data["items"]:
         if it.get("thscode") == thscode:
             it["note"] = (note or "").strip()[:120]
+            _save(data)
+            return {"ok": True, "items": data["items"]}
+    return {"ok": False, "error": "不在自选里"}
+
+
+def set_hold(code: str, held: bool, cost=None) -> Dict[str, object]:
+    """标记是否持有 + 成本价。
+
+    · held=False → cost 清空（不再持有就没必要留着成本）
+    · held=True  → cost 可为空（用户还没填），但传了非法值就拒绝
+    """
+    thscode = norm_code(code)
+    if not thscode:
+        return {"ok": False, "error": "代码非法"}
+    held = bool(held)
+    c = None
+    if held and cost not in (None, ""):
+        try:
+            c = round(float(str(cost).strip()), 3)
+        except (TypeError, ValueError):
+            return {"ok": False, "error": f"成本价不是数字：{cost}"}
+        if c <= 0:
+            return {"ok": False, "error": "成本价必须大于 0"}
+        if c > 100000:
+            return {"ok": False, "error": "成本价看起来不对（>100000）"}
+    data = load()
+    for it in data["items"]:
+        if it.get("thscode") == thscode:
+            it["held"] = held
+            it["cost"] = c if held else None
             _save(data)
             return {"ok": True, "items": data["items"]}
     return {"ok": False, "error": "不在自选里"}
@@ -275,7 +306,8 @@ def batch_add(text: str, resolve=None) -> Dict[str, object]:
             break
         data["items"].append({"thscode": it["thscode"],
                               "name": it["name"] or it["thscode"].split(".")[0],
-                              "added_at": time.strftime("%Y-%m-%d %H:%M:%S"), "note": ""})
+                              "added_at": time.strftime("%Y-%m-%d %H:%M:%S"), "note": "",
+                              "held": False, "cost": None})
         have.add(it["thscode"])
         added.append(it["thscode"])
     if added:
@@ -286,8 +318,9 @@ def batch_add(text: str, resolve=None) -> Dict[str, object]:
 def export_csv() -> str:
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["thscode", "name", "added_at", "note"])
+    w.writerow(["thscode", "name", "added_at", "note", "held", "cost"])
     for it in items():
-        w.writerow([it.get("thscode", ""), it.get("name", ""),
-                    it.get("added_at", ""), it.get("note", "")])
+        w.writerow([it.get("thscode", ""), it.get("name", ""), it.get("added_at", ""),
+                    it.get("note", ""), "1" if it.get("held") else "",
+                    it.get("cost") if it.get("cost") is not None else ""])
     return "\ufeff" + buf.getvalue()      # BOM：Excel 直接打开不乱码

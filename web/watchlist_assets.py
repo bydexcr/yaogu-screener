@@ -143,7 +143,7 @@ body.wl {
 
 .wl-row {
   display: grid;
-  grid-template-columns: 20px minmax(150px, 1.5fr) 118px 96px 74px 96px minmax(90px, 1fr) 34px;
+  grid-template-columns: 20px minmax(150px, 1.5fr) 118px 92px 70px 92px 78px 132px minmax(80px, 1fr) 30px;
   align-items: center; gap: 10px;
   padding: 11px 16px 11px 10px;
   border-top: 1px solid var(--line-soft);
@@ -203,6 +203,34 @@ body.wl {
 .wl-row:hover .wl-rm { opacity: 1; }
 .wl-rm:hover { background: rgba(225, 29, 51, .1); color: var(--up); }
 
+/* ---------------------------------------------------------------- 持有 / 成本价 */
+.wl-hold-cell { text-align: center; }
+.wl-hold {
+  padding: 3px 9px; font: inherit; font-size: 11px; line-height: 1.5; cursor: pointer;
+  color: var(--text-mute); background: transparent;
+  border: 1px dashed var(--line); border-radius: 999px; white-space: nowrap;
+}
+.wl-hold:hover { color: var(--text); border-color: var(--text-mute); border-style: solid; }
+.wl-hold.on {
+  color: #fff; background: #1b1a17; border: 1px solid #1b1a17; font-weight: 600;
+}
+
+.wl-cost-cell { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.wl-cost {
+  width: 84px; padding: 5px 8px; font: inherit; font-size: 12px;
+  font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right;
+  color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 8px; -moz-appearance: textfield;
+}
+.wl-cost::-webkit-outer-spin-button,
+.wl-cost::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.wl-cost:focus { outline: none; border-color: var(--accent); background: var(--panel); }
+.wl-cost-ph { font-family: var(--mono); color: var(--line); font-size: 12px; }
+.wl-pnl {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 11.5px; font-weight: 650; white-space: nowrap;
+}
+
 /* ---------------------------------------------------------------- 空态 / 页脚 */
 .wl-empty {
   padding: 46px 20px; text-align: center;
@@ -215,7 +243,7 @@ body.wl {
 /* 表头（桌面显示，手机隐藏） */
 .wl-thead {
   display: grid;
-  grid-template-columns: 20px minmax(150px, 1.5fr) 118px 96px 74px 96px minmax(90px, 1fr) 34px;
+  grid-template-columns: 20px minmax(150px, 1.5fr) 118px 92px 70px 92px 78px 132px minmax(80px, 1fr) 30px;
   gap: 10px; padding: 9px 16px 9px 10px;
   font-size: 11px; color: var(--text-mute); background: var(--panel-2);
   border-bottom: 1px solid var(--line-soft);
@@ -233,6 +261,7 @@ body.wl {
     grid-template-areas:
       'grip name rm'
       'px px badge'
+      'hold hold cost'
       'meta meta meta'
       'note note note';
     gap: 6px 10px; padding: 13px 14px; cursor: default;
@@ -248,6 +277,9 @@ body.wl {
   .wl-cell.c-t1 { display: none; }
   .wl-note { grid-area: note; white-space: normal; }
   .wl-rm { grid-area: rm; opacity: 1; width: 30px; height: 30px; }
+  .wl-hold-cell { grid-area: hold; text-align: left; }
+  .wl-cost-cell { grid-area: cost; justify-content: flex-end; }
+  .wl-cost { width: 92px; }
 }
 """
 
@@ -302,10 +334,18 @@ JS = r"""/* ====================================================================
     return '<span class="wl-badge ' + c + '">' + esc(t) + '</span>';
   }
 
+  function pnl(it) {
+    // 盈亏 = 现价 / 成本 - 1；没成本或没行情就不显示
+    if (!it.held || !isNum(it.cost) || !isNum(it.last) || it.cost <= 0) return '';
+    var v = (it.last / it.cost - 1) * 100;
+    return '<span class="wl-pnl ' + cls(v) + '" title="按成本价计算，未计手续费">' + pct(v) + '</span>';
+  }
+
   function row(it) {
     var t1 = isNum(it.t1_pct) ? pct(it.t1_pct) : '—';
     var lim = it.radar && it.radar.t1_limitup ? '板' : '';
     var note = (it.note || '').trim();
+    var held = !!it.held;
     return '<div class="wl-row" draggable="true" data-code="' + esc(it.thscode) + '">' +
       '<span class="wl-grip" title="拖动排序">⋮⋮</span>' +
       '<span class="wl-name"><a href="' + url(it.thscode) + '">' + esc(it.name) + '</a>' +
@@ -315,6 +355,16 @@ JS = r"""/* ====================================================================
       '<span class="wl-cell c-turnover">' + money(it.turnover) + '</span>' +
       '<span class="wl-cell c-t1 ' + cls(it.t1_pct) + '">' + t1 + lim + '</span>' +
       '<span class="wl-cell badge-cell" style="text-align:right">' + badge(it) + '</span>' +
+      '<span class="wl-hold-cell"><button class="wl-hold' + (held ? ' on' : '') + '" type="button"' +
+      ' data-hold="' + esc(it.thscode) + '" title="' + (held ? '点击改为未持有' : '点击标记为持有') + '">' +
+      (held ? '持有' : '未持有') + '</button></span>' +
+      '<span class="wl-cost-cell">' +
+      (held
+        ? '<input class="wl-cost" type="number" step="0.001" min="0" inputmode="decimal"' +
+          ' data-cost="' + esc(it.thscode) + '" placeholder="成本价"' +
+          ' value="' + (isNum(it.cost) ? it.cost : '') + '">' + pnl(it)
+        : '<span class="wl-cost-ph">—</span>') +
+      '</span>' +
       '<span class="wl-note' + (note ? '' : ' empty') + '" data-note="' + esc(it.thscode) + '"' +
       ' title="点击写备注">' + (note ? esc(note) : '') + '</span>' +
       '<button class="wl-rm" type="button" data-rm="' + esc(it.thscode) + '" title="移出自选">×</button>' +
@@ -325,6 +375,7 @@ JS = r"""/* ====================================================================
     return '<div class="wl-thead"><span></span><span>名称 / 代码</span>' +
       '<span class="r">最新价</span><span class="r">成交额</span>' +
       '<span class="r">T-1</span><span class="r">雷达状态</span>' +
+      '<span class="c">持有</span><span class="r">成本价 / 盈亏</span>' +
       '<span>备注</span><span></span></div>';
   }
 
@@ -472,6 +523,34 @@ JS = r"""/* ====================================================================
     });
   }
 
+  function toggleHold(code, held) {
+    applyPromise(api({ action: 'hold', code: code, held: held ? 1 : 0 })).catch(function (e) {
+      $('#wlSub').textContent = '持有状态保存失败：' + e.message;
+    });
+  }
+
+  function saveCost(code, value, input) {
+    var v = (value || '').trim();
+    if (v !== '' && !(Number(v) > 0)) {
+      $('#wlSub').textContent = '成本价要大于 0';
+      return;
+    }
+    var it = (state.items || []).filter(function (x) { return x.thscode === code; })[0];
+    if (it && String(it.cost == null ? '' : it.cost) === v) return;   // 没改就不发请求
+    if (input) input.disabled = true;
+    applyPromise(api({ action: 'hold', code: code, held: 1, cost: v }))
+      .then(function () {
+        var fresh = (state.items || []).filter(function (x) { return x.thscode === code; })[0];
+        if (fresh && !fresh.held) {                // 已在别处取消了持有
+          $('#wlSub').textContent = '这只已不在持有里';
+        }
+      })
+      .catch(function (e) {
+        $('#wlSub').textContent = '成本价保存失败：' + e.message;
+        if (input) input.disabled = false;
+      });
+  }
+
   function editNote(code) {
     var it = (state.items || []).filter(function (x) { return x.thscode === code; })[0];
     var cur = (it && it.note) || '';
@@ -523,8 +602,42 @@ JS = r"""/* ====================================================================
     $('#wlList').addEventListener('click', function (e) {
       var rm = e.target.closest ? e.target.closest('[data-rm]') : null;
       if (rm) { removeStock(rm.getAttribute('data-rm')); return; }
+      var hd = e.target.closest ? e.target.closest('[data-hold]') : null;
+      if (hd) {
+        var code = hd.getAttribute('data-hold');
+        var cur = (state.items || []).filter(function (x) { return x.thscode === code; })[0];
+        toggleHold(code, !(cur && cur.held));
+        return;
+      }
       var nt = e.target.closest ? e.target.closest('[data-note]') : null;
       if (nt) { editNote(nt.getAttribute('data-note')); }
+    });
+
+    // 成本价：失焦或回车保存（input 事件不保存，避免每敲一个数字就打接口）
+    $('#wlList').addEventListener('change', function (e) {
+      var c = e.target;
+      if (!c || !c.getAttribute || !c.getAttribute('data-cost')) return;
+      saveCost(c.getAttribute('data-cost'), c.value, c);
+    });
+    $('#wlList').addEventListener('keydown', function (e) {
+      var c = e.target;
+      if (!c || !c.getAttribute || !c.getAttribute('data-cost')) return;
+      if (e.key === 'Enter') { e.preventDefault(); c.blur(); }
+    });
+    // 点输入框不要触发拖拽
+    $('#wlList').addEventListener('mousedown', function (e) {
+      var t2 = e.target;
+      if (t2 && t2.tagName === 'INPUT') {
+        var row = t2.closest('.wl-row');
+        if (row) row.setAttribute('draggable', 'false');
+      }
+    });
+    $('#wlList').addEventListener('mouseup', function (e) {
+      var t3 = e.target;
+      if (t3 && t3.tagName === 'INPUT') {
+        var row2 = t3.closest('.wl-row');
+        if (row2) row2.setAttribute('draggable', 'true');
+      }
     });
 
     $('#btnImport').addEventListener('click', function () {

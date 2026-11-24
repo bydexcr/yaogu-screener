@@ -76,7 +76,7 @@ body.wl {
 
 .wl-row {
   display: grid;
-  grid-template-columns: 20px minmax(150px, 1.5fr) 118px 96px 74px 96px minmax(90px, 1fr) 34px;
+  grid-template-columns: 20px minmax(150px, 1.5fr) 118px 92px 70px 92px 78px 132px minmax(80px, 1fr) 30px;
   align-items: center; gap: 10px;
   padding: 11px 16px 11px 10px;
   border-top: 1px solid var(--line-soft);
@@ -136,6 +136,34 @@ body.wl {
 .wl-row:hover .wl-rm { opacity: 1; }
 .wl-rm:hover { background: rgba(225, 29, 51, .1); color: var(--up); }
 
+/* ---------------------------------------------------------------- 持有 / 成本价 */
+.wl-hold-cell { text-align: center; }
+.wl-hold {
+  padding: 3px 9px; font: inherit; font-size: 11px; line-height: 1.5; cursor: pointer;
+  color: var(--text-mute); background: transparent;
+  border: 1px dashed var(--line); border-radius: 999px; white-space: nowrap;
+}
+.wl-hold:hover { color: var(--text); border-color: var(--text-mute); border-style: solid; }
+.wl-hold.on {
+  color: #fff; background: #1b1a17; border: 1px solid #1b1a17; font-weight: 600;
+}
+
+.wl-cost-cell { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.wl-cost {
+  width: 84px; padding: 5px 8px; font: inherit; font-size: 12px;
+  font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right;
+  color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 8px; -moz-appearance: textfield;
+}
+.wl-cost::-webkit-outer-spin-button,
+.wl-cost::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.wl-cost:focus { outline: none; border-color: var(--accent); background: var(--panel); }
+.wl-cost-ph { font-family: var(--mono); color: var(--line); font-size: 12px; }
+.wl-pnl {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 11.5px; font-weight: 650; white-space: nowrap;
+}
+
 /* ---------------------------------------------------------------- 空态 / 页脚 */
 .wl-empty {
   padding: 46px 20px; text-align: center;
@@ -148,12 +176,13 @@ body.wl {
 /* 表头（桌面显示，手机隐藏） */
 .wl-thead {
   display: grid;
-  grid-template-columns: 20px minmax(150px, 1.5fr) 118px 96px 74px 96px minmax(90px, 1fr) 34px;
+  grid-template-columns: 20px minmax(150px, 1.5fr) 118px 92px 70px 92px 78px 132px minmax(80px, 1fr) 30px;
   gap: 10px; padding: 9px 16px 9px 10px;
   font-size: 11px; color: var(--text-mute); background: var(--panel-2);
   border-bottom: 1px solid var(--line-soft);
 }
 .wl-thead .r { text-align: right; }
+.wl-thead .c { text-align: center; }
 
 /* ---------------------------------------------------------------- 手机端：卡片式 */
 @media (max-width: 899px) {
@@ -166,6 +195,7 @@ body.wl {
     grid-template-areas:
       'grip name rm'
       'px px badge'
+      'hold hold cost'
       'meta meta meta'
       'note note note';
     gap: 6px 10px; padding: 13px 14px; cursor: default;
@@ -181,4 +211,7 @@ body.wl {
   .wl-cell.c-t1 { display: none; }
   .wl-note { grid-area: note; white-space: normal; }
   .wl-rm { grid-area: rm; opacity: 1; width: 30px; height: 30px; }
+  .wl-hold-cell { grid-area: hold; text-align: left; }
+  .wl-cost-cell { grid-area: cost; justify-content: flex-end; }
+  .wl-cost { width: 92px; }
 }

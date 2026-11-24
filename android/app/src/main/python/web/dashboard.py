@@ -331,7 +331,8 @@ def _num(v):
 
 def api_watchlist(action: str = "list", code: str = "", name: str = "",
                   note: str = "", text: str = "", order: str = "",
-                  state_json_fn=None, engine=None) -> dict:
+                  state_json_fn=None, engine=None,
+                  held: str = "", cost: str = "") -> dict:
     """自选股：list/add/remove/rename/note/reorder/batch/clear。
 
     统一返回 {ok, items:[用户字段 + 实时行情 + T-1 涨幅 + 雷达状态], ...}。
@@ -355,7 +356,8 @@ def api_watchlist(action: str = "list", code: str = "", name: str = "",
     # 手机端：所有写操作转发给电脑，避免两端各存一份互相打架
     if src and act != "list":
         fwd = {"action": act}
-        for k, v in (("code", code), ("name", name), ("note", note), ("text", text), ("order", order)):
+        for k, v in (("code", code), ("name", name), ("note", note), ("text", text),
+                     ("order", order), ("held", held), ("cost", cost)):
             if v:
                 fwd[k] = v
         remote = _remote_watch(src, fwd, timeout=6.0)
@@ -409,6 +411,10 @@ def api_watchlist(action: str = "list", code: str = "", name: str = "",
             return r
     elif act == "note":
         r = W.set_note(code, note)
+        if not r.get("ok"):
+            return r
+    elif act == "hold":
+        r = W.set_hold(code, str(held).strip().lower() in ("1", "true", "yes", "on"), cost)
         if not r.get("ok"):
             return r
     elif act == "reorder":
@@ -475,6 +481,8 @@ def api_watchlist(action: str = "list", code: str = "", name: str = "",
             "name": it.get("name") or code_.split(".")[0],
             "added_at": it.get("added_at") or "",
             "note": it.get("note") or "",
+            "held": bool(it.get("held")),
+            "cost": it.get("cost"),
             "last": last,
             "pct": round(pct, 2) if pct is not None else None,
             "open": _num(q.get("open_price")),
@@ -734,7 +742,9 @@ class _Handler(BaseHTTPRequestHandler):
                                   (qs.get("text", [""])[0] or ""),
                                   (qs.get("order", [""])[0] or ""),
                                   self._state_fn,
-                                  self._engine))
+                                  self._engine,
+                                  (qs.get("held", [""])[0] or "").strip(),
+                                  (qs.get("cost", [""])[0] or "").strip()))
             return
         if path.startswith("/api/search"):
             self._json(self._safe(api_search, (qs.get("q", [""])[0] or "").strip()))
