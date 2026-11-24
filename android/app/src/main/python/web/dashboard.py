@@ -517,6 +517,12 @@ def api_hits(days: int = 30) -> dict:
     return hit_log.build(days=days)
 
 
+def api_holdings(state_json_fn=None) -> dict:
+    """持仓深度分析：15:00 后对「自选里标记持有 + 已填成本价」的股票做完整分析。"""
+    mod = _load_stock_module("holdings")
+    return mod.build(state_json_fn=state_json_fn)
+
+
 def api_overview() -> dict:
     """市场全景：/api/market 的全量数据 + 服务端生成的派生文案（今日一句/结构句等）。"""
     stock_market = _load_stock_module("stock_market")
@@ -698,6 +704,9 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if path.startswith("/api/diag"):
             self._json(self._safe(api_diag))
+            return
+        if path.startswith("/api/holdings"):
+            self._json(self._safe(api_holdings, self._state_fn))
             return
         if path.startswith("/api/hits"):
             try:

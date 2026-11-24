@@ -33,6 +33,7 @@ RUNTIME_WEB = [
     "stock.html", "stock.css", "stock.js", "stock_assets.py", "stock-dark.css",
     "review.html", "review.css", "review.js", "review_assets.py",
     "watchlist_store.py", "watchlist.html", "watchlist.css", "watchlist.js",
+    "holdings.py",
     "watch-core.js", "watchlist_assets.py",
     "build_watchlist_assets.py",
     "index.html", "index_html.py", "radar-dark.css",

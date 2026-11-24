@@ -492,6 +492,101 @@
           收益一律按真实开盘价计算。` : ''}</p>`;
   }
 
+  /* ---------------------------------------------------------------- 持仓深度分析（15:00 后） */
+  const obIcon = { good: '▲', bad: '▼', warn: '!', info: '·' };
+
+  function holdCard(it) {
+    if (!it || it.error) {
+      return `<div class="rv-hold-row err"><div class="rv-hold-h"><b>${esc((it && (it.name || it.thscode)) || '?')}</b></div>
+        <div class="rv-hold-err">分析失败：${esc((it && it.error) || '未知错误')}</div></div>`;
+    }
+    const s = it.scores || {};
+    const ma = it.ma || {};
+    const obs = (it.observations || []).map((o) =>
+      `<li class="ob ${esc(o.tone)}"><i>${obIcon[o.tone] || '·'}</i><span>${esc(o.text)}</span></li>`).join('');
+    const scoreBox = [
+      ['综合', s.overall], ['趋势', s.trend], ['资金', s.capital]
+    ].map(([k, v]) => `<span class="rv-hold-sc">${k}<b>${isNum(v) ? v.toFixed(0) : '—'}</b></span>`).join('');
+    const head = `<div class="rv-hold-h">
+        <b data-code="${esc(it.thscode)}">${esc(it.name)}</b>
+        <small>${esc(it.thscode)}</small>
+        <span class="rv-hold-grade">${esc(it.grade || '')}</span>
+        <span class="rv-hold-pnl ${cls(it.pnl_pct)}">${fpct(it.pnl_pct)}</span>
+      </div>
+      <div class="rv-hold-px">
+        <span>成本 <b>${n2(it.cost)}</b></span>
+        <span>现价 <b class="${cls(it.pct)}">${n2(it.last)}</b></span>
+        <span>当日 <b class="${cls(it.pct)}">${fpct(it.pct)}</b></span>
+        <span class="rv-hold-sc-wrap">${scoreBox}</span>
+      </div>`;
+
+    const levels = [
+      ['MA20', ma.ma20], ['MA60', ma.ma60], ['20日支撑', ma.support20], ['20日压力', ma.resistance20]
+    ].map(([k, v]) => `<span><i>${k}</i><b>${n2(v)}</b></span>`).join('');
+
+    const risks = (it.risks || []).map((x) => `<li>${esc(x)}</li>`).join('');
+
+    return `<div class="rv-hold-row">
+      ${head}
+      <ul class="rv-hold-obs">${obs}</ul>
+      <div class="rv-hold-levels">${levels}</div>
+      ${risks ? `<div class="rv-hold-risk"><b>风险提示</b><ul>${risks}</ul></div>` : ''}
+    </div>`;
+  }
+
+  function renderHoldings(d) {
+    const box = el('rvHoldings');
+    const body = el('rvHoldBody');
+    const hint = el('rvHoldHint');
+    if (!box || !body) return;
+    if (!d || d.ok === false) {
+      box.hidden = false;
+      body.innerHTML = `<div class="rv-empty">持仓分析加载失败：${esc((d && d.error) || '未知错误')}</div>`;
+      return;
+    }
+    if (!d.available) {
+      box.hidden = false;
+      if (hint) hint.textContent = d.reason || '15:00 收盘后生成';
+      body.innerHTML = `<div class="rv-empty">${esc(d.reason || '15:00 收盘后生成')}
+        ${d.count ? `<br><span class="rv-hold-dim">（自选里有 ${d.count} 只「已持有 + 已填成本价」，收盘后自动分析）</span>` : ''}</div>`;
+      return;
+    }
+    if (!d.count) {
+      box.hidden = false;
+      if (hint) hint.textContent = '';
+      body.innerHTML = `<div class="rv-empty">${esc(d.reason || '自选股里还没有「已持有 + 已填成本价」的股票')}
+        <br><span class="rv-hold-dim">去「自选股」页把持有的股票标上「持有」并填入成本价即可</span></div>`;
+      return;
+    }
+    const sm = d.summary || {};
+    box.hidden = false;
+    if (hint) hint.textContent = `锚定 ${d.trade_date || '—'} · 生成于 ${d.generated_at || '—'}`;
+    const chips = [
+      `<span class="rv-hits-chip">持仓<b>${sm.held || 0}</b><i>只</i></span>`,
+      isNum(sm.weighted_pnl) ? `<span class="rv-hits-chip">加权浮盈<b class="${cls(sm.weighted_pnl)}">${fpct(sm.weighted_pnl)}</b><i>按成本加权</i></span>` : '',
+      sm.best ? `<span class="rv-hits-chip">最好<b class="up">${esc(sm.best.name)} ${fpct(sm.best.pnl)}</b></span>` : '',
+      sm.worst ? `<span class="rv-hits-chip">最差<b class="down">${esc(sm.worst.name)} ${fpct(sm.worst.pnl)}</b></span>` : '',
+      sm.attention ? `<span class="rv-hits-chip warn">需关注<b>${sm.attention}</b><i>亏损/风险项/跌破20日线</i></span>` : '',
+      sm.errors ? `<span class="rv-hits-chip warn">分析失败<b>${sm.errors}</b></span>` : '',
+    ].join('');
+    body.innerHTML = `<div class="rv-hits-sum">${chips}</div>
+      <div class="rv-hold-list">${(d.items || []).map(holdCard).join('')}</div>
+      <p class="rv-caliber">口径：成本价与持有状态来自「自选股」页；技术位/量能/风险矩阵取自个股分析引擎的前复权日线；
+        所有条目只是对已发生数据的规则化描述，<b>不构成投资建议</b>。</p>`;
+  }
+
+  async function loadHoldings() {
+    const box = el('rvHoldings');
+    if (!box) return;
+    try {
+      const res = await fetch('/api/holdings', { cache: 'no-store' });
+      const d = await res.json();
+      renderHoldings(d);
+    } catch (e) {
+      renderHoldings({ ok: false, error: e.message || '请求失败' });
+    }
+  }
+
   async function loadHits() {
     const box = el('rvHitsBody');
     if (!box) return;
@@ -513,6 +608,7 @@
   function init() {
     bindSearch();
     loadHits();
+  loadHoldings();
     el('rvRefresh').addEventListener('click', () => { state.retry = 0; loadReview(currentDate(), true); });
     loadDates();
     loadReview('', false);
