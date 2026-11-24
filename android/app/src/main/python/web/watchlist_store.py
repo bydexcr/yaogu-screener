@@ -29,10 +29,16 @@ _LOCK = threading.RLock()
 
 # ------------------------------------------------------------------ 路径
 def _data_dir() -> Path:
-    """优先引擎 data 目录（YAOGU_DATA_DIR），退化到本模块上级的 data/。"""
+    """优先引擎 data 目录（YAOGU_DATA_DIR），退化到本模块上级的 data/。
+
+    注意：环境变量必须是绝对路径才采用。曾经因为传入相对路径（临时目录名），
+    自选文件被写到仓库 web/ 下的垃圾目录里并被提交 —— 这里直接拒绝相对路径。
+    """
     env = os.environ.get("YAOGU_DATA_DIR")
     if env:
-        return Path(env)
+        p = Path(env)
+        if p.is_absolute():
+            return p
     return Path(__file__).resolve().parent.parent / "data"
 
 
