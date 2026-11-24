@@ -20,9 +20,9 @@
     { key: '/', href: '/', name: '市场全景', short: '全景', icon: 'grid' },
     { key: '/stock', href: '/stock', name: '个股分析', short: '分析', icon: 'candle' },
     { key: '/radar', href: '/radar', name: '妖股雷达', short: '雷达', icon: 'radar', badge: true },
-    { key: '/review', href: '/review', name: '复盘', short: '复盘', icon: 'note' },
-    // 「历史」已并入复盘页（复盘页里的「历史命中回顾」区块），这里换成自选股
+    // 「历史」已并入复盘页（复盘页里的「历史命中回顾」区块），原位置换成自选股
     { key: '/watchlist', href: '/watchlist', name: '自选股', short: '自选', icon: 'star' },
+    { key: '/review', href: '/review', name: '复盘', short: '复盘', icon: 'note' },
     { key: 'settings', href: '', name: '设置', short: '设置', icon: 'gear' }
   ];
 
