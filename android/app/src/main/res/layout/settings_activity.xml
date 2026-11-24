@@ -150,6 +150,29 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
+                android:text="自选股同步（电脑地址，留空则只用手机本地）"
+                android:textColor="@color/text_dim"
+                android:textSize="11sp" />
+
+            <EditText
+                android:id="@+id/et_watch_src"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_field"
+                android:inputType="textUri"
+                android:maxLines="1"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textColor="@color/text"
+                android:textColorHint="@color/text_mute"
+                android:textSize="13sp"
+                android:hint="http://192.168.1.10:8311" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:text="低开主栏区间（% · 下限 / 上限）"
                 android:textColor="@color/text_dim"
                 android:textSize="11sp" />

@@ -210,7 +210,9 @@
     }
     $('#ovHot').innerHTML = list.length ? list.map(function (s, i) {
       return '<div class="r"><span class="ov-rk">' + (i < 9 ? '0' : '') + (i + 1) + '</span>' +
-        '<span><span class="nm">' + esc(s.name) + '</span><span class="nm2">' + esc(s.sub) + '</span></span>' +
+        '<span><span class="nm">' + esc(s.name) +
+      (s.code ? '<button class="wstar" type="button" data-watch="' + esc(s.code) + '" title="加自选">★</button>' : '') +
+      '</span><span class="nm2">' + esc(s.sub) + '</span></span>' +
         '<span class="v">' + s.v + '<small>' + s.unit + '</small></span></div>';
     }).join('') : '<div class="ov-skel">暂无数据</div>';
 

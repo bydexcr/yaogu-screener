@@ -411,7 +411,7 @@
       : '';
     const mark = r.suspect ? '<b class="sus">⚠</b>' : '';
     return `<span>${esc(String(r.date || '').slice(5))}</span>
-      <span class="nm" data-code="${esc(r.thscode)}"${warn}>${mark}${esc(r.name || r.thscode)}<small>${esc(zone)}</small></span>
+      <span class="nm" data-code="${esc(r.thscode)}"${warn}>${mark}${esc(r.name || r.thscode)}<small>${esc(zone)}</small><button class="wstar" type="button" data-watch="${esc(r.thscode)}" title="加自选">★</button></span>
       <span>${fpct(r.open_pct, 1)}</span>
       <span>${n2(r.buy)}</span>
       <span class="${cls(r.r0)}">${fpct(r.r0)}</span>

@@ -43,6 +43,7 @@ class SettingsActivity : Activity() {
         val etMinGain = findViewById<EditText>(R.id.et_min_gain)
         val etMinAmount = findViewById<EditText>(R.id.et_min_amount)
         val etNdays = findViewById<EditText>(R.id.et_ndays)
+        val etWatchSrc = findViewById<EditText>(R.id.et_watch_src)
         val cbSt = findViewById<CheckBox>(R.id.cb_st)
         val cbBj = findViewById<CheckBox>(R.id.cb_bj)
         val swSound = findViewById<android.widget.Switch>(R.id.sw_sound)
@@ -60,6 +61,8 @@ class SettingsActivity : Activity() {
         etMinGain.setText(strat.optDouble("t1_gain_min_pct", 8.0).toString())
         etMinAmount.setText(strat.optDouble("t1_amount_min_yi", 5.0).toString())
         etNdays.setText(strat.optInt("high_ndays", 30).toString())
+        // 自选股同步源：手机拉取电脑端 /api/watchlist 的地址（留空＝只用手机本地）
+        etWatchSrc.setText(cfg.optString("watch_source", ""))
         cbSt.isChecked = cfg.optBoolean("exclude_st", true)
         cbBj.isChecked = cfg.optBoolean("exclude_bj", true)
         swSound.isChecked = (cfg.optJSONObject("notify")?.optBoolean("sound", true) ?: true)
@@ -115,6 +118,11 @@ class SettingsActivity : Activity() {
                     .put("confirm_above_open", true)
                     .put("broken_below_open_pct", -3.0)
                     .put("broken_below_prev_pct", -9.0))
+                val watchSrc = etWatchSrc.text.toString().trim().trimEnd('/')
+                if (watchSrc.isNotEmpty() && !watchSrc.startsWith("http://") && !watchSrc.startsWith("https://")) {
+                    throw IllegalArgumentException("同步地址要以 http:// 开头，例如 http://192.168.1.10:8311")
+                }
+                out.put("watch_source", watchSrc)
                 out.put("notify", JSONObject().put("enabled", true).put("sound", swSound.isChecked))
                 out.put("exclude_st", cbSt.isChecked)
                 out.put("exclude_bj", cbBj.isChecked)

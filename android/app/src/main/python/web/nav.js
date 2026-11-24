@@ -9,6 +9,7 @@
     radar: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 12l6-4"/>',
     note: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
     clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    star: '<path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8z"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3H9.8l-.4 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.4 2.7h4.4l.4-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>'
   };
 
@@ -20,7 +21,8 @@
     { key: '/stock', href: '/stock', name: '个股分析', short: '分析', icon: 'candle' },
     { key: '/radar', href: '/radar', name: '妖股雷达', short: '雷达', icon: 'radar', badge: true },
     { key: '/review', href: '/review', name: '复盘', short: '复盘', icon: 'note' },
-    { key: '/review#hits', href: '/review#hits', name: '历史', short: '历史', icon: 'clock' },
+    // 「历史」已并入复盘页（复盘页里的「历史命中回顾」区块），这里换成自选股
+    { key: '/watchlist', href: '/watchlist', name: '自选股', short: '自选', icon: 'star' },
     { key: 'settings', href: '', name: '设置', short: '设置', icon: 'gear' }
   ];
 
@@ -34,7 +36,7 @@
     var p = (location.pathname || '/').replace(/\/+$/, '') || '/';
     if (p === '/index.html') p = '/stock';
     if (p === '/overview' || p === '/overview.html') p = '/';
-    if (p === '/review' && /(^|#)hits$/.test(location.hash || '')) return '/review#hits';
+    if (p === '/watchlist.html') p = '/watchlist';
     return p;
   }
 
@@ -103,6 +105,19 @@
       if (n > 0) { el.textContent = String(n); el.hidden = false; }
     }).catch(function () { /* 忽略 */ });
   }
+
+
+  // 全站「加自选」星标：统一在这里加载，各页面模板只要写 <button class="wstar" data-watch="代码">
+  function bootWatch() {
+    if (window.Watch || window.__WATCH_LOADING__) return;
+    window.__WATCH_LOADING__ = true;
+    var s = document.createElement('script');
+    s.src = '/watch-core.js';
+    s.async = true;
+    s.onload = function () { if (window.Watch) window.Watch.init(); };
+    document.head.appendChild(s);
+  }
+  bootWatch();
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', render);

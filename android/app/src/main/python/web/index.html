@@ -865,7 +865,7 @@ async function refresh(){
         return `<tr class="${cls}" data-code="${esc(h.thscode)}">
           <td data-label="时间">${esc(String(h.hit_time||'').slice(11)||'-')}</td>
           <td data-label="代码">${esc(h.thscode)}</td>
-          <td data-label="名称"><b>${esc(h.name)}</b></td>
+          <td data-label="名称"><b>${esc(h.name)}</b><button class="wstar" type="button" data-watch="${esc(h.thscode)}" title="加自选">★</button></td>
           <td data-label="评分" class="sc">${fmt(h.score,0)}</td>
           <td data-label="状态">${sx}</td></tr>`;
       }).join("");
@@ -892,7 +892,7 @@ async function refresh(){
       const colorTag=c.continue_text?esc(c.continue_text):(c.t1_limitup?"<b style='color:var(--hit)'>涨停</b>":"大涨");
       const seal=c.seal_money_yi!=null?`<span class="tick">封${fmt(c.seal_money_yi,1)}亿</span>`:"";
       return `<tr class="${cls}" data-code="${esc(c.thscode)}">
-        <td data-label="代码">${esc(c.thscode)}</td><td data-label="名称"><b>${esc(c.name)}</b></td>
+        <td data-label="代码">${esc(c.thscode)}</td><td data-label="名称"><b>${esc(c.name)}</b><button class="wstar" type="button" data-watch="${esc(c.thscode)}" title="加自选">★</button></td>
         <td data-label="评分" class="sc">${fmt(c.score,0)}</td>
         <td data-label="成色">${colorTag}${c.limit_up_time?`<span class="tick"> ${esc(c.limit_up_time)}</span>`:""}${seal}</td>
         <td data-label="题材" class="rr" title="${esc(c.limit_up_reason||"")}">${esc(c.limit_up_reason||"-")}</td>

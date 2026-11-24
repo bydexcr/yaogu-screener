@@ -238,3 +238,17 @@ html[data-theme="dark"] .settings-mask { background: rgba(0, 0, 0, .62); }
 .settings-sheet .btn-ghost:active {
   background: var(--card-3, var(--panel-3, #e9e5dc));
 }
+
+/* ============================================================================
+   全站「加自选」星标（watch-core.js 控制状态；未收录为空心，已收录为实心）
+   ========================================================================== */
+.wstar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; margin-left: 6px;
+  border: 0; border-radius: 6px; background: none; cursor: pointer;
+  color: var(--line); font-size: 13px; line-height: 1; vertical-align: middle;
+  transition: color .12s ease, transform .12s ease;
+}
+.wstar:hover { color: #c79300; transform: scale(1.12); }
+.wstar.on { color: #d9a400; }
+.wstar-lg { width: 26px; height: 26px; font-size: 16px; margin-left: 8px; }

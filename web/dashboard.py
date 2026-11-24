@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import pathlib
 import secrets
 import threading
 from collections import deque
@@ -136,6 +138,26 @@ def _load_radar_css() -> str:
     return _read_asset("radar.css", "CSS", "web.radar_assets")
 
 
+def _load_watch_html() -> str:
+    """自选股页 HTML（APK 里文件缺失时退回 web.watchlist_assets）。"""
+    html = _read_asset("watchlist.html", "HTML", "web.watchlist_assets")
+    return html or "<h1>watchlist.html 缺失</h1>"
+
+
+def _load_watch_css() -> str:
+    return _read_asset("watchlist.css", "CSS", "web.watchlist_assets")
+
+
+def _load_watch_core_js() -> str:
+    """全站星标脚本：纯文件资源（不内嵌，随 APK 的 web/ 目录一起打包）。"""
+    f = WEB_DIR / "watch-core.js"
+    return f.read_text(encoding="utf-8") if f.exists() else ""
+
+
+def _load_watch_js() -> str:
+    return _read_asset("watchlist.js", "JS", "web.watchlist_assets")
+
+
 def _load_pages_dark() -> str:
     return _read_asset("pages-dark.css", "PAGES_DARK", "web.theme_assets")
 
@@ -177,6 +199,297 @@ def api_search(q: str) -> dict:
     stock_data = _load_stock_module("stock_data")
     items = stock_data.search(q, 12) if q else []
     return {"ok": True, "items": [i for i in items if i.get("assetType") == "a-share"]}
+
+
+def _watch_source(engine) -> str:
+    """手机端同步源（电脑地址）；电脑端配置里没有这个键 → 空串。"""
+    try:
+        cfg = getattr(engine, "cfg", None) or {}
+        src = str(cfg.get("watch_source") or "").strip()
+    except Exception:
+        return ""
+    if not src:
+        return ""
+    if not src.startswith(("http://", "https://")):
+        src = "http://" + src
+    return src.rstrip("/")
+
+
+def _remote_watch(src: str, qs: dict, timeout: float = 4.0):
+    """请求电脑端的 /api/watchlist；失败返回 None（调用方决定降级方式）。"""
+    import urllib.parse as _up
+    import urllib.request as _ur
+    url = src + "/api/watchlist?" + _up.urlencode(qs)
+    try:
+        with _ur.urlopen(url, timeout=timeout) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except Exception:
+        return None
+
+
+def _watch_cache_path() -> pathlib.Path:
+    d = pathlib.Path(os.environ.get("YAOGU_DATA_DIR") or ".")
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    return d / "watchlist_cache.json"
+
+
+def _watch_cache_read():
+    p = _watch_cache_path()
+    try:
+        return json.loads(p.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return None
+
+
+def _watch_cache_write(payload: dict) -> None:
+    try:
+        import time as _t
+        p = _watch_cache_path()
+        p.write_text(json.dumps({"cached_at": _t.strftime("%Y-%m-%d %H:%M:%S"),
+                                 "payload": payload}, ensure_ascii=False),
+                     encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _radar_index(state_json_fn=None) -> dict:
+    """把引擎状态里的候选池整理成 {thscode: 状态}，供自选股标注「今天在雷达里吗」。"""
+    try:
+        raw = state_json_fn() if callable(state_json_fn) else "{}"
+        st = json.loads(raw or "{}")
+    except Exception:
+        return {}
+    idx = {}
+    for c in (st.get("candidates") or []):
+        code = (c.get("thscode") or "").strip()
+        if not code:
+            continue
+        zone = c.get("zone") or ""
+        hit = bool(c.get("hit"))
+        sig = c.get("sig") or ""
+        if hit and zone == "deep":
+            status = "深水命中"
+        elif hit:
+            status = "低开命中"
+        elif zone == "deep":
+            status = "深水"
+        elif sig == "confirm":
+            status = "承接"
+        elif sig == "broken":
+            status = "走弱"
+        else:
+            status = "候选"
+        idx[code] = {"status": status, "zone": zone, "hit": hit,
+                     "score": c.get("score"), "t1_pct": c.get("t1_pct"),
+                     "t1_limitup": bool(c.get("t1_limitup")),
+                     "continue_text": c.get("continue_text") or ""}
+    return idx
+
+
+def _resolve_name(stock_data, thscode: str) -> str:
+    """把 '600519.SH' 解析成中文名（加自选时用）。失败返回空串。"""
+    ticker = thscode.split(".")[0]
+    try:
+        for q in (ticker, thscode):
+            for it in (stock_data.search(q, 8) or []):
+                if (it.get("thscode") or "").upper() == thscode:
+                    return (it.get("name") or "").strip()
+    except Exception:
+        return ""
+    return ""
+
+
+def _t1_pct(stock_data, code: str):
+    """上一交易日涨跌幅（用于自选股页「T-1」列）。取 10 天日线，前复权。"""
+    try:
+        bars = stock_data.history(code, days=10)
+    except Exception:
+        return None
+    if not bars or len(bars) < 2:
+        return None
+    today = __import__("time").strftime("%Y-%m-%d")
+    if (bars[-1].get("date") or "") == today and len(bars) >= 3:
+        prev, cur = bars[-3], bars[-2]
+    else:
+        prev, cur = bars[-2], bars[-1]
+    pc, cc = _num(prev.get("close")), _num(cur.get("close"))
+    if not pc or not cc:
+        return None
+    return round((cc / pc - 1) * 100, 2)
+
+
+def _num(v):
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f
+
+
+def api_watchlist(action: str = "list", code: str = "", name: str = "",
+                  note: str = "", text: str = "", order: str = "",
+                  state_json_fn=None, engine=None) -> dict:
+    """自选股：list/add/remove/rename/note/reorder/batch/clear。
+
+    统一返回 {ok, items:[用户字段 + 实时行情 + T-1 涨幅 + 雷达状态], ...}。
+    行情失败不影响列表（降级为 —），这是自选股页必须的韧性。
+    """
+    W = _load_stock_module("watchlist_store")   # 兼容 包导入 / 同目录 / APK
+    act = (action or "list").strip().lower()
+    src = _watch_source(engine)
+    if act == "ids":                       # 轻量：只返回代码列表（其他页面的星标状态用）
+        if src:
+            remote = _remote_watch(src, {"action": "ids"}, timeout=2.5)
+            if remote and remote.get("ok"):
+                return remote
+            cached = _watch_cache_read()
+            if cached:
+                return {"ok": True, "codes": [i.get("thscode") for i in (cached.get("payload") or {}).get("items", [])
+                                              if i.get("thscode")], "synced": False}
+            return {"ok": True, "codes": [], "synced": False}
+        return {"ok": True, "codes": [it["thscode"] for it in W.items()]}
+
+    # 手机端：所有写操作转发给电脑，避免两端各存一份互相打架
+    if src and act != "list":
+        fwd = {"action": act}
+        for k, v in (("code", code), ("name", name), ("note", note), ("text", text), ("order", order)):
+            if v:
+                fwd[k] = v
+        remote = _remote_watch(src, fwd, timeout=6.0)
+        if remote is None:
+            return {"ok": False, "synced": False,
+                    "error": f"未连上电脑（{src}），自选股需要电脑端在线才能修改"}
+        if remote.get("ok"):
+            _watch_cache_write(remote)
+        remote["synced"] = True
+        remote["sync_source"] = src
+        return remote
+
+    if src and act == "list":
+        remote = _remote_watch(src, {"action": "list"}, timeout=5.0)
+        if remote is not None and remote.get("ok"):
+            _watch_cache_write(remote)
+            remote["synced"] = True
+            remote["sync_source"] = src
+            return remote
+        cached = _watch_cache_read()
+        if cached and isinstance(cached.get("payload"), dict):
+            out = dict(cached["payload"])
+            out["synced"] = False
+            out["sync_source"] = src
+            out["cached_at"] = cached.get("cached_at")
+            return out
+        return {"ok": False, "synced": False,
+                "error": f"未连上电脑（{src}），本地也没有缓存；请确认手机与电脑在同一局域网"}
+
+    extra = {}
+    if act == "add":
+        if not (name or "").strip():                 # 调用方没带名字就先解析，别让列表显示成一串代码
+            try:
+                name = _resolve_name(_load_stock_module("stock_data"), W.norm_code(code))
+            except BaseException:
+                name = ""
+        r = W.add(code, name)
+        if not r.get("ok"):
+            return r
+        extra["added"] = r.get("added")
+        if r.get("note"):
+            extra["note"] = r["note"]
+    elif act == "remove":
+        r = W.remove(code)
+        if not r.get("ok"):
+            return r
+        extra["removed"] = r.get("removed")
+    elif act == "rename":
+        r = W.rename(code, name)
+        if not r.get("ok"):
+            return r
+    elif act == "note":
+        r = W.set_note(code, note)
+        if not r.get("ok"):
+            return r
+    elif act == "reorder":
+        r = W.reorder([c for c in (order or "").split(",") if c.strip()])
+        if not r.get("ok"):
+            return r
+    elif act == "batch":
+        try:
+            _sd = _load_stock_module("stock_data")
+            _res = lambda c: _resolve_name(_sd, c)      # noqa: E731
+        except BaseException:
+            _res = None
+        r = W.batch_add(text, resolve=_res)
+        if not r.get("ok"):
+            return r
+        extra["added"] = r.get("added") or []
+        extra["skipped"] = r.get("skipped") or 0
+    elif act == "clear":
+        W.clear()
+    elif act != "list":
+        return {"ok": False, "error": f"未知动作：{action}"}
+
+    data = W.load()
+    items = data["items"]
+    codes = [it["thscode"] for it in items]
+
+    quotes, radar = {}, {}
+    try:
+        quotes = _load_stock_module("stock_data").snapshot(codes) if codes else {}
+    except BaseException as e:                      # noqa: BLE001
+        _ERRORS.append({"at": __import__("time").strftime("%H:%M:%S"),
+                        "error": f"watchlist 行情失败: {type(e).__name__}: {e}"})
+    try:
+        radar = _radar_index(state_json_fn)
+    except BaseException:
+        radar = {}
+
+    # 非候选股的 T-1 涨幅需要日线：并发取，失败就留空
+    need_t1 = [c for c in codes if c not in radar]
+    t1map = {}
+    if need_t1:
+        try:
+            sd = _load_stock_module("stock_data")
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=min(6, len(need_t1))) as ex:
+                for c, v in zip(need_t1, ex.map(lambda x: _t1_pct(sd, x), need_t1)):
+                    if v is not None:
+                        t1map[c] = v
+        except BaseException:
+            pass
+
+    out = []
+    for it in items:
+        code_ = it["thscode"]
+        q = quotes.get(code_) or {}
+        r = radar.get(code_) or {}
+        prev = _num(q.get("prev_price"))
+        last = _num(q.get("last_price"))
+        pct = _num(q.get("price_change_ratio_pct"))
+        if pct is None and prev and last:
+            pct = (last / prev - 1) * 100
+        out.append({
+            "thscode": code_,
+            "name": it.get("name") or code_.split(".")[0],
+            "added_at": it.get("added_at") or "",
+            "note": it.get("note") or "",
+            "last": last,
+            "pct": round(pct, 2) if pct is not None else None,
+            "open": _num(q.get("open_price")),
+            "turnover": _num(q.get("turnover")),
+            "volume": _num(q.get("volume")),
+            "t1_pct": r.get("t1_pct") if r else t1map.get(code_),
+            "radar": ({"status": r.get("status"), "zone": r.get("zone"), "hit": r.get("hit"),
+                       "score": r.get("score"), "t1_limitup": r.get("t1_limitup"),
+                       "continue_text": r.get("continue_text")} if r else None),
+        })
+
+    res = {"ok": True, "items": out, "count": len(out),
+           "updated": data.get("updated") or "", "schema": data.get("schema")}
+    res.update(extra)
+    return res
 
 
 def api_review(date: str = "", force: bool = False) -> dict:
@@ -292,6 +605,10 @@ class _Handler(BaseHTTPRequestHandler):
         return html if isinstance(html, str) and html else self.index_html
 
     @property
+    def _engine(self):
+        return getattr(self.server, "dashboard_engine", None)
+
+    @property
     def _token(self) -> str:
         tok = getattr(self.server, "dashboard_token", "")
         return tok if isinstance(tok, str) else ""
@@ -401,6 +718,24 @@ class _Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/market"):
             self._json(self._safe(api_market))
             return
+        if path.startswith("/api/watchlist"):
+            act = (qs.get("action", ["list"])[0] or "list").strip()
+            if act == "export":
+                _W = _load_stock_module("watchlist_store")
+                import time as _time
+                body = _W.export_csv().encode("utf-8")
+                self._send(200, body, "text/csv; charset=utf-8")
+                return
+            self._json(self._safe(api_watchlist,
+                                  act,
+                                  (qs.get("code", [""])[0] or "").strip(),
+                                  (qs.get("name", [""])[0] or "").strip(),
+                                  (qs.get("note", [""])[0] or "").strip(),
+                                  (qs.get("text", [""])[0] or ""),
+                                  (qs.get("order", [""])[0] or ""),
+                                  self._state_fn,
+                                  self._engine))
+            return
         if path.startswith("/api/search"):
             self._json(self._safe(api_search, (qs.get("q", [""])[0] or "").strip()))
             return
@@ -468,6 +803,19 @@ class _Handler(BaseHTTPRequestHandler):
         if path == "/radar":
             self._send(200, self._page_html.encode("utf-8"), "text/html; charset=utf-8")
             return
+        if path in ("/watchlist", "/watchlist.html"):
+            self._send(200, _load_watch_html().encode("utf-8"), "text/html; charset=utf-8")
+            return
+        if path == "/watchlist.css":
+            self._send(200, _load_watch_css().encode("utf-8"), "text/css; charset=utf-8")
+            return
+        if path == "/watch-core.js":
+            self._send(200, _load_watch_core_js().encode("utf-8"), "text/javascript; charset=utf-8")
+            return
+        if path == "/watchlist.js":
+            self._send(200, _load_watch_js().encode("utf-8"),
+                       "text/javascript; charset=utf-8")
+            return
         if path in ("/review", "/review.html"):
             self._send(200, _load_review_html().encode("utf-8"), "text/html; charset=utf-8")
             return
@@ -495,7 +843,8 @@ class _Handler(BaseHTTPRequestHandler):
 
 class Dashboard:
     def __init__(self, get_state: Callable[[], str], host: str = "127.0.0.1",
-                 port: int = 8311, token: str = ""):
+                 port: int = 8311, token: str = "", engine=None):
+        self.engine = engine
         self.host = host
         self.port = port
         self.token = token or ""
@@ -519,6 +868,7 @@ class Dashboard:
         self._httpd.dashboard_state = self.get_state
         self._httpd.dashboard_html = page_html
         self._httpd.dashboard_token = self.token
+        self._httpd.dashboard_engine = self.engine
         self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
         self._thread.start()
         # 后台预热板块成分索引（首次约 30~90 秒，之后走落盘缓存）
@@ -601,7 +951,8 @@ def start_dashboard(engine, host: str = "127.0.0.1", port: int = 8311,
         print(f"[看板] 监听 {host} 且未设置令牌，已自动生成: {eff}"
               f"（访问时需带 ?token={eff}）")
     try:
-        dash = Dashboard(get_state=engine.state_json, host=host, port=port, token=eff)
+        dash = Dashboard(get_state=engine.state_json, host=host, port=port, token=eff,
+                         engine=engine)
         dash.start()
         return dash
     except Exception as e:

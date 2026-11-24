@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light" id="metaColorScheme">
+<meta name="theme-color" content="#f7f5f1" id="metaThemeColor">
+<title>大A小散 · 自选股</title>
+<link rel="stylesheet" href="/stock.css">
+<link rel="stylesheet" href="/watchlist.css">
+<link rel="stylesheet" href="/stock-dark.css" data-theme-dark media="not all">
+<link rel="stylesheet" href="/nav.css">
+<link rel="stylesheet" href="/pages-dark.css" data-theme-dark media="not all">
+</head>
+<body class="wl">
+<aside class="side" id="appSide"></aside>
+
+<main class="wl-main">
+  <div class="wl-head">
+    <div>
+      <h1>自选股</h1>
+      <p class="wl-sub" id="wlSub">加载中…</p>
+    </div>
+  </div>
+
+  <form class="wl-add" id="wlForm" autocomplete="off">
+    <input id="wlInput" type="search" enterkeyhint="search" spellcheck="false"
+           placeholder="输入代码或名称，如 600519 / 贵州茅台">
+    <button class="btn-primary" type="submit">＋ 加入自选</button>
+    <div class="wl-sug" id="wlSug" hidden></div>
+  </form>
+
+  <div class="wl-tools">
+    <button class="wl-tool" type="button" id="btnImport">批量导入</button>
+    <a class="wl-tool" href="/api/watchlist?action=export" download="watchlist.csv">导出 CSV</a>
+    <span class="wl-tip" id="wlDragTip">拖动行可排序</span>
+  </div>
+
+  <section class="wl-import" id="wlImport" hidden>
+    <textarea id="wlText" spellcheck="false" placeholder="每行一个，支持这几种写法：&#10;600519 贵州茅台&#10;000001,平安银行&#10;sz300750&#10;（以 # 开头的行会被忽略）"></textarea>
+    <div class="wl-import-foot">
+      <span class="wl-tip" id="wlImportTip"></span>
+      <button class="btn-ghost" type="button" id="wlCancel">取消</button>
+      <button class="btn-primary" type="button" id="wlDoImport">导入</button>
+    </div>
+  </section>
+
+  <div class="wl-list" id="wlList"></div>
+
+  <div class="wl-empty" id="wlEmpty" hidden>
+    <p class="wl-empty-t">还没有自选股</p>
+    <p class="wl-empty-s">在上方输入代码/名称加入；也可在「个股分析」「妖股雷达」「市场全景」「复盘」里点股票旁的 ☆。</p>
+  </div>
+
+  <p class="wl-foot" id="wlFoot"></p>
+</main>
+
+<script src="/theme.js"></script>
+<script src="/nav.js"></script>
+<script src="/watchlist.js"></script>
+</body>
+</html>
