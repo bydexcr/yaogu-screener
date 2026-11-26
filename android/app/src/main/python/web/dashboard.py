@@ -332,7 +332,7 @@ def _num(v):
 def api_watchlist(action: str = "list", code: str = "", name: str = "",
                   note: str = "", text: str = "", order: str = "",
                   state_json_fn=None, engine=None,
-                  held: str = "", cost: str = "") -> dict:
+                  held: str = "", cost: str = "", qty: str = "") -> dict:
     """自选股：list/add/remove/rename/note/reorder/batch/clear。
 
     统一返回 {ok, items:[用户字段 + 实时行情 + T-1 涨幅 + 雷达状态], ...}。
@@ -357,7 +357,7 @@ def api_watchlist(action: str = "list", code: str = "", name: str = "",
     if src and act != "list":
         fwd = {"action": act}
         for k, v in (("code", code), ("name", name), ("note", note), ("text", text),
-                     ("order", order), ("held", held), ("cost", cost)):
+                     ("order", order), ("held", held), ("cost", cost), ("qty", qty)):
             if v:
                 fwd[k] = v
         remote = _remote_watch(src, fwd, timeout=6.0)
@@ -414,7 +414,7 @@ def api_watchlist(action: str = "list", code: str = "", name: str = "",
         if not r.get("ok"):
             return r
     elif act == "hold":
-        r = W.set_hold(code, str(held).strip().lower() in ("1", "true", "yes", "on"), cost)
+        r = W.set_hold(code, str(held).strip().lower() in ("1", "true", "yes", "on"), cost, qty)
         if not r.get("ok"):
             return r
     elif act == "reorder":
@@ -476,6 +476,11 @@ def api_watchlist(action: str = "list", code: str = "", name: str = "",
         pct = _num(q.get("price_change_ratio_pct"))
         if pct is None and prev and last:
             pct = (last / prev - 1) * 100
+        qty_ = _num(it.get("qty"))
+        cost_ = _num(it.get("cost"))
+        prev_ = _num(q.get("prev_price"))
+        value_ = round(qty_ * last, 2) if (qty_ and last) else None
+        cost_amt_ = round(qty_ * cost_, 2) if (qty_ and cost_) else None
         out.append({
             "thscode": code_,
             "name": it.get("name") or code_.split(".")[0],
@@ -483,19 +488,26 @@ def api_watchlist(action: str = "list", code: str = "", name: str = "",
             "note": it.get("note") or "",
             "held": bool(it.get("held")),
             "cost": it.get("cost"),
+            "qty": it.get("qty"),
             "last": last,
             "pct": round(pct, 2) if pct is not None else None,
             "open": _num(q.get("open_price")),
             "turnover": _num(q.get("turnover")),
             "volume": _num(q.get("volume")),
             "t1_pct": r.get("t1_pct") if r else t1map.get(code_),
+            "prev": prev_,
+            "value": value_,
+            "cost_amt": cost_amt_,
+            "pnl_amt": (round(value_ - cost_amt_, 2) if (value_ is not None and cost_amt_ is not None) else None),
+            "today_pnl": (round(qty_ * (last - prev_), 2) if (qty_ and last and prev_) else None),
             "radar": ({"status": r.get("status"), "zone": r.get("zone"), "hit": r.get("hit"),
                        "score": r.get("score"), "t1_limitup": r.get("t1_limitup"),
                        "continue_text": r.get("continue_text")} if r else None),
         })
 
     res = {"ok": True, "items": out, "count": len(out),
-           "updated": data.get("updated") or "", "schema": data.get("schema")}
+           "updated": data.get("updated") or "", "schema": data.get("schema"),
+           "portfolio": W.portfolio(out)}
     res.update(extra)
     return res
 
@@ -753,7 +765,8 @@ class _Handler(BaseHTTPRequestHandler):
                                   self._state_fn,
                                   self._engine,
                                   (qs.get("held", [""])[0] or "").strip(),
-                                  (qs.get("cost", [""])[0] or "").strip()))
+                                  (qs.get("cost", [""])[0] or "").strip(),
+                                  (qs.get("qty", [""])[0] or "").strip()))
             return
         if path.startswith("/api/search"):
             self._json(self._safe(api_search, (qs.get("q", [""])[0] or "").strip()))

@@ -145,6 +145,85 @@ def test_unhold_clears_cost():
     assert it["held"] is False and it["cost"] is None
 
 
+# ---------------------------------------------------------------- 持股数量
+def test_set_qty_with_cost():
+    W.add("600519", "贵州茅台")
+    assert W.set_hold("600519", True, "1500", "1000")["ok"] is True
+    it = W.items()[0]
+    assert it["cost"] == 1500 and it["qty"] == 1000
+
+
+def test_qty_rejects_bad_values():
+    W.add("600519")
+    assert "不是数字" in W.set_hold("600519", True, "10", "abc")["error"]
+    assert "大于 0" in W.set_hold("600519", True, "10", "0")["error"]
+    assert "整数" in W.set_hold("600519", True, "10", "100.5")["error"]
+    assert "看起来不对" in W.set_hold("600519", True, "10", "99999999999")["error"]
+    # 校验失败不能落库
+    assert W.items()[0]["qty"] is None
+
+
+def test_qty_accepts_commas_and_space():
+    W.add("600519")
+    assert W.set_hold("600519", True, "1500", " 1,000 ")["ok"] is True
+    assert W.items()[0]["qty"] == 1000
+
+
+def test_qty_cleared_when_unheld():
+    W.add("600519")
+    W.set_hold("600519", True, "1500", "1000")
+    W.set_hold("600519", False)
+    it = W.items()[0]
+    assert it["qty"] is None and it["cost"] is None
+
+
+# ---------------------------------------------------------------- 持仓汇总
+def test_portfolio_amount_and_weighted_pct():
+    items = [
+        {"thscode": "A", "name": "甲", "held": True, "cost": 10.0, "qty": 1000, "last": 11.0, "prev": 10.5},
+        {"thscode": "B", "name": "乙", "held": True, "cost": 20.0, "qty": 500, "last": 18.0, "prev": 19.0},
+        {"thscode": "C", "name": "丙", "held": False, "cost": 5.0, "qty": 100, "last": 9.0},
+    ]
+    p = W.portfolio(items)
+    assert p["held"] == 2 and p["with_qty"] == 2
+    assert p["cost_amt"] == 20000.0            # 10*1000 + 20*500
+    assert p["value"] == 20000.0               # 11*1000 + 18*500
+    assert p["pnl_amt"] == 0.0
+    assert p["pnl_pct"] == 0.0                 # 按金额加权：(+1000 -1000)/20000
+    assert p["today_amt"] == 0.0               # prev 10.5*1000 + 19*500 = 20000
+
+
+def test_portfolio_falls_back_to_cost_weighted_pct():
+    """没填数量时只给百分比（按成本加权），金额字段为 None。"""
+    items = [
+        {"thscode": "A", "name": "甲", "held": True, "cost": 10.0, "qty": None, "last": 11.0, "pnl_pct": 10.0},
+        {"thscode": "B", "name": "乙", "held": True, "cost": 30.0, "qty": None, "last": 27.0, "pnl_pct": -10.0},
+    ]
+    p = W.portfolio(items)
+    assert p["with_qty"] == 0
+    assert p["cost_amt"] is None and p["value"] is None and p["pnl_amt"] is None
+    assert p["pnl_pct"] == -5.0                # (10*10 + 30*-10)/40
+
+
+def test_portfolio_empty():
+    p = W.portfolio([])
+    assert p["held"] == 0 and p["pnl_pct"] is None and p["pnl_amt"] is None
+
+
+def test_portfolio_partial_qty():
+    """部分填了数量：金额只算填了的那几只，并标出未计入的数量。"""
+    items = [
+        {"thscode": "A", "name": "甲", "held": True, "cost": 10.0, "qty": 1000, "last": 12.0},
+        {"thscode": "B", "name": "乙", "held": True, "cost": 20.0, "qty": None, "last": 20.0, "pnl_pct": 0.0},
+    ]
+    p = W.portfolio(items)
+    assert p["held"] == 2 and p["with_qty"] == 1
+    assert p["cost_amt"] == 10000.0
+    assert p["value"] == 12000.0
+    assert p["pnl_amt"] == 2000.0
+    assert p["pnl_pct"] == 20.0                # 只按有数量的那只
+
+
 def test_set_hold_unknown_code():
     assert W.set_hold("600519", True, "10")["ok"] is False
 
@@ -206,7 +285,7 @@ def test_export_csv_has_bom_and_header():
     text = W.export_csv()
     assert text.startswith("\ufeff")
     lines = text.lstrip("\ufeff").splitlines()
-    assert lines[0] == "thscode,name,added_at,note,held,cost"
+    assert lines[0] == "thscode,name,added_at,note,held,cost,qty"
     assert lines[1].startswith("600519.SH,贵州茅台,")
 
 

@@ -75,8 +75,11 @@ def _pick(analysis: dict, item: dict) -> Dict[str, Any]:
     meta = analysis.get("meta") or {}
 
     cost = _num(item.get("cost"))
+    qty = _num(item.get("qty"))
     last = _num(q.get("lastPrice"))
     pnl = (last / cost - 1) * 100 if (cost and last) else None
+    value = round(qty * last, 2) if (qty and last) else None
+    cost_amt = round(qty * cost, 2) if (qty and cost) else None
 
     rows = risk.get("rows") or []
     alerts = [r for r in rows if (r.get("status") or "") == "alert"]
@@ -86,6 +89,10 @@ def _pick(analysis: dict, item: dict) -> Dict[str, Any]:
         "thscode": item.get("thscode"),
         "name": q.get("name") or item.get("name") or item.get("thscode"),
         "cost": cost,
+        "qty": qty,
+        "value": value,
+        "cost_amt": cost_amt,
+        "pnl_amt": (round(value - cost_amt, 2) if (value is not None and cost_amt is not None) else None),
         "last": last,
         "pct": _num(q.get("changePct")),
         "pnl_pct": round(pnl, 2) if pnl is not None else None,
@@ -135,9 +142,11 @@ def observations(p: Dict[str, Any]) -> List[Dict[str, str]]:
     ma = p.get("ma") or {}
 
     if pnl is not None:
+        amt = p.get("pnl_amt")
+        extra = ("，折合 %+.0f 元（%d 股 × 现价）" % (amt, p.get("qty"))) if (amt is not None and p.get("qty")) else ""
         out.append({"tone": "good" if pnl >= 0 else "bad",
-                    "text": "相对成本 %s：现价 %.2f / 成本 %.2f，浮动 %s"
-                            % ("盈利" if pnl >= 0 else "亏损", last, cost, _pct(pnl))})
+                    "text": "相对成本 %s：现价 %.2f / 成本 %.2f，浮动 %s%s"
+                            % ("盈利" if pnl >= 0 else "亏损", last, cost, _pct(pnl), extra)})
 
     if last and ma20:
         diff = (last / ma20 - 1) * 100
@@ -272,6 +281,12 @@ def build(state_json_fn=None, analysis_fn=None, now: Optional[dt.datetime] = Non
             "held": len(items),
             "analyzed": len(ok),
             "weighted_pnl": round(total_pnl, 2) if total_pnl is not None else None,
+            "cost_amt": (round(sum(_num(r.get("cost_amt")) or 0 for r in ok), 2)
+                         if any(_num(r.get("cost_amt")) for r in ok) else None),
+            "value": (round(sum(_num(r.get("value")) or 0 for r in ok), 2)
+                      if any(_num(r.get("value")) for r in ok) else None),
+            "pnl_amt": (round(sum(_num(r.get("pnl_amt")) or 0 for r in ok), 2)
+                        if any(_num(r.get("pnl_amt")) is not None for r in ok) else None),
             "best": {"name": best.get("name"), "pnl": best.get("pnl_pct")} if best else None,
             "worst": {"name": worst.get("name"), "pnl": worst.get("pnl_pct")} if worst else None,
             "attention": len(attention),

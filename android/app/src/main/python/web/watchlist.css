@@ -44,6 +44,24 @@ body.wl {
 .wl-sug button:hover { background: var(--panel-2); }
 .wl-sug .cd { color: var(--text-mute); font-family: var(--mono); font-size: 11.5px; }
 
+/* ---------------------------------------------------------------- 持仓汇总条 */
+.wl-portfolio {
+  display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+  padding: 11px 16px; border-radius: 16px;
+  background: #1b1a17; color: #f3efe6;
+}
+.wl-pf-t { font-size: 12px; font-weight: 700; letter-spacing: .3px; color: #d9a400; }
+.wl-pf-i { display: inline-flex; align-items: baseline; gap: 6px; font-size: 12px; }
+.wl-pf-i i { font-style: normal; color: rgba(243, 239, 230, .55); }
+.wl-pf-i b {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 13px; font-weight: 700; color: #f3efe6;
+}
+.wl-pf-i em { font-style: normal; font-family: var(--mono); font-size: 11px; color: rgba(243, 239, 230, .6); }
+.wl-pf-i b.up, .wl-pf-i em.up { color: #ff6b6b; }
+.wl-pf-i b.down, .wl-pf-i em.down { color: #4ade80; }
+.wl-pf-hint { font-size: 11px; color: rgba(243, 239, 230, .45); }
+
 /* ---------------------------------------------------------------- 工具条 */
 .wl-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .wl-tool {
@@ -76,7 +94,7 @@ body.wl {
 
 .wl-row {
   display: grid;
-  grid-template-columns: 20px minmax(150px, 1.5fr) 118px 92px 70px 92px 78px 132px minmax(80px, 1fr) 30px;
+  grid-template-columns: 20px minmax(140px, 1.3fr) 112px 86px 64px 86px 72px 116px 116px minmax(64px, 1fr) 28px;
   align-items: center; gap: 10px;
   padding: 11px 16px 11px 10px;
   border-top: 1px solid var(--line-soft);
@@ -159,6 +177,22 @@ body.wl {
 .wl-cost::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .wl-cost:focus { outline: none; border-color: var(--accent); background: var(--panel); }
 .wl-cost-ph { font-family: var(--mono); color: var(--line); font-size: 12px; }
+
+.wl-qty-cell {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+  justify-content: center; line-height: 1.15;
+}
+.wl-qty {
+  width: 74px; padding: 5px 7px; font: inherit; font-size: 12px;
+  font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right;
+  color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 8px; -moz-appearance: textfield;
+}
+.wl-qty::-webkit-outer-spin-button,
+.wl-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.wl-qty:focus { outline: none; border-color: var(--accent); background: var(--panel); }
+.wl-qty-cell small { font-family: var(--mono); font-size: 10.5px; color: var(--text-mute); }
+
 .wl-pnl {
   font-family: var(--mono); font-variant-numeric: tabular-nums;
   font-size: 11.5px; font-weight: 650; white-space: nowrap;
@@ -176,7 +210,7 @@ body.wl {
 /* 表头（桌面显示，手机隐藏） */
 .wl-thead {
   display: grid;
-  grid-template-columns: 20px minmax(150px, 1.5fr) 118px 92px 70px 92px 78px 132px minmax(80px, 1fr) 30px;
+  grid-template-columns: 20px minmax(140px, 1.3fr) 112px 86px 64px 86px 72px 116px 116px minmax(64px, 1fr) 28px;
   gap: 10px; padding: 9px 16px 9px 10px;
   font-size: 11px; color: var(--text-mute); background: var(--panel-2);
   border-bottom: 1px solid var(--line-soft);
@@ -196,7 +230,7 @@ body.wl {
       'grip name rm'
       'px px badge'
       'hold hold cost'
-      'meta meta meta'
+      'meta meta qty'
       'note note note';
     gap: 6px 10px; padding: 13px 14px; cursor: default;
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
@@ -214,4 +248,7 @@ body.wl {
   .wl-hold-cell { grid-area: hold; text-align: left; }
   .wl-cost-cell { grid-area: cost; justify-content: flex-end; }
   .wl-cost { width: 92px; }
+  .wl-qty-cell { grid-area: qty; justify-content: flex-end; flex-direction: row; align-items: baseline; gap: 5px; }
+  .wl-qty { width: 78px; }
+  .wl-portfolio { gap: 12px; padding: 10px 13px; }
 }

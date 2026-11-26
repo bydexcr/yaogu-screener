@@ -19,6 +19,16 @@
   function pct(v) { return isNum(v) ? (v > 0 ? '+' : '') + v.toFixed(2) + '%' : '—'; }
   function cls(v) { return !isNum(v) ? '' : (v > 0 ? 'up' : (v < 0 ? 'down' : 'flat')); }
   function px(v) { return isNum(v) ? v.toFixed(2) : '—'; }
+  function money2(v) {
+    // 汇总/市值用两位小数：几万块的四舍五入成整数太糊
+    if (!isNum(v)) return '—';
+    var a = Math.abs(v);
+    var sign = v < 0 ? '-' : '';
+    if (a >= 1e8) return sign + (a / 1e8).toFixed(2) + ' 亿';
+    if (a >= 1e4) return sign + (a / 1e4).toFixed(2) + ' 万';
+    return sign + a.toFixed(0);
+  }
+
   function money(v) {
     if (!isNum(v)) return '—';
     if (v >= 1e8) return (v / 1e8).toFixed(1) + ' 亿';
@@ -80,6 +90,14 @@
           ' value="' + (isNum(it.cost) ? it.cost : '') + '">' + pnl(it)
         : '<span class="wl-cost-ph">—</span>') +
       '</span>' +
+      '<span class="wl-qty-cell">' +
+      (held
+        ? '<input class="wl-qty" type="number" step="100" min="0" inputmode="numeric"' +
+          ' data-qty="' + esc(it.thscode) + '" placeholder="股数"' +
+          ' value="' + (isNum(it.qty) ? it.qty : '') + '">' +
+          (isNum(it.value) ? '<small>' + money2(it.value) + '</small>' : '')
+        : '<span class="wl-cost-ph">—</span>') +
+      '</span>' +
       '<span class="wl-note' + (note ? '' : ' empty') + '" data-note="' + esc(it.thscode) + '"' +
       ' title="点击写备注">' + (note ? esc(note) : '') + '</span>' +
       '<button class="wl-rm" type="button" data-rm="' + esc(it.thscode) + '" title="移出自选">×</button>' +
@@ -90,7 +108,7 @@
     return '<div class="wl-thead"><span></span><span>名称 / 代码</span>' +
       '<span class="r">最新价</span><span class="r">成交额</span>' +
       '<span class="r">T-1</span><span class="r">雷达状态</span>' +
-      '<span class="c">持有</span><span class="r">成本价 / 盈亏</span>' +
+      '<span class="c">持有</span><span class="r">成本价 / 盈亏</span><span class="r">数量 / 市值</span>' +
       '<span>备注</span><span></span></div>';
   }
 
@@ -119,6 +137,37 @@
     el.textContent = bits.join(' · ');
   }
 
+  function portfolioBar(d) {
+    var p = d && d.portfolio;
+    var box = $('#wlPortfolio');
+    if (!box) return;
+    if (!p || !p.held) { box.hidden = true; box.innerHTML = ''; return; }
+    var bits = ['<span class="wl-pf-t">持仓</span>'];
+    bits.push('<span class="wl-pf-i"><i>只数</i><b>' + p.held + '</b></span>');
+    if (isNum(p.cost_amt)) {
+      bits.push('<span class="wl-pf-i"><i>总成本</i><b>' + money2(p.cost_amt) + '</b></span>');
+      bits.push('<span class="wl-pf-i"><i>市值</i><b>' + money2(p.value) + '</b></span>');
+    }
+    if (isNum(p.pnl_amt)) {
+      bits.push('<span class="wl-pf-i"><i>浮动盈亏</i><b class="' + cls(p.pnl_amt) + '">' +
+        (p.pnl_amt > 0 ? '+' : '') + money2(p.pnl_amt) + '</b>' +
+        (isNum(p.pnl_pct) ? '<em class="' + cls(p.pnl_pct) + '">' + pct(p.pnl_pct) + '</em>' : '') +
+        '</span>');
+    } else if (isNum(p.pnl_pct)) {
+      bits.push('<span class="wl-pf-i"><i>加权浮盈</i><b class="' + cls(p.pnl_pct) + '">' +
+        pct(p.pnl_pct) + '</b><em>未填数量，仅按成本加权</em></span>');
+    }
+    if (isNum(p.today_amt)) {
+      bits.push('<span class="wl-pf-i"><i>今日盈亏</i><b class="' + cls(p.today_amt) + '">' +
+        (p.today_amt > 0 ? '+' : '') + money2(p.today_amt) + '</b></span>');
+    }
+    if (p.with_qty < p.held) {
+      bits.push('<span class="wl-pf-hint">' + (p.held - p.with_qty) + ' 只未填数量，不计入金额</span>');
+    }
+    box.hidden = false;
+    box.innerHTML = bits.join('');
+  }
+
   function sub(d) {
     var el = $('#wlSub');
     if (!el) return;
@@ -139,7 +188,7 @@
         state.loading = false;
         if (!d || d.ok === false) throw new Error((d && d.error) || '接口异常');
         state.items = d.items || [];
-        render(); sub(d); foot(d);
+        render(); sub(d); foot(d); portfolioBar(d);
       })
       .catch(function (e) {
         state.loading = false;
@@ -151,7 +200,7 @@
     return p.then(function (d) {
       if (!d || d.ok === false) throw new Error((d && d.error) || '操作失败');
       state.items = d.items || [];
-      render(); sub(d); foot(d);
+      render(); sub(d); foot(d); portfolioBar(d);
       return d;
     });
   }
@@ -266,6 +315,28 @@
       });
   }
 
+  function saveQty(code, value, input) {
+    var v = (value || '').trim().replace(/,/g, '');
+    if (v !== '' && !(Number(v) > 0)) {
+      $('#wlSub').textContent = '持股数量要大于 0';
+      return;
+    }
+    if (v !== '' && Number(v) !== Math.round(Number(v))) {
+      $('#wlSub').textContent = '持股数量需为整数（股）';
+      return;
+    }
+    var it = (state.items || []).filter(function (x) { return x.thscode === code; })[0];
+    if (it && String(it.qty == null ? '' : it.qty) === v) return;
+    if (input) input.disabled = true;
+    applyPromise(api({
+      action: 'hold', code: code, held: 1,
+      cost: (it && it.cost != null) ? it.cost : '', qty: v
+    })).catch(function (e) {
+      $('#wlSub').textContent = '数量保存失败：' + e.message;
+      if (input) input.disabled = false;
+    });
+  }
+
   function editNote(code) {
     var it = (state.items || []).filter(function (x) { return x.thscode === code; })[0];
     var cur = (it && it.note) || '';
@@ -331,12 +402,14 @@
     // 成本价：失焦或回车保存（input 事件不保存，避免每敲一个数字就打接口）
     $('#wlList').addEventListener('change', function (e) {
       var c = e.target;
-      if (!c || !c.getAttribute || !c.getAttribute('data-cost')) return;
-      saveCost(c.getAttribute('data-cost'), c.value, c);
+      if (!c || !c.getAttribute) return;
+      if (c.getAttribute('data-cost')) { saveCost(c.getAttribute('data-cost'), c.value, c); return; }
+      if (c.getAttribute('data-qty')) { saveQty(c.getAttribute('data-qty'), c.value, c); }
     });
     $('#wlList').addEventListener('keydown', function (e) {
       var c = e.target;
-      if (!c || !c.getAttribute || !c.getAttribute('data-cost')) return;
+      if (!c || !c.getAttribute) return;
+      if (!c.getAttribute('data-cost') && !c.getAttribute('data-qty')) return;
       if (e.key === 'Enter') { e.preventDefault(); c.blur(); }
     });
     // 点输入框不要触发拖拽
@@ -370,7 +443,7 @@
       api({ action: 'batch', text: text }).then(function (d) {
         if (!d || d.ok === false) throw new Error((d && d.error) || '导入失败');
         state.items = d.items || [];
-        render(); sub(d); foot(d);
+        render(); sub(d); foot(d); portfolioBar(d);
         var added = (d.added || []).length;
         $('#wlImportTip').textContent = '新增 ' + added + ' 只' +
           (d.skipped ? '，跳过 ' + d.skipped + '（已存在或重复）' : '');

@@ -99,6 +99,15 @@ def norm_code(code: str) -> str:
 
 
 # ------------------------------------------------------------------ 读写
+def _f(v):
+    """宽松转数字：None / 空 / 非法 → None。"""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if f == f else None
+
+
 def _empty() -> dict:
     return {"schema": SCHEMA, "updated": "", "items": []}
 
@@ -152,7 +161,7 @@ def add(code: str, name: str = "") -> Dict[str, object]:
         return {"ok": False, "error": f"自选股最多 {MAX_ITEMS} 只"}
     cur.append({"thscode": thscode, "name": (name or "").strip() or thscode.split(".")[0],
                 "added_at": time.strftime("%Y-%m-%d %H:%M:%S"), "note": "",
-                "held": False, "cost": None})
+                "held": False, "cost": None, "qty": None})
     _save(data)
     return {"ok": True, "added": True, "items": cur}
 
@@ -198,11 +207,11 @@ def set_note(code: str, note: str) -> Dict[str, object]:
     return {"ok": False, "error": "不在自选里"}
 
 
-def set_hold(code: str, held: bool, cost=None) -> Dict[str, object]:
-    """标记是否持有 + 成本价。
+def set_hold(code: str, held: bool, cost=None, qty=None) -> Dict[str, object]:
+    """标记是否持有 + 成本价 + 持股数量。
 
-    · held=False → cost 清空（不再持有就没必要留着成本）
-    · held=True  → cost 可为空（用户还没填），但传了非法值就拒绝
+    · held=False → cost / qty 一并清空（不再持有就没必要留着）
+    · held=True  → cost / qty 都可为空（用户还没填），但传了非法值就拒绝
     """
     thscode = norm_code(code)
     if not thscode:
@@ -218,11 +227,27 @@ def set_hold(code: str, held: bool, cost=None) -> Dict[str, object]:
             return {"ok": False, "error": "成本价必须大于 0"}
         if c > 100000:
             return {"ok": False, "error": "成本价看起来不对（>100000）"}
+
+    q = None
+    if held and qty not in (None, ""):
+        try:
+            fq = float(str(qty).strip().replace(",", ""))
+        except (TypeError, ValueError):
+            return {"ok": False, "error": f"持股数量不是数字：{qty}"}
+        if fq <= 0:
+            return {"ok": False, "error": "持股数量必须大于 0"}
+        if fq != int(fq):
+            return {"ok": False, "error": "持股数量需为整数（股）"}
+        if fq > 1_000_000_000:
+            return {"ok": False, "error": "持股数量看起来不对（>10 亿股）"}
+        q = int(fq)
+
     data = load()
     for it in data["items"]:
         if it.get("thscode") == thscode:
             it["held"] = held
             it["cost"] = c if held else None
+            it["qty"] = q if held else None
             _save(data)
             return {"ok": True, "items": data["items"]}
     return {"ok": False, "error": "不在自选里"}
@@ -307,7 +332,7 @@ def batch_add(text: str, resolve=None) -> Dict[str, object]:
         data["items"].append({"thscode": it["thscode"],
                               "name": it["name"] or it["thscode"].split(".")[0],
                               "added_at": time.strftime("%Y-%m-%d %H:%M:%S"), "note": "",
-                              "held": False, "cost": None})
+                              "held": False, "cost": None, "qty": None})
         have.add(it["thscode"])
         added.append(it["thscode"])
     if added:
@@ -315,12 +340,63 @@ def batch_add(text: str, resolve=None) -> Dict[str, object]:
     return {"ok": True, "added": added, "skipped": len(parsed) - len(added), "items": data["items"]}
 
 
+def portfolio(items: List[dict]) -> Dict[str, object]:
+    """持仓汇总（纯计算，不碰网络）。
+
+    入参 items 每项至少可含：held / cost / qty / last / prev / pct。
+    规则：
+      · 只统计 held=True 且 cost>0 的
+      · 有 qty 的按「成本×数量」计金额；没有 qty 的只能参与百分比加权，不参与金额
+    """
+    held = [it for it in (items or []) if it.get("held")]
+    priced = [it for it in held if _f(it.get("cost")) and _f(it.get("cost")) > 0]
+    with_qty = [it for it in priced if _f(it.get("qty"))]
+    cost_amt = sum(_f(it.get("cost")) * _f(it.get("qty")) for it in with_qty)
+    value = sum((_f(it.get("last")) or 0) * _f(it.get("qty")) for it in with_qty)
+    prev_amt = 0.0
+    for it in with_qty:
+        prev = _f(it.get("prev"))
+        if prev is None:
+            last, pct = _f(it.get("last")), _f(it.get("pct"))
+            if last and pct is not None:
+                prev = last / (1 + pct / 100) if (1 + pct / 100) else None
+        if prev:
+            prev_amt += prev * _f(it.get("qty"))
+
+    # 百分比：有数量的按金额加权，没数量的退化为成本加权
+    if with_qty and cost_amt > 0:
+        pnl_pct = (value / cost_amt - 1) * 100
+    else:
+        tot = sum(_f(it.get("cost")) for it in priced) or 0
+        pnl_pct = (sum((_f(it.get("pnl_pct")) or 0) * _f(it.get("cost")) for it in priced) / tot
+                   if tot else None)
+
+    def _best(key):
+        rows = [it for it in priced if _f(it.get(key)) is not None]
+        if not rows:
+            return None
+        r = (max if key != "pnl_pct" else max)(rows, key=lambda x: _f(x.get(key)) or -1e18)
+        return {"name": r.get("name"), "code": r.get("thscode"), "pnl_pct": r.get("pnl_pct")}
+
+    return {
+        "held": len(held),
+        "priced": len(priced),
+        "with_qty": len(with_qty),
+        "cost_amt": round(cost_amt, 2) if with_qty else None,
+        "value": round(value, 2) if with_qty else None,
+        "pnl_amt": round(value - cost_amt, 2) if with_qty else None,
+        "today_amt": round(value - prev_amt, 2) if (with_qty and prev_amt) else None,
+        "pnl_pct": round(pnl_pct, 2) if pnl_pct is not None else None,
+    }
+
+
 def export_csv() -> str:
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["thscode", "name", "added_at", "note", "held", "cost"])
+    w.writerow(["thscode", "name", "added_at", "note", "held", "cost", "qty"])
     for it in items():
         w.writerow([it.get("thscode", ""), it.get("name", ""), it.get("added_at", ""),
                     it.get("note", ""), "1" if it.get("held") else "",
-                    it.get("cost") if it.get("cost") is not None else ""])
+                    it.get("cost") if it.get("cost") is not None else "",
+                    it.get("qty") if it.get("qty") is not None else ""])
     return "\ufeff" + buf.getvalue()      # BOM：Excel 直接打开不乱码
